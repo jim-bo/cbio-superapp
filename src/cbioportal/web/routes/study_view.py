@@ -199,6 +199,13 @@ async def study_summary(request: Request, id: str = ""):
     )
 
 
+@router.get("/study/vanilla", response_class=HTMLResponse)
+async def study_vanilla(request: Request):
+    return request.app.state.templates.TemplateResponse(
+        "study_view/vanilla_dashboard.html", {"request": request}
+    )
+
+
 @router.post("/study/summary/chart/clinical")
 async def chart_clinical(
     request: Request,
