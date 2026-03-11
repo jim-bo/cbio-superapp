@@ -1,0 +1,106 @@
+<div id="rightColumn">
+<div>
+
+    <!-- What's New -->
+    <div class="rightBarSection" style="padding-bottom: 20px;">
+        <h3 style="border-bottom: 0px;">
+            <a href="https://docs.cbioportal.org/news/" target="_blank" title="View all news"
+               style="color: rgb(41, 134, 226); text-decoration: none;">
+                What's New <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 14px;"></i>
+            </a>
+            <span class="pull-right">
+                <a href="https://bsky.app/profile/cbioportal.bsky.social" target="_blank" title="Follow us on Bluesky" style="margin-left: 10px;">
+                    <i class="fa-brands fa-bluesky" aria-hidden="true" style="color: rgb(0, 133, 255);"></i>
+                </a>
+                <a href="https://www.twitter.com/cbioportal" target="_blank" title="Follow us on Twitter" style="margin-left: 10px;">
+                    <i class="fa-brands fa-x-twitter" aria-hidden="true" style="color: rgb(0, 0, 0);"></i>
+                </a>
+                <a href="https://linkedin.com/company/cbioportal" target="_blank" title="Follow us on LinkedIn" style="margin-left: 10px;">
+                    <i class="fa-brands fa-linkedin" aria-hidden="true" style="color: rgb(10, 102, 194);"></i>
+                </a>
+            </span>
+        </h3>
+        <div class="newsContent">
+            <h2><span>November 15, 2025</span></h2>
+            <ul>
+                <li>
+                    <p><strong>Data Improvement</strong>: The default transcripts for each gene were updated to
+                    align better with OncoKB, prioritizing clinically relevant and MANE transcripts
+                    (<a href="https://www.nature.com/articles/s41586-022-04558-8" target="_blank">Morales et al. 2022</a>).
+                    Also Ensembl's subversions are now included for each transcript.</p>
+                </li>
+                <p style="margin: 10px 0 0 0; font-size: 12px;">
+                    <a href="https://docs.cbioportal.org/news/#november-15-2025" target="_blank"
+                       style="color: #2986e2; text-decoration: none;">(Read more)</a>
+                </p>
+            </ul>
+
+            <h2><span>November 7, 2025</span></h2>
+            <ul>
+                <li><strong>New Feature:</strong> The Data type filter on the
+                    <a href="/" target="_blank">home page</a> now has options to filter studies by imaging data.
+                </li>
+            </ul>
+
+            <h2><span>October 10, 2025</span></h2>
+            <ul>
+                <li>
+                    <p><strong>New Feature:</strong> Variant Allele Frequency (VAF) is now available as a data
+                    option in the Plots tab, allowing visualization of allele frequencies across samples.</p>
+                </li>
+            </ul>
+        </div>
+        <div style="padding-top: 5px;">
+            <p style="text-align: center;">Read the latest cBioPortal Newsletter! Subscribe via:</p>
+            <div style="display: flex; gap: 3px;">
+                <a target="_blank" class="btn btn-default btn-sm" href="https://www.linkedin.com/newsletters/cbioportal-newsletter-7178731490539634689/" style="flex: 1;">LinkedIn</a>
+                <a target="_blank" class="btn btn-default btn-sm" href="https://groups.google.com/g/cbioportal-news" style="flex: 1;">Google Groups</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Queries -->
+    <div class="rightBarSection exampleQueries">
+        <h3>Example Queries</h3>
+        <ul>
+            <li><a href="/comparison/mutations?sessionId=5cf89323e4b0ab413787436c">Primary vs. metastatic prostate cancer</a></li>
+            <li><a href="/results?cancer_study_list=coadread_tcga_pub&amp;genetic_profile_ids_PROFILE_MUTATION_EXTENDED=coadread_tcga_pub_mutations&amp;genetic_profile_ids_PROFILE_COPY_NUMBER_ALTERATION=coadread_tcga_pub_gistic&amp;Z_SCORE_THRESHOLD=2.0&amp;case_set_id=coadread_tcga_pub_nonhypermut&amp;gene_list=KRAS+NRAS+BRAF">RAS/RAF alterations in colorectal cancer</a></li>
+            <li><a href="/results/mutations?cancer_study_list=ov_tcga_pub&amp;genetic_profile_ids_PROFILE_MUTATION_EXTENDED=ov_tcga_pub_mutations&amp;Z_SCORE_THRESHOLD=2.0&amp;case_set_id=ov_tcga_pub_3way_complete&amp;gene_list=BRCA1+BRCA2">BRCA1 and BRCA2 mutations in ovarian cancer</a></li>
+            <li><a href="/results?cancer_study_list=ucec_tcga_pub&amp;genetic_profile_ids_PROFILE_MUTATION_EXTENDED=ucec_tcga_pub_mutations&amp;Z_SCORE_THRESHOLD=2.0&amp;case_set_id=ucec_tcga_pub_sequenced&amp;gene_list=POLE%3A+MUT+%3D+P286+MUT+%3D+V411+MUT+%3D+L424+MUT+%3D+S297F">POLE hotspot mutations in endometrial cancer</a></li>
+            <li><a href="/results?cancer_study_list=gbm_tcga_pub&amp;genetic_profile_ids_PROFILE_MUTATION_EXTENDED=gbm_tcga_pub_mutations&amp;genetic_profile_ids_PROFILE_COPY_NUMBER_ALTERATION=gbm_tcga_pub_cna_rae&amp;Z_SCORE_THRESHOLD=1.0&amp;gene_list=TP53+MDM2+MDM4">TP53 and MDM2/4 alterations in GBM</a></li>
+            <li><a href="/results/download?cancer_study_list=gbm_tcga_pub&amp;genetic_profile_ids_PROFILE_MUTATION_EXTENDED=gbm_tcga_pub_mutations&amp;gene_list=PTEN">PTEN mutations in GBM in text format</a></li>
+            <li><a href="/patient?studyId=ucec_tcga_pub&amp;caseId=TCGA-BK-A0CC">Patient view of an endometrial cancer case</a></li>
+        </ul>
+    </div>
+
+    <!-- Local Installations -->
+    <div class="rightBarSection">
+        <h3 style="padding-bottom: 8px;">Local Installations
+            <a class="btn btn-link btn-xs pull-right" target="_blank" href="/visualize">Host your own</a>
+        </h3>
+        <p>Are you running a local instance of cBioPortal, public or private?
+            <a target="_blank" href="https://docs.google.com/forms/d/e/1FAIpQLSflQdN956q7Xh5caO8z8jIaF6uMLBkKrSxFvPi8OhNBWB247w/viewform">
+                Complete the survey here</a> to add your installation to the map.
+        </p>
+    </div>
+
+    <!-- Testimonials -->
+    <div class="rightBarSection" style="min-height: 300px;">
+        <h3>Testimonials</h3>
+        <div class="testimonials-module__testimonial__PdHUf">
+            <div class="testimonial-blockquote">
+                <p>"Whenever bench scientists ask me how they can look at TCGA data, I've never
+                    had a good answer for them. Now I do. The cBio Portal meets a critical need--it is the
+                    interface that the cancer research community needs to access the wealth of TCGA. Even as a
+                    computational biologist, I use it to follow-up on genes of interest. It makes querying
+                    the data much less painful."</p>
+                <cite>--Postdoctoral Fellow, Oregon Health &amp; Science University</cite>
+                <div class="testimonial-links">
+                    <a href="/testimonials">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>

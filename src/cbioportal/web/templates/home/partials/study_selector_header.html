@@ -1,0 +1,86 @@
+<div class="small" style="display: flex; overflow: hidden; flex-direction: column; padding: 5px 0 0 0; border: 1px solid #ddd; border-radius: 2px; box-shadow: 0 0 1px #e9e9e9; background: #fff; flex: 1; min-height: 0;">
+
+    {# Single form wrapping all filters. Any change triggers POST to /studies,
+       which swaps only #study-list-wrapper — cancer type radios stay intact. #}
+    <form id="filter-form"
+          hx-post="/studies"
+          hx-target="#study-list-wrapper"
+          hx-trigger="change"
+          hx-swap="innerHTML"
+          style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+
+        <div style="margin-top: 0px; display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+
+            <!-- Header Row: title, count, data type filter, search -->
+            <div style="display: flex; overflow: visible; flex-direction: row; justify-content: space-between; align-items: center; padding: 0 10px 5px 10px; border-bottom: 1px solid #ddd;">
+
+                <div class="studySelectorHeader">
+                    <h2 style="padding: 0; margin: 0;">Select Studies for Visualization &amp; Analysis:</h2>
+                </div>
+
+                <div>
+                    <a style="cursor: pointer;">
+                        <div><b>{{ total_studies }}</b> studies available (<b>{{ "{:,}".format(total_samples) }}</b> samples)</div>
+                    </a>
+                </div>
+
+                <!-- Data Type Filter Dropdown (Bootstrap dropdown, checkboxes inside) -->
+                <div data-tour="data-type-filter" style="display: inline-block;">
+                    <div style="padding-right: 5px;">
+                        <div class="input-group input-group-sm input-group-toggle">
+                            <div class="dropdown btn-group">
+                                <button id="dropdown-study-data-filter" type="button"
+                                        class="btn-sm dropdown-toggle btn btn-default"
+                                        style="width: 150px; text-align: right; float: right; padding-right: 5px;"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span style="float: left; padding-left: 0px; margin-left: 0px;">Data type</span>
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu" style="padding: 8px 12px; min-width: 180px;">
+                                    {% for value, label in data_type_options %}
+                                    <li style="padding: 3px 0;">
+                                        <label style="font-weight: normal; cursor: pointer; margin: 0;">
+                                            <input type="checkbox" name="data_types" value="{{ value }}"
+                                                   {% if value in selected_data_types %}checked{% endif %}
+                                                   style="margin-right: 6px;">
+                                            {{ label }}
+                                        </label>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Box (non-functional in this experiment) -->
+                <div data-tour="cancer-study-search-box" style="display: inline-block;">
+                    <div class="dropdown">
+                        <div class="input-group input-group-sm input-group-toggle">
+                            <input autocomplete="off" spellcheck="false" class="form-control"
+                                   placeholder="Search..." type="text" value=""
+                                   style="width: 300px;">
+                            <div class="input-group-btn">
+                                <button type="button" class="dropdown-toggle btn btn-sm btn-default">
+                                    <span class="caret" style="transform: rotate(0deg);">&nbsp;</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- End Header Row -->
+
+            <!-- Selector Body: cancer type list (left) + study list (right, swap target) -->
+            <div class="cancerSelectorBody" style="flex: 1; overflow: hidden; display: flex;">
+                {% include "home/partials/cancer_type_list.html" %}
+                <div id="study-list-wrapper" style="flex: 1; overflow-y: auto; height: 100%;">
+                    {% include "home/partials/cancer_study_list.html" %}
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+{% include "home/partials/study_selector_footer.html" %}

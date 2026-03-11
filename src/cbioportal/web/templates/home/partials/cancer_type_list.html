@@ -1,0 +1,37 @@
+<div class="cancerTypeListContainer">
+    <ul class="cancerTypeList">
+
+        {# Special collections (Pan-Cancer Studies, Pediatric, etc.) #}
+        {% for token, label, count in special_collections %}
+        <li class="{% if selected_cancer_type == token %}selected{% endif %}">
+            <label style="display: flex; justify-content: space-between; width: 100%; margin: 0; font-weight: normal; cursor: pointer;">
+                <input type="radio" name="cancer_type" value="{{ token }}"
+                       {% if selected_cancer_type == token %}checked{% endif %}
+                       hx-post="/studies"
+                       hx-target="#studyList"
+                       style="display: none;">
+                <span class="typeLabel">{{ label }}</span>
+                <span class="typeCount">{{ count }}</span>
+            </label>
+        </li>
+        {% endfor %}
+
+        <hr style="margin: 5px 0; border: 0; border-top: 1px solid #eee;">
+
+        {# Organ Systems (derived from OncoTree root nodes) #}
+        {% for ct in cancer_types %}
+        <li class="{% if selected_cancer_type == ct %}selected{% endif %}">
+            <label style="display: flex; justify-content: space-between; width: 100%; margin: 0; font-weight: normal; cursor: pointer;">
+                <input type="radio" name="cancer_type" value="{{ ct }}"
+                       {% if selected_cancer_type == ct %}checked{% endif %}
+                       hx-post="/studies"
+                       hx-target="#studyList"
+                       style="display: none;">
+                <span class="typeLabel">{{ ct }}</span>
+                <span class="typeCount">{{ cancer_type_counts.get(ct, 0) }}</span>
+            </label>
+        </li>
+        {% endfor %}
+
+    </ul>
+</div>

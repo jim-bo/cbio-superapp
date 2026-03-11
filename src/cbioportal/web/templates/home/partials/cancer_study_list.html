@@ -1,0 +1,64 @@
+<div class="cancerStudyListContainer">
+
+    <div class="queryHelpLink">
+        <a href="https://docs.cbioportal.org/user-guide/by-page/#homepage" target="_blank">Help <i class="fa fa-book"></i></a>
+    </div>
+
+    <div class="checkbox" style="margin-left: 0;">
+        <div class="quickSelect">
+            <div>Quick select:&nbsp;
+                <button class="btn btn-default btn-xs">TCGA PanCancer Atlas Studies</button>
+                <button class="btn btn-default btn-xs">Curated set of non-redundant studies</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="genieNotice">
+        Looking for <strong>AACR Project GENIE</strong>, the largest public clinicogenomic cancer dataset?&nbsp;
+        <a href="https://genie.cbioportal.org/" target="_blank">It's available here.</a>
+        <i class="fa fa-info-circle" style="color: gray;"></i>
+    </div>
+
+    {% if not grouped_studies %}
+    <div style="padding: 20px; color: #999;">No studies match the selected filters.</div>
+    {% else %}
+
+    <ul class="studyList">
+        {% for cancer_type, studies in grouped_studies.items() %}
+        <ul class="studyListLevel1">
+
+            <li class="cancerTypeHeading">
+                <label>
+                    <input type="checkbox">
+                    <span>{{ cancer_type }}</span>
+                    <span class="selectAllBtn">Select All</span>
+                </label>
+            </li>
+
+            {% for study in studies %}
+            <li class="studyItem">
+                <label>
+                    <input type="checkbox">
+                    <span class="studyName">{{ study.name }}</span>
+                </label>
+                <div class="studyMeta">
+                    <span class="studySamples">{{ "{:,}".format(study.samples) }} samples</span>
+                    <span class="studyLinks">
+                        <a href="#" title="{{ study.description or '' }}"><span class="fa fa-info-circle" style="color: gray;"></span></a>
+                        {% if study.pubmed_url %}
+                        <a href="{{ study.pubmed_url }}" target="_blank"><span class="fa fa-book"></span></a>
+                        {% else %}
+                        <span class="fa fa-book" style="color: #ccc;"></span>
+                        {% endif %}
+                        <a href="{{ study.cbio_url }}" target="_blank"><span class="ci ci-pie-chart"></span></a>
+                    </span>
+                </div>
+            </li>
+            {% endfor %}
+
+        </ul>
+        {% endfor %}
+    </ul>
+
+    {% endif %}
+</div>

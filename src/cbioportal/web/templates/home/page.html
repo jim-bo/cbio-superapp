@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="contentWrapper" style="height: calc(100vh - 61px); overflow: hidden;">
+    <div class="contentWidth homePageLayout noMargin" style="height: 100%; align-items: stretch;">
+        <div id="mainColumn" data-tour="mainColumn" style="display: flex; flex-direction: column; min-height: 0; overflow: hidden;">
+            {% include "home/partials/subheader.html" %}
+        </div>
+        {% include "home/partials/right_sidebar.html" %}
+    </div>
+</div>
+{% endblock %}

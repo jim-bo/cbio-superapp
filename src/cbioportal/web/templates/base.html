@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html class="cbioportal-frontend" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}cBioPortal for Cancer Genomics{% endblock %}</title>
+    <link rel="icon" href="/static/img/cbioportal_logo.png">
+    <link rel="stylesheet" href="/static/css/prefixed-bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block header %}
+    {% include "shared/header.html" %}
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    {% include "shared/footer.html" %}
+    {% endblock %}
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</body>
+</html>
