@@ -51,6 +51,18 @@ def get_study_metadata(conn, study_id: str) -> dict | None:
 # Filter engine (Internal)
 # ---------------------------------------------------------------------------
 
+def _get_mutation_sample_col(conn, study_id: str) -> str:
+    """Return the sample ID column name for the mutation table (SAMPLE_ID or Tumor_Sample_Barcode)."""
+    try:
+        cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_mutations"').fetchall()]
+        if "SAMPLE_ID" in cols:
+            return "SAMPLE_ID"
+        if "Tumor_Sample_Barcode" in cols:
+            return "Tumor_Sample_Barcode"
+        return "SAMPLE_ID" # default
+    except Exception:
+        return "SAMPLE_ID"
+
 def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tuple[str, list]:
     """
     Returns (sql_subquery, params). 
@@ -60,7 +72,10 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
 
     try:
-        f = json.loads(filter_json)
+        if isinstance(filter_json, str):
+            f = json.loads(filter_json)
+        else:
+            f = filter_json
     except (json.JSONDecodeError, TypeError):
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
 
@@ -117,11 +132,13 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
             params.extend(local_params)
 
     # Mutation gene filter
-    for gene in mutation_filter_genes:
-        subqueries.append(
-            f'SELECT DISTINCT SAMPLE_ID FROM "{study_id}_mutations" WHERE Hugo_Symbol = ?'
-        )
-        params.append(gene)
+    if mutation_filter_genes:
+        mut_sample_col = _get_mutation_sample_col(conn, study_id)
+        for gene in mutation_filter_genes:
+            subqueries.append(
+                f'SELECT DISTINCT {mut_sample_col} FROM "{study_id}_mutations" WHERE Hugo_Symbol = ?'
+            )
+            params.append(gene)
 
     if not subqueries:
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
@@ -285,6 +302,7 @@ def get_mutated_genes(
     table = f'"{study_id}_mutations"'
     
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    mut_sample_col = _get_mutation_sample_col(conn, study_id)
 
     try:
         # Total samples matching filter (denominator)
@@ -295,9 +313,9 @@ def get_mutated_genes(
             SELECT
                 Hugo_Symbol,
                 COUNT(*) AS n_mut,
-                COUNT(DISTINCT SAMPLE_ID) AS n_samples
+                COUNT(DISTINCT {mut_sample_col}) AS n_samples
             FROM {table}
-            WHERE SAMPLE_ID IN ({filter_sql})
+            WHERE {mut_sample_col} IN ({filter_sql})
             GROUP BY Hugo_Symbol
             ORDER BY n_samples DESC
             LIMIT {limit}
@@ -584,15 +602,16 @@ def get_tmb_fga_scatter(
     sample_table = f'"{study_id}_sample"'
     mut_table = f'"{study_id}_mutations"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    mut_sample_col = _get_mutation_sample_col(conn, study_id)
 
     try:
         sql = f"""
             SELECT
                 s.SAMPLE_ID,
                 TRY_CAST(s."{fga_col}" AS DOUBLE) AS fga,
-                COUNT(m.SAMPLE_ID) AS mutation_count
+                COUNT(m.{mut_sample_col}) AS mutation_count
             FROM {sample_table} s
-            LEFT JOIN {mut_table} m ON s.SAMPLE_ID = m.SAMPLE_ID
+            LEFT JOIN {mut_table} m ON s.SAMPLE_ID = m.{mut_sample_col}
             WHERE s.SAMPLE_ID IN ({filter_sql})
             GROUP BY s.SAMPLE_ID, fga
             HAVING fga IS NOT NULL

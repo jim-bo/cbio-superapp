@@ -1,7 +1,7 @@
-<div class="cbio-widget" id="widget-CANCER_TYPE">
+<div class="cbio-widget" id="widget-cna-genes">
     <!-- Header -->
     <div class="cbio-widget-header">
-        <div class="cbio-widget-title">Cancer Type</div>
+        <div class="cbio-widget-title" id="title-cna-genes">CNA Genes</div>
         <div class="cbio-widget-controls">
             <button class="cbio-widget-btn" title="Info"><i class="fa fa-info-circle"></i></button>
             <button class="cbio-widget-btn" title="Close"><i class="fa fa-times"></i></button>
@@ -14,12 +14,16 @@
         <table class="cbio-table">
             <thead>
                 <tr>
-                    <th></th>
-                    <th class="cbio-table-count">#</th>
-                    <th class="cbio-table-freq">Freq <i class="fa fa-caret-down"></i></th>
+                    <th style="text-align: left; padding-left: 10px;">
+                        <i class="fa fa-filter" style="color: #ccc; margin-right: 4px;"></i>
+                        Gene
+                    </th>
+                    <th style="text-align: center;">CNA</th>
+                    <th style="text-align: right;">#</th>
+                    <th style="text-align: right;">Freq <i class="fa fa-caret-down"></i></th>
                 </tr>
             </thead>
-            <tbody id="table-body-CANCER_TYPE">
+            <tbody id="table-body-cna-genes">
                 <!-- Dynamic Rows -->
             </tbody>
         </table>
@@ -28,7 +32,6 @@
     <!-- Footer -->
     <div class="cbio-widget-footer">
         <input type="text" class="cbio-search-input" placeholder="Search...">
-        <button class="cbio-footer-btn">Select all</button>
     </div>
 
     <!-- Resize Handle -->
