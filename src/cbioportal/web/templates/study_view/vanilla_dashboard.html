@@ -216,6 +216,70 @@
                 </div>
             </div>
         </div>
+
+        <!-- Row 5 -->
+        <div class="grid-stack-item" gs-w="4" gs-h="10" gs-x="0" gs-y="40">
+            <div class="grid-stack-item-content">
+                <div class="cbio-widget" id="widget-GENE_PANEL">
+                    <div class="cbio-widget-header">
+                        <div class="cbio-widget-title">Gene Panel</div>
+                        <div class="cbio-widget-controls">
+                            <button class="cbio-widget-btn"><i class="fa fa-bars"></i></button>
+                        </div>
+                    </div>
+                    <div class="cbio-widget-content">
+                        <table class="cbio-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th class="cbio-table-count">#</th>
+                                    <th class="cbio-table-freq">Freq <i class="fa fa-caret-down"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body-GENE_PANEL"></tbody>
+                        </table>
+                    </div>
+                    <div class="cbio-widget-footer">
+                        <input type="text" class="cbio-search-input" placeholder="Search...">
+                    </div>
+                    <div class="cbio-resize-handle"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-stack-item" gs-w="4" gs-h="10" gs-x="4" gs-y="40">
+            <div class="grid-stack-item-content">
+                <div class="cbio-widget" id="widget-LIVER">
+                    <div class="cbio-widget-header">
+                        <div class="cbio-widget-title">Metastatic Site: Liver</div>
+                        <div class="cbio-widget-controls">
+                            <button class="cbio-widget-btn"><i class="fa fa-bars"></i></button>
+                        </div>
+                    </div>
+                    <div class="cbio-widget-content">
+                        <div id="chart-LIVER" class="echarts-container"></div>
+                    </div>
+                    <div class="cbio-resize-handle"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-stack-item" gs-w="4" gs-h="10" gs-x="8" gs-y="40">
+            <div class="grid-stack-item-content">
+                <div class="cbio-widget" id="widget-LUNG">
+                    <div class="cbio-widget-header">
+                        <div class="cbio-widget-title">Metastatic Site: Lung</div>
+                        <div class="cbio-widget-controls">
+                            <button class="cbio-widget-btn"><i class="fa fa-bars"></i></button>
+                        </div>
+                    </div>
+                    <div class="cbio-widget-content">
+                        <div id="chart-LUNG" class="echarts-container"></div>
+                    </div>
+                    <div class="cbio-resize-handle"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -548,9 +612,12 @@
             updateTableWidget('CANCER_TYPE');
             updateTableWidget('CLINICAL_SUMMARY');
             updateTableWidget('DIAGNOSIS_DESCRIPTION');
+            updateTableWidget('GENE_PANEL');
             updatePieWidget('GENDER');
             updatePieWidget('NUM_ICDO_DX');
             updatePieWidget('BONE');
+            updatePieWidget('LIVER');
+            updatePieWidget('LUNG');
             updateGenomicTableWidget();
             updateSVTableWidget();
             updateCNATableWidget();
