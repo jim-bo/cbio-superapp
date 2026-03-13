@@ -1,0 +1,10352 @@
+{
+  "scenario": "baseline",
+  "study_id": "msk_chord_2024",
+  "clinical": {
+    "ICD_O_HISTOLOGY_DESCRIPTION": [
+      {
+        "value": "Adenocarcinoma, Nos",
+        "count": 14230
+      },
+      {
+        "value": "Infiltrating Duct Carcinoma",
+        "count": 4567
+      },
+      {
+        "value": "Adenocarcinoma Combined With Other Types Of Carcinoma",
+        "count": 1041
+      },
+      {
+        "value": "Squamous Cell Carcinoma, Nos",
+        "count": 519
+      },
+      {
+        "value": "Lobular Carcinoma, Nos",
+        "count": 514
+      },
+      {
+        "value": "Mucinous Adenocarcinoma",
+        "count": 480
+      },
+      {
+        "value": "Carcinoid Tumor, Malignant",
+        "count": 285
+      },
+      {
+        "value": "Sq Cell Ca, Keratinizing Type, Nos",
+        "count": 264
+      },
+      {
+        "value": "Acinar Cell Carcinoma",
+        "count": 248
+      },
+      {
+        "value": "Lobular Ca + Ifdc/Dcis",
+        "count": 244
+      },
+      {
+        "value": "Non-Small Cell Carcinoma (C34._)",
+        "count": 196
+      },
+      {
+        "value": "Adenocarcinoma In Polyp,Nos",
+        "count": 189
+      },
+      {
+        "value": "Adenoca In Tubulovillous Adenoma",
+        "count": 170
+      },
+      {
+        "value": "Carcinoma, Nos",
+        "count": 161
+      },
+      {
+        "value": "Large Cell Neuroendocrine Carcinoma",
+        "count": 138
+      },
+      {
+        "value": "Tubular Adenocarcinoma",
+        "count": 126
+      },
+      {
+        "value": "Adenosquamous Carcinoma",
+        "count": 119
+      },
+      {
+        "value": "Sq Cell Ca, Large Cell, Non-Keratinizing",
+        "count": 109
+      },
+      {
+        "value": "Infiltrating Duct Mixed W/Other Types Of Ca (C50._)",
+        "count": 109
+      },
+      {
+        "value": "Neuroendocrine Carcinoma",
+        "count": 98
+      },
+      {
+        "value": "Acinar Cell Cystadenocarcinoma",
+        "count": 90
+      },
+      {
+        "value": "Signet Ring Cel Carcinoma",
+        "count": 73
+      },
+      {
+        "value": "Atypical Carcinoid Tumor",
+        "count": 67
+      },
+      {
+        "value": "Pleomorphic Carcinoma",
+        "count": 59
+      },
+      {
+        "value": "Small Cell Carcinoma, Nos",
+        "count": 58
+      },
+      {
+        "value": "Lobular Carcinoma In Situ",
+        "count": 57
+      },
+      {
+        "value": "Adenocarcinoma, Ca Insitu",
+        "count": 55
+      },
+      {
+        "value": "Metaplastic Carcinoma, Nos",
+        "count": 50
+      },
+      {
+        "value": "Minimally Invasive Adenocarcinoma, Non Mucinous",
+        "count": 49
+      },
+      {
+        "value": "Solid Carcinoma, Nos",
+        "count": 47
+      },
+      {
+        "value": "Intraductal Ca, Non-Infiltrating, Nos",
+        "count": 41
+      },
+      {
+        "value": "Papillary Adenocarcinoma, Nos",
+        "count": 40
+      },
+      {
+        "value": "Medullary Carcinoma, Nos",
+        "count": 35
+      },
+      {
+        "value": "Bronchiolo-Alveolar Carcinoma, Mucinous (C34._)",
+        "count": 31
+      },
+      {
+        "value": "Bronchiolo-Alveolar Ca Mixed Muc/Non Mucinous (C34._)",
+        "count": 29
+      },
+      {
+        "value": "Intraductal Mixed W/Other Types Of Ca, In Situ",
+        "count": 28
+      },
+      {
+        "value": "Small Cell-Large Cell Carcinoma",
+        "count": 27
+      },
+      {
+        "value": "Basaloid Squamous Cell Carcinoma",
+        "count": 26
+      },
+      {
+        "value": "Bronchiolo-Alveolar Adenocarcinoma",
+        "count": 26
+      },
+      {
+        "value": "Pseudosarcomatous Carcinoma",
+        "count": 22
+      },
+      {
+        "value": "Blastoma, Nos",
+        "count": 20
+      },
+      {
+        "value": "Adenocarcinoma With Neuroendocrine Differentiation",
+        "count": 19
+      },
+      {
+        "value": "Apocrine Adenocarcinoma",
+        "count": 17
+      },
+      {
+        "value": "Composite Carcinoid",
+        "count": 16
+      },
+      {
+        "value": "Adenoid Cystic Carcinoma",
+        "count": 16
+      },
+      {
+        "value": "Large Cell Carcinoma, Nos",
+        "count": 13
+      },
+      {
+        "value": "Mucin-Producing Adenocarinoma",
+        "count": 13
+      },
+      {
+        "value": "Micropap Adenoca (C34) Dx < 2018 Use 8507/3",
+        "count": 12
+      },
+      {
+        "value": "Spindle Cell Carcinoma",
+        "count": 10
+      },
+      {
+        "value": "Mixed Islet Cell & Exocrine Adenoca",
+        "count": 10
+      },
+      {
+        "value": "Micropapillary Carcinoma",
+        "count": 10
+      },
+      {
+        "value": "Paget's Disease & Infilt Duct Ca",
+        "count": 9
+      },
+      {
+        "value": "Bronchiol-Alveol Adenoca (Cis)",
+        "count": 9
+      },
+      {
+        "value": "Adenocarcinoma In Villous Adenoma",
+        "count": 8
+      },
+      {
+        "value": "Ductal Carcinoma In Situ, Solid Type (C50._)",
+        "count": 8
+      },
+      {
+        "value": "Intraductal Carcinoma & Lobular Carcinoma In Situ",
+        "count": 8
+      },
+      {
+        "value": "Infiltrating Lobular Mixed W/Other Types Of Ca (C50._)",
+        "count": 7
+      },
+      {
+        "value": "Papillary Carcinoma, Nos",
+        "count": 7
+      },
+      {
+        "value": "Intraductal Papillary Adenoca W/ Invasion",
+        "count": 7
+      },
+      {
+        "value": "Clear Cell Adenocarcinoma, Nos",
+        "count": 6
+      },
+      {
+        "value": "Inflammatory Carcinoma",
+        "count": 6
+      },
+      {
+        "value": "Carcinoma With Osteoclast-Like Giant Cells",
+        "count": 6
+      },
+      {
+        "value": "Intraductal Papillary-Mucinous Carcinoma, Non-Invasive",
+        "count": 5
+      },
+      {
+        "value": "Pseudopapillary Carcinoma, Solid(C25._)",
+        "count": 5
+      },
+      {
+        "value": "Carcinosarcoma, Nos",
+        "count": 5
+      },
+      {
+        "value": "Carcinoma, Anaplastic Type, Nos",
+        "count": 4
+      },
+      {
+        "value": "Islet Cell Carcinoma",
+        "count": 4
+      },
+      {
+        "value": "Schminke Tumor/Lymphoepithelial Carcinoma",
+        "count": 4
+      },
+      {
+        "value": "Juvenile Carcinoma Of Breast",
+        "count": 3
+      },
+      {
+        "value": "Carcinoma, Undifferentiated Type, Nos",
+        "count": 3
+      },
+      {
+        "value": "Pancreatoblastoma",
+        "count": 3
+      },
+      {
+        "value": "Sq Cell Ca, Spindle Cell Type",
+        "count": 2
+      },
+      {
+        "value": "Adenoca, Intestinal Type",
+        "count": 2
+      },
+      {
+        "value": "Cribriform Carcinoma",
+        "count": 2
+      },
+      {
+        "value": "Mucoepidermoid Carcinoma",
+        "count": 2
+      },
+      {
+        "value": "Cribriform Intraductal Ca",
+        "count": 2
+      },
+      {
+        "value": "Giant Cell Carcinoma",
+        "count": 2
+      },
+      {
+        "value": "Basaloid Carcinoma",
+        "count": 2
+      },
+      {
+        "value": "Giant Cell & Spindle Cell Carcinoma",
+        "count": 2
+      },
+      {
+        "value": "Intracystic Carcinoma, Nos",
+        "count": 2
+      },
+      {
+        "value": "Intraductal Micropapillary Carcinoma (C50._)",
+        "count": 2
+      },
+      {
+        "value": "Intraductal Papillary-Mucinous Ca Invasive (C25._)",
+        "count": 2
+      },
+      {
+        "value": "Epithelioid Sarcoma",
+        "count": 2
+      },
+      {
+        "value": "Paget's Disease, Mammary",
+        "count": 1
+      },
+      {
+        "value": "Adenoca Cis In Tubulovillous Adenoma",
+        "count": 1
+      },
+      {
+        "value": "Undifferentiated Sarcoma",
+        "count": 1
+      },
+      {
+        "value": "Malignant Melanoma, Nos",
+        "count": 1
+      },
+      {
+        "value": "Adenoca In Mult Adenomatous Polyps",
+        "count": 1
+      },
+      {
+        "value": "Chondroblastic Osteosarcoma",
+        "count": 1
+      },
+      {
+        "value": "Adenoca W/ Squamous Metaplasia",
+        "count": 1
+      },
+      {
+        "value": "Pulmonary Blastoma",
+        "count": 1
+      },
+      {
+        "value": "Solid Papillary Carcinoma With Invasion",
+        "count": 1
+      },
+      {
+        "value": "Squamous Cell Carcinoma, Clear Cell Type",
+        "count": 1
+      },
+      {
+        "value": "Cystadenocarcinoma, Nos",
+        "count": 1
+      },
+      {
+        "value": "Marginal Zone B-Cell Lymphoma, Nos",
+        "count": 1
+      },
+      {
+        "value": "Nut Midline Carcinoma",
+        "count": 1
+      },
+      {
+        "value": "Non-Infilt Intraductal Papill Adenoca",
+        "count": 1
+      },
+      {
+        "value": "Sarcoma, Nos",
+        "count": 1
+      },
+      {
+        "value": "Phyllodes Tumor Malignant",
+        "count": 1
+      },
+      {
+        "value": "Fetal Adenocarcinoma",
+        "count": 1
+      },
+      {
+        "value": "Neuroblastoma, Nos",
+        "count": 1
+      },
+      {
+        "value": "Endodermal Sinus Tumor",
+        "count": 1
+      },
+      {
+        "value": "Adenoca In Situ In Adenomatous Polyp",
+        "count": 1
+      },
+      {
+        "value": "Gastrinoma, Malignant",
+        "count": 1
+      },
+      {
+        "value": "Langerhans Cell Histiocytosis, Nos",
+        "count": 1
+      },
+      {
+        "value": "Large Cell (Ki-1+) Lymphoma",
+        "count": 1
+      },
+      {
+        "value": "Prostatic Intraepithelial Neoplasia, Grade Iii (C61.9)",
+        "count": 1
+      },
+      {
+        "value": "Mucinous Cystadenocarcicoma, Non-Invasive (C25_.)",
+        "count": 1
+      },
+      {
+        "value": "Large Cell Carcinoma With Rhabdoid Phenotype",
+        "count": 1
+      }
+    ],
+    "CANCER_TYPE_DETAILED": [
+      {
+        "value": "Lung Adenocarcinoma",
+        "count": 5957
+      },
+      {
+        "value": "Colon Adenocarcinoma",
+        "count": 3352
+      },
+      {
+        "value": "Breast Invasive Ductal Carcinoma",
+        "count": 3350
+      },
+      {
+        "value": "Prostate Adenocarcinoma",
+        "count": 3177
+      },
+      {
+        "value": "Pancreatic Adenocarcinoma",
+        "count": 2703
+      },
+      {
+        "value": "Rectal Adenocarcinoma",
+        "count": 1321
+      },
+      {
+        "value": "Invasive Breast Carcinoma",
+        "count": 967
+      },
+      {
+        "value": "Lung Squamous Cell Carcinoma",
+        "count": 822
+      },
+      {
+        "value": "Colorectal Adenocarcinoma",
+        "count": 716
+      },
+      {
+        "value": "Breast Invasive Lobular Carcinoma",
+        "count": 538
+      },
+      {
+        "value": "Non-Small Cell Lung Cancer",
+        "count": 499
+      },
+      {
+        "value": "Pancreatic Neuroendocrine Tumor",
+        "count": 259
+      },
+      {
+        "value": "Breast Invasive Carcinoma, NOS",
+        "count": 215
+      },
+      {
+        "value": "Large Cell Neuroendocrine Carcinoma",
+        "count": 134
+      },
+      {
+        "value": "Breast Invasive Cancer, NOS",
+        "count": 130
+      },
+      {
+        "value": "Mucinous Adenocarcinoma of the Colon and Rectum",
+        "count": 113
+      },
+      {
+        "value": "Lung Carcinoid",
+        "count": 91
+      },
+      {
+        "value": "Breast Mixed Ductal and Lobular Carcinoma",
+        "count": 86
+      },
+      {
+        "value": "Poorly Differentiated Non-Small Cell Lung Cancer",
+        "count": 77
+      },
+      {
+        "value": "Lung Adenosquamous Carcinoma",
+        "count": 56
+      },
+      {
+        "value": "Adenosquamous Carcinoma of the Pancreas",
+        "count": 50
+      },
+      {
+        "value": "Pleomorphic Carcinoma of the Lung",
+        "count": 45
+      },
+      {
+        "value": "Acinar Cell Carcinoma of the Pancreas",
+        "count": 43
+      },
+      {
+        "value": "Atypical Lung Carcinoid",
+        "count": 43
+      },
+      {
+        "value": "Lung Neuroendocrine Tumor",
+        "count": 32
+      },
+      {
+        "value": "Metaplastic Breast Cancer",
+        "count": 31
+      },
+      {
+        "value": "Undifferentiated Carcinoma of the Pancreas",
+        "count": 25
+      },
+      {
+        "value": "Medullary Carcinoma of the Colon",
+        "count": 21
+      },
+      {
+        "value": "Signet Ring Cell Adenocarcinoma of the Colon and Rectum",
+        "count": 19
+      },
+      {
+        "value": "Sarcomatoid Carcinoma of the Lung",
+        "count": 19
+      },
+      {
+        "value": "Prostate Neuroendocrine Carcinoma",
+        "count": 19
+      },
+      {
+        "value": "Prostate Small Cell Carcinoma",
+        "count": 15
+      },
+      {
+        "value": "Breast Invasive Mixed Mucinous Carcinoma",
+        "count": 14
+      },
+      {
+        "value": "Intraductal Papillary Mucinous Neoplasm",
+        "count": 10
+      },
+      {
+        "value": "Adenoid Cystic Breast Cancer",
+        "count": 10
+      },
+      {
+        "value": "Large Cell Lung Carcinoma",
+        "count": 7
+      },
+      {
+        "value": "Pancreatic Neuroendocrine Carcinoma",
+        "count": 7
+      },
+      {
+        "value": "Adenoid Cystic Carcinoma of the Lung",
+        "count": 7
+      },
+      {
+        "value": "Breast Neoplasm, NOS",
+        "count": 6
+      },
+      {
+        "value": "Lung Adenocarcinoma In Situ",
+        "count": 6
+      },
+      {
+        "value": "Mixed Type Metaplastic Breast Cancer",
+        "count": 6
+      },
+      {
+        "value": "Lymphoepithelioma-like Carcinoma of the Lung",
+        "count": 5
+      },
+      {
+        "value": "Solid Pseudopapillary Neoplasm of the Pancreas",
+        "count": 5
+      },
+      {
+        "value": "Spindle Cell Carcinoma of the Lung",
+        "count": 4
+      },
+      {
+        "value": "Pancreatoblastoma",
+        "count": 3
+      },
+      {
+        "value": "Adenomyoepithelioma of the Breast",
+        "count": 2
+      },
+      {
+        "value": "Breast Ductal Carcinoma In Situ",
+        "count": 2
+      },
+      {
+        "value": "Breast Invasive Carcinosarcoma, NOS",
+        "count": 2
+      },
+      {
+        "value": "Solid Papillary Carcinoma of the Breast",
+        "count": 2
+      },
+      {
+        "value": "Juvenile Secretory Carcinoma of the Breast",
+        "count": 2
+      },
+      {
+        "value": "Mucoepidermoid Carcinoma of the Lung",
+        "count": 2
+      },
+      {
+        "value": "Mucinous Cystic Neoplasm",
+        "count": 2
+      },
+      {
+        "value": "Pleuropulmonary Blastoma",
+        "count": 1
+      },
+      {
+        "value": "Intraductal Tubulopapillary Neoplasm",
+        "count": 1
+      },
+      {
+        "value": "Colon Adenocarcinoma In Situ",
+        "count": 1
+      },
+      {
+        "value": "Basaloid Large Cell Carcinoma of the Lung",
+        "count": 1
+      },
+      {
+        "value": "Metaplastic Carcinosarcoma",
+        "count": 1
+      },
+      {
+        "value": "Osteoclastic Giant Cell Tumor",
+        "count": 1
+      },
+      {
+        "value": "Metaplastic Adenosquamous Carcinoma",
+        "count": 1
+      },
+      {
+        "value": "Metaplastic Adenocarcinoma with Spindle Cell Differentiation",
+        "count": 1
+      },
+      {
+        "value": "NUT Carcinoma of the Lung",
+        "count": 1
+      },
+      {
+        "value": "Paget Disease of the Nipple",
+        "count": 1
+      },
+      {
+        "value": "Metaplastic Squamous Cell Carcinoma",
+        "count": 1
+      }
+    ],
+    "CLINICAL_GROUP": [
+      {
+        "value": "NA",
+        "count": 4664
+      },
+      {
+        "value": "4",
+        "count": 4594
+      },
+      {
+        "value": "1A",
+        "count": 2112
+      },
+      {
+        "value": "4A",
+        "count": 2103
+      },
+      {
+        "value": "4B",
+        "count": 1943
+      },
+      {
+        "value": "2A",
+        "count": 1729
+      },
+      {
+        "value": "2B",
+        "count": 1308
+      },
+      {
+        "value": "3B",
+        "count": 1221
+      },
+      {
+        "value": "1B",
+        "count": 964
+      },
+      {
+        "value": "3A",
+        "count": 909
+      },
+      {
+        "value": "1",
+        "count": 671
+      },
+      {
+        "value": "3",
+        "count": 543
+      },
+      {
+        "value": "1A2",
+        "count": 467
+      },
+      {
+        "value": "3C",
+        "count": 422
+      },
+      {
+        "value": "2",
+        "count": 373
+      },
+      {
+        "value": "1A3",
+        "count": 307
+      },
+      {
+        "value": "0",
+        "count": 187
+      },
+      {
+        "value": "1A1",
+        "count": 177
+      },
+      {
+        "value": "4C",
+        "count": 176
+      },
+      {
+        "value": "2C",
+        "count": 158
+      },
+      {
+        "value": "Occu",
+        "count": 6
+      },
+      {
+        "value": "9",
+        "count": 5
+      },
+      {
+        "value": "OC",
+        "count": 1
+      }
+    ],
+    "CLINICAL_SUMMARY": [
+      {
+        "value": "Distant Metastases/Systemic Disease",
+        "count": 7526
+      },
+      {
+        "value": "Localized",
+        "count": 5784
+      },
+      {
+        "value": "Distant",
+        "count": 2543
+      },
+      {
+        "value": "Regional To Lymph Nodes",
+        "count": 2089
+      },
+      {
+        "value": "Regional Both 2 and 3",
+        "count": 1937
+      },
+      {
+        "value": "Regional by Direct Extension",
+        "count": 1322
+      },
+      {
+        "value": "Regional,Lymph Nodes Only",
+        "count": 1250
+      },
+      {
+        "value": "Regional,Extension and Nodes",
+        "count": 952
+      },
+      {
+        "value": "Regional,Direct Extension",
+        "count": 747
+      },
+      {
+        "value": "NA",
+        "count": 488
+      },
+      {
+        "value": "In Situ",
+        "count": 202
+      },
+      {
+        "value": "Unknown/Unstaged",
+        "count": 94
+      },
+      {
+        "value": "Unstaged Unknown",
+        "count": 88
+      },
+      {
+        "value": "Regional Nos",
+        "count": 18
+      }
+    ],
+    "PATHOLOGICAL_GROUP": [
+      {
+        "value": "NA",
+        "count": 7273
+      },
+      {
+        "value": "4",
+        "count": 2996
+      },
+      {
+        "value": "0",
+        "count": 2368
+      },
+      {
+        "value": "1A",
+        "count": 1731
+      },
+      {
+        "value": "2A",
+        "count": 1718
+      },
+      {
+        "value": "2B",
+        "count": 1415
+      },
+      {
+        "value": "4A",
+        "count": 1290
+      },
+      {
+        "value": "3B",
+        "count": 950
+      },
+      {
+        "value": "3A",
+        "count": 897
+      },
+      {
+        "value": "4B",
+        "count": 840
+      },
+      {
+        "value": "1B",
+        "count": 667
+      },
+      {
+        "value": "1",
+        "count": 611
+      },
+      {
+        "value": "3C",
+        "count": 586
+      },
+      {
+        "value": "3",
+        "count": 573
+      },
+      {
+        "value": "1A1",
+        "count": 332
+      },
+      {
+        "value": "1A2",
+        "count": 322
+      },
+      {
+        "value": "1A3",
+        "count": 171
+      },
+      {
+        "value": "4C",
+        "count": 137
+      },
+      {
+        "value": "2",
+        "count": 98
+      },
+      {
+        "value": "2C",
+        "count": 62
+      },
+      {
+        "value": "OC",
+        "count": 3
+      }
+    ],
+    "SAMPLE_TYPE": [
+      {
+        "value": "Primary",
+        "count": 15928
+      },
+      {
+        "value": "Metastasis",
+        "count": 8878
+      },
+      {
+        "value": "Unknown",
+        "count": 136
+      },
+      {
+        "value": "Local Recurrence",
+        "count": 98
+      }
+    ],
+    "DIAGNOSIS_DESCRIPTION": [
+      {
+        "value": "Lung and Bronchus",
+        "count": 7807
+      },
+      {
+        "value": "Breast",
+        "count": 5367
+      },
+      {
+        "value": "Prostate",
+        "count": 3211
+      },
+      {
+        "value": "Pancreas",
+        "count": 3109
+      },
+      {
+        "value": "Rectum",
+        "count": 1670
+      },
+      {
+        "value": "Sigmoid Colon",
+        "count": 1183
+      },
+      {
+        "value": "Cecum",
+        "count": 630
+      },
+      {
+        "value": "Ascending Colon",
+        "count": 612
+      },
+      {
+        "value": "Rectosigmoid Junction",
+        "count": 572
+      },
+      {
+        "value": "Descending Colon",
+        "count": 289
+      },
+      {
+        "value": "Transverse Colon",
+        "count": 270
+      },
+      {
+        "value": "Hepatic Flexure",
+        "count": 128
+      },
+      {
+        "value": "Splenic Flexure",
+        "count": 85
+      },
+      {
+        "value": "Large Intestine, NOS",
+        "count": 79
+      },
+      {
+        "value": "Anus, Anal Canal and Anorectum",
+        "count": 25
+      },
+      {
+        "value": "NHL - Extranodal",
+        "count": 2
+      },
+      {
+        "value": "Miscellaneous",
+        "count": 1
+      }
+    ],
+    "SAMPLE_CLASS": [
+      {
+        "value": "Tumor",
+        "count": 25040
+      }
+    ],
+    "CANCER_TYPE": [
+      {
+        "value": "Non-Small Cell Lung Cancer",
+        "count": 7809
+      },
+      {
+        "value": "Colorectal Cancer",
+        "count": 5543
+      },
+      {
+        "value": "Breast Cancer",
+        "count": 5368
+      },
+      {
+        "value": "Prostate Cancer",
+        "count": 3211
+      },
+      {
+        "value": "Pancreatic Cancer",
+        "count": 3109
+      }
+    ],
+    "MSI_TYPE": [
+      {
+        "value": "Stable",
+        "count": 21096
+      },
+      {
+        "value": "Do not report",
+        "count": 1826
+      },
+      {
+        "value": "Indeterminate",
+        "count": 865
+      },
+      {
+        "value": "Instable",
+        "count": 699
+      },
+      {
+        "value": "NA",
+        "count": 554
+      }
+    ],
+    "GENE_PANEL": [
+      {
+        "value": "IMPACT468",
+        "count": 12891
+      },
+      {
+        "value": "IMPACT505",
+        "count": 7155
+      },
+      {
+        "value": "IMPACT410",
+        "count": 3973
+      },
+      {
+        "value": "IMPACT341",
+        "count": 1019
+      },
+      {
+        "value": "IMPACT-HEME-400",
+        "count": 2
+      }
+    ],
+    "SOMATIC_STATUS": [
+      {
+        "value": "Matched",
+        "count": 24869
+      },
+      {
+        "value": "Unmatched",
+        "count": 171
+      }
+    ],
+    "SMOKING_PREDICTIONS_3_CLASSES": [
+      {
+        "value": "Never",
+        "count": 12168
+      },
+      {
+        "value": "Former/Current Smoker",
+        "count": 11684
+      },
+      {
+        "value": "Unknown",
+        "count": 1098
+      }
+    ],
+    "RACE": [
+      {
+        "value": "White",
+        "count": 19542
+      },
+      {
+        "value": "Asian-Far East/Indian Subcont",
+        "count": 1965
+      },
+      {
+        "value": "Black Or African American",
+        "count": 1770
+      },
+      {
+        "value": "Pt Refused To Answer",
+        "count": 724
+      },
+      {
+        "value": "Other",
+        "count": 673
+      },
+      {
+        "value": "Unknown",
+        "count": 209
+      },
+      {
+        "value": "No Value Entered",
+        "count": 27
+      },
+      {
+        "value": "Native American-Am Ind/Alaska",
+        "count": 27
+      },
+      {
+        "value": "Native Hawaiian Or Pacific Isl",
+        "count": 13
+      }
+    ],
+    "PRIOR_MED_TO_MSK": [
+      {
+        "value": "No prior medications",
+        "count": 14801
+      },
+      {
+        "value": "Unknown",
+        "count": 5396
+      },
+      {
+        "value": "Prior medications to MSK",
+        "count": 4753
+      }
+    ],
+    "GENDER": [
+      {
+        "value": "Female",
+        "count": 13874
+      },
+      {
+        "value": "Male",
+        "count": 11073
+      },
+      {
+        "value": "Unknown",
+        "count": 3
+      }
+    ],
+    "ETHNICITY": [
+      {
+        "value": "Non-Spanish; Non-Hispanic",
+        "count": 22373
+      },
+      {
+        "value": "Spanish  NOS; Hispanic NOS, Latino NOS",
+        "count": 1279
+      },
+      {
+        "value": "Unknown whether Spanish or not",
+        "count": 1000
+      },
+      {
+        "value": "South/Central America (except Brazil)",
+        "count": 121
+      },
+      {
+        "value": "Puerto Rican",
+        "count": 66
+      },
+      {
+        "value": "Dominican Republic",
+        "count": 57
+      },
+      {
+        "value": "Cuban",
+        "count": 23
+      },
+      {
+        "value": "Other Spanish/Hispanic(incl European; excl Dom Rep",
+        "count": 12
+      },
+      {
+        "value": "Mexican (includes Chicano)",
+        "count": 11
+      },
+      {
+        "value": "Spanish surname only",
+        "count": 5
+      },
+      {
+        "value": "Unknown",
+        "count": 3
+      }
+    ],
+    "STAGE_HIGHEST_RECORDED": [
+      {
+        "value": "Stage 1-3",
+        "count": 15176
+      },
+      {
+        "value": "Stage 4",
+        "count": 9771
+      },
+      {
+        "value": "Unknown",
+        "count": 3
+      }
+    ],
+    "OS_STATUS": [
+      {
+        "value": "0:LIVING",
+        "count": 13653
+      },
+      {
+        "value": "1:DECEASED",
+        "count": 11297
+      }
+    ]
+  },
+  "mutated_genes": [
+    {
+      "gene": "TP53",
+      "n_mut": 13876,
+      "n_samples": 13124,
+      "freq": 52.4
+    },
+    {
+      "gene": "KRAS",
+      "n_mut": 7231,
+      "n_samples": 7128,
+      "freq": 28.5
+    },
+    {
+      "gene": "APC",
+      "n_mut": 7187,
+      "n_samples": 4777,
+      "freq": 19.1
+    },
+    {
+      "gene": "PIK3CA",
+      "n_mut": 4178,
+      "n_samples": 3708,
+      "freq": 14.8
+    },
+    {
+      "gene": "EGFR",
+      "n_mut": 2556,
+      "n_samples": 2159,
+      "freq": 8.6
+    },
+    {
+      "gene": "ARID1A",
+      "n_mut": 2205,
+      "n_samples": 1843,
+      "freq": 7.4
+    },
+    {
+      "gene": "SMAD4",
+      "n_mut": 1925,
+      "n_samples": 1796,
+      "freq": 7.2
+    },
+    {
+      "gene": "KMT2D",
+      "n_mut": 2390,
+      "n_samples": 1783,
+      "freq": 7.1
+    },
+    {
+      "gene": "KMT2C",
+      "n_mut": 1979,
+      "n_samples": 1629,
+      "freq": 6.5
+    },
+    {
+      "gene": "ATM",
+      "n_mut": 1681,
+      "n_samples": 1388,
+      "freq": 5.5
+    },
+    {
+      "gene": "CDKN2A",
+      "n_mut": 1396,
+      "n_samples": 1338,
+      "freq": 5.3
+    },
+    {
+      "gene": "FAT1",
+      "n_mut": 1620,
+      "n_samples": 1250,
+      "freq": 5.0
+    },
+    {
+      "gene": "NF1",
+      "n_mut": 1469,
+      "n_samples": 1221,
+      "freq": 4.9
+    },
+    {
+      "gene": "ZFHX3",
+      "n_mut": 1571,
+      "n_samples": 1218,
+      "freq": 5.1
+    },
+    {
+      "gene": "STK11",
+      "n_mut": 1258,
+      "n_samples": 1207,
+      "freq": 4.8
+    },
+    {
+      "gene": "PTPRT",
+      "n_mut": 1399,
+      "n_samples": 1199,
+      "freq": 4.8
+    },
+    {
+      "gene": "PTEN",
+      "n_mut": 1391,
+      "n_samples": 1199,
+      "freq": 4.8
+    },
+    {
+      "gene": "KEAP1",
+      "n_mut": 1253,
+      "n_samples": 1198,
+      "freq": 4.8
+    },
+    {
+      "gene": "BRAF",
+      "n_mut": 1188,
+      "n_samples": 1142,
+      "freq": 4.6
+    },
+    {
+      "gene": "FBXW7",
+      "n_mut": 1277,
+      "n_samples": 1120,
+      "freq": 4.5
+    },
+    {
+      "gene": "GATA3",
+      "n_mut": 1145,
+      "n_samples": 1101,
+      "freq": 4.4
+    },
+    {
+      "gene": "SMARCA4",
+      "n_mut": 1229,
+      "n_samples": 1085,
+      "freq": 4.3
+    },
+    {
+      "gene": "PTPRD",
+      "n_mut": 1289,
+      "n_samples": 1084,
+      "freq": 4.3
+    },
+    {
+      "gene": "RBM10",
+      "n_mut": 1115,
+      "n_samples": 1077,
+      "freq": 4.3
+    },
+    {
+      "gene": "CDH1",
+      "n_mut": 1011,
+      "n_samples": 967,
+      "freq": 3.9
+    },
+    {
+      "gene": "MGA",
+      "n_mut": 1119,
+      "n_samples": 954,
+      "freq": 4.0
+    },
+    {
+      "gene": "GRIN2A",
+      "n_mut": 1052,
+      "n_samples": 938,
+      "freq": 3.7
+    },
+    {
+      "gene": "BRCA2",
+      "n_mut": 1145,
+      "n_samples": 932,
+      "freq": 3.7
+    },
+    {
+      "gene": "RNF43",
+      "n_mut": 1181,
+      "n_samples": 923,
+      "freq": 3.7
+    },
+    {
+      "gene": "TCF7L2",
+      "n_mut": 1004,
+      "n_samples": 921,
+      "freq": 3.8
+    },
+    {
+      "gene": "EPHA5",
+      "n_mut": 1032,
+      "n_samples": 902,
+      "freq": 3.6
+    },
+    {
+      "gene": "PTPRS",
+      "n_mut": 1085,
+      "n_samples": 892,
+      "freq": 3.6
+    },
+    {
+      "gene": "KMT2B",
+      "n_mut": 1211,
+      "n_samples": 887,
+      "freq": 4.4
+    },
+    {
+      "gene": "RB1",
+      "n_mut": 959,
+      "n_samples": 882,
+      "freq": 3.5
+    },
+    {
+      "gene": "SETD2",
+      "n_mut": 1093,
+      "n_samples": 878,
+      "freq": 3.5
+    },
+    {
+      "gene": "NOTCH3",
+      "n_mut": 1059,
+      "n_samples": 878,
+      "freq": 3.5
+    },
+    {
+      "gene": "CREBBP",
+      "n_mut": 1027,
+      "n_samples": 862,
+      "freq": 3.4
+    },
+    {
+      "gene": "SPEN",
+      "n_mut": 1095,
+      "n_samples": 855,
+      "freq": 3.4
+    },
+    {
+      "gene": "SOX9",
+      "n_mut": 930,
+      "n_samples": 839,
+      "freq": 3.4
+    },
+    {
+      "gene": "ATRX",
+      "n_mut": 967,
+      "n_samples": 835,
+      "freq": 3.3
+    },
+    {
+      "gene": "NOTCH1",
+      "n_mut": 998,
+      "n_samples": 825,
+      "freq": 3.3
+    },
+    {
+      "gene": "FOXA1",
+      "n_mut": 905,
+      "n_samples": 822,
+      "freq": 3.3
+    },
+    {
+      "gene": "ERBB4",
+      "n_mut": 948,
+      "n_samples": 816,
+      "freq": 3.3
+    },
+    {
+      "gene": "AMER1",
+      "n_mut": 896,
+      "n_samples": 809,
+      "freq": 3.2
+    },
+    {
+      "gene": "KMT2A",
+      "n_mut": 986,
+      "n_samples": 807,
+      "freq": 3.2
+    },
+    {
+      "gene": "ERBB2",
+      "n_mut": 868,
+      "n_samples": 803,
+      "freq": 3.2
+    },
+    {
+      "gene": "EPHA3",
+      "n_mut": 870,
+      "n_samples": 791,
+      "freq": 3.2
+    },
+    {
+      "gene": "TBX3",
+      "n_mut": 867,
+      "n_samples": 789,
+      "freq": 3.2
+    },
+    {
+      "gene": "MAP3K1",
+      "n_mut": 1007,
+      "n_samples": 786,
+      "freq": 3.1
+    },
+    {
+      "gene": "CTNNB1",
+      "n_mut": 836,
+      "n_samples": 782,
+      "freq": 3.1
+    },
+    {
+      "gene": "TERT",
+      "n_mut": 848,
+      "n_samples": 781,
+      "freq": 3.1
+    },
+    {
+      "gene": "MED12",
+      "n_mut": 863,
+      "n_samples": 773,
+      "freq": 3.1
+    },
+    {
+      "gene": "ALK",
+      "n_mut": 848,
+      "n_samples": 759,
+      "freq": 3.0
+    },
+    {
+      "gene": "ARID2",
+      "n_mut": 850,
+      "n_samples": 743,
+      "freq": 3.0
+    },
+    {
+      "gene": "ARID1B",
+      "n_mut": 839,
+      "n_samples": 742,
+      "freq": 3.0
+    },
+    {
+      "gene": "POLE",
+      "n_mut": 874,
+      "n_samples": 735,
+      "freq": 2.9
+    },
+    {
+      "gene": "NCOR1",
+      "n_mut": 860,
+      "n_samples": 731,
+      "freq": 2.9
+    },
+    {
+      "gene": "PIK3CG",
+      "n_mut": 824,
+      "n_samples": 724,
+      "freq": 2.9
+    },
+    {
+      "gene": "PREX2",
+      "n_mut": 835,
+      "n_samples": 722,
+      "freq": 3.6
+    },
+    {
+      "gene": "CARD11",
+      "n_mut": 789,
+      "n_samples": 709,
+      "freq": 2.8
+    },
+    {
+      "gene": "NOTCH4",
+      "n_mut": 783,
+      "n_samples": 708,
+      "freq": 2.8
+    },
+    {
+      "gene": "BCOR",
+      "n_mut": 782,
+      "n_samples": 705,
+      "freq": 2.8
+    },
+    {
+      "gene": "ANKRD11",
+      "n_mut": 846,
+      "n_samples": 690,
+      "freq": 2.9
+    },
+    {
+      "gene": "FLT4",
+      "n_mut": 770,
+      "n_samples": 689,
+      "freq": 2.8
+    },
+    {
+      "gene": "MTOR",
+      "n_mut": 750,
+      "n_samples": 681,
+      "freq": 2.7
+    },
+    {
+      "gene": "EP300",
+      "n_mut": 781,
+      "n_samples": 679,
+      "freq": 2.7
+    },
+    {
+      "gene": "EPHB1",
+      "n_mut": 722,
+      "n_samples": 673,
+      "freq": 2.7
+    },
+    {
+      "gene": "ATR",
+      "n_mut": 780,
+      "n_samples": 668,
+      "freq": 2.7
+    },
+    {
+      "gene": "AR",
+      "n_mut": 735,
+      "n_samples": 661,
+      "freq": 2.6
+    },
+    {
+      "gene": "NTRK3",
+      "n_mut": 719,
+      "n_samples": 654,
+      "freq": 2.6
+    },
+    {
+      "gene": "ESR1",
+      "n_mut": 690,
+      "n_samples": 642,
+      "freq": 2.6
+    },
+    {
+      "gene": "KDR",
+      "n_mut": 695,
+      "n_samples": 624,
+      "freq": 2.5
+    },
+    {
+      "gene": "TET1",
+      "n_mut": 725,
+      "n_samples": 621,
+      "freq": 2.5
+    },
+    {
+      "gene": "ASXL1",
+      "n_mut": 680,
+      "n_samples": 618,
+      "freq": 2.5
+    },
+    {
+      "gene": "KDM6A",
+      "n_mut": 643,
+      "n_samples": 603,
+      "freq": 2.4
+    },
+    {
+      "gene": "ROS1",
+      "n_mut": 684,
+      "n_samples": 587,
+      "freq": 2.3
+    },
+    {
+      "gene": "PIK3C2G",
+      "n_mut": 685,
+      "n_samples": 585,
+      "freq": 2.3
+    },
+    {
+      "gene": "TGFBR2",
+      "n_mut": 626,
+      "n_samples": 584,
+      "freq": 2.3
+    },
+    {
+      "gene": "CDK12",
+      "n_mut": 716,
+      "n_samples": 578,
+      "freq": 2.3
+    },
+    {
+      "gene": "MET",
+      "n_mut": 644,
+      "n_samples": 577,
+      "freq": 2.3
+    },
+    {
+      "gene": "PIK3R1",
+      "n_mut": 652,
+      "n_samples": 575,
+      "freq": 2.3
+    },
+    {
+      "gene": "DOT1L",
+      "n_mut": 614,
+      "n_samples": 565,
+      "freq": 2.3
+    },
+    {
+      "gene": "TSC2",
+      "n_mut": 636,
+      "n_samples": 564,
+      "freq": 2.3
+    },
+    {
+      "gene": "CIC",
+      "n_mut": 672,
+      "n_samples": 561,
+      "freq": 2.2
+    },
+    {
+      "gene": "FLT1",
+      "n_mut": 634,
+      "n_samples": 555,
+      "freq": 2.2
+    },
+    {
+      "gene": "HGF",
+      "n_mut": 597,
+      "n_samples": 552,
+      "freq": 2.2
+    },
+    {
+      "gene": "PTCH1",
+      "n_mut": 635,
+      "n_samples": 546,
+      "freq": 2.2
+    },
+    {
+      "gene": "ERBB3",
+      "n_mut": 613,
+      "n_samples": 545,
+      "freq": 2.2
+    },
+    {
+      "gene": "NOTCH2",
+      "n_mut": 607,
+      "n_samples": 544,
+      "freq": 2.2
+    },
+    {
+      "gene": "PBRM1",
+      "n_mut": 632,
+      "n_samples": 540,
+      "freq": 2.2
+    },
+    {
+      "gene": "NSD1",
+      "n_mut": 640,
+      "n_samples": 535,
+      "freq": 2.1
+    },
+    {
+      "gene": "PDGFRA",
+      "n_mut": 591,
+      "n_samples": 534,
+      "freq": 2.1
+    },
+    {
+      "gene": "SPOP",
+      "n_mut": 543,
+      "n_samples": 534,
+      "freq": 2.1
+    },
+    {
+      "gene": "EPHA7",
+      "n_mut": 586,
+      "n_samples": 533,
+      "freq": 2.2
+    },
+    {
+      "gene": "IRS2",
+      "n_mut": 582,
+      "n_samples": 521,
+      "freq": 2.1
+    },
+    {
+      "gene": "GLI1",
+      "n_mut": 572,
+      "n_samples": 520,
+      "freq": 2.2
+    },
+    {
+      "gene": "BRCA1",
+      "n_mut": 587,
+      "n_samples": 515,
+      "freq": 2.1
+    },
+    {
+      "gene": "AXIN2",
+      "n_mut": 580,
+      "n_samples": 515,
+      "freq": 2.1
+    },
+    {
+      "gene": "KDM5C",
+      "n_mut": 551,
+      "n_samples": 511,
+      "freq": 2.0
+    },
+    {
+      "gene": "RET",
+      "n_mut": 534,
+      "n_samples": 503,
+      "freq": 2.0
+    },
+    {
+      "gene": "SF3B1",
+      "n_mut": 530,
+      "n_samples": 502,
+      "freq": 2.0
+    },
+    {
+      "gene": "POLD1",
+      "n_mut": 595,
+      "n_samples": 501,
+      "freq": 2.1
+    },
+    {
+      "gene": "TET2",
+      "n_mut": 570,
+      "n_samples": 499,
+      "freq": 2.0
+    },
+    {
+      "gene": "AKT1",
+      "n_mut": 512,
+      "n_samples": 499,
+      "freq": 2.0
+    },
+    {
+      "gene": "IRS1",
+      "n_mut": 532,
+      "n_samples": 486,
+      "freq": 1.9
+    },
+    {
+      "gene": "MSH3",
+      "n_mut": 532,
+      "n_samples": 474,
+      "freq": 2.4
+    },
+    {
+      "gene": "MSH6",
+      "n_mut": 541,
+      "n_samples": 472,
+      "freq": 1.9
+    },
+    {
+      "gene": "INPPL1",
+      "n_mut": 547,
+      "n_samples": 465,
+      "freq": 2.3
+    },
+    {
+      "gene": "DICER1",
+      "n_mut": 534,
+      "n_samples": 465,
+      "freq": 1.9
+    },
+    {
+      "gene": "MAP2K4",
+      "n_mut": 488,
+      "n_samples": 465,
+      "freq": 1.9
+    },
+    {
+      "gene": "JAK1",
+      "n_mut": 581,
+      "n_samples": 463,
+      "freq": 1.8
+    },
+    {
+      "gene": "KDM5A",
+      "n_mut": 542,
+      "n_samples": 461,
+      "freq": 1.8
+    },
+    {
+      "gene": "MDC1",
+      "n_mut": 509,
+      "n_samples": 458,
+      "freq": 1.8
+    },
+    {
+      "gene": "PLCG2",
+      "n_mut": 513,
+      "n_samples": 446,
+      "freq": 1.9
+    },
+    {
+      "gene": "RASA1",
+      "n_mut": 507,
+      "n_samples": 445,
+      "freq": 1.8
+    },
+    {
+      "gene": "SOX17",
+      "n_mut": 465,
+      "n_samples": 442,
+      "freq": 1.8
+    },
+    {
+      "gene": "IGF1R",
+      "n_mut": 483,
+      "n_samples": 441,
+      "freq": 1.8
+    },
+    {
+      "gene": "BRD4",
+      "n_mut": 488,
+      "n_samples": 438,
+      "freq": 1.7
+    },
+    {
+      "gene": "PGR",
+      "n_mut": 474,
+      "n_samples": 434,
+      "freq": 1.8
+    },
+    {
+      "gene": "RECQL4",
+      "n_mut": 488,
+      "n_samples": 431,
+      "freq": 1.7
+    },
+    {
+      "gene": "LATS2",
+      "n_mut": 465,
+      "n_samples": 427,
+      "freq": 1.7
+    },
+    {
+      "gene": "IKZF1",
+      "n_mut": 445,
+      "n_samples": 426,
+      "freq": 1.7
+    },
+    {
+      "gene": "DNMT3A",
+      "n_mut": 447,
+      "n_samples": 424,
+      "freq": 1.7
+    },
+    {
+      "gene": "ASXL2",
+      "n_mut": 495,
+      "n_samples": 422,
+      "freq": 1.7
+    },
+    {
+      "gene": "GNAS",
+      "n_mut": 454,
+      "n_samples": 422,
+      "freq": 1.7
+    },
+    {
+      "gene": "JAK3",
+      "n_mut": 448,
+      "n_samples": 421,
+      "freq": 1.7
+    },
+    {
+      "gene": "MEN1",
+      "n_mut": 433,
+      "n_samples": 420,
+      "freq": 1.7
+    },
+    {
+      "gene": "TP53BP1",
+      "n_mut": 499,
+      "n_samples": 417,
+      "freq": 2.1
+    },
+    {
+      "gene": "PAK5",
+      "n_mut": 454,
+      "n_samples": 414,
+      "freq": 1.7
+    },
+    {
+      "gene": "DROSHA",
+      "n_mut": 458,
+      "n_samples": 413,
+      "freq": 2.1
+    },
+    {
+      "gene": "SLX4",
+      "n_mut": 456,
+      "n_samples": 410,
+      "freq": 2.0
+    },
+    {
+      "gene": "STAG2",
+      "n_mut": 439,
+      "n_samples": 409,
+      "freq": 1.6
+    },
+    {
+      "gene": "NTRK1",
+      "n_mut": 429,
+      "n_samples": 409,
+      "freq": 1.6
+    },
+    {
+      "gene": "FANCA",
+      "n_mut": 432,
+      "n_samples": 399,
+      "freq": 1.6
+    },
+    {
+      "gene": "PDGFRB",
+      "n_mut": 432,
+      "n_samples": 399,
+      "freq": 1.6
+    },
+    {
+      "gene": "KIT",
+      "n_mut": 419,
+      "n_samples": 392,
+      "freq": 1.6
+    },
+    {
+      "gene": "DNMT1",
+      "n_mut": 432,
+      "n_samples": 385,
+      "freq": 1.5
+    },
+    {
+      "gene": "CTCF",
+      "n_mut": 419,
+      "n_samples": 384,
+      "freq": 1.5
+    },
+    {
+      "gene": "SMO",
+      "n_mut": 411,
+      "n_samples": 382,
+      "freq": 1.5
+    },
+    {
+      "gene": "RPTOR",
+      "n_mut": 413,
+      "n_samples": 380,
+      "freq": 1.5
+    },
+    {
+      "gene": "INPP4B",
+      "n_mut": 413,
+      "n_samples": 378,
+      "freq": 1.5
+    },
+    {
+      "gene": "SMAD2",
+      "n_mut": 407,
+      "n_samples": 376,
+      "freq": 1.5
+    },
+    {
+      "gene": "ERCC5",
+      "n_mut": 412,
+      "n_samples": 375,
+      "freq": 1.5
+    },
+    {
+      "gene": "RICTOR",
+      "n_mut": 423,
+      "n_samples": 373,
+      "freq": 1.5
+    },
+    {
+      "gene": "CASP8",
+      "n_mut": 421,
+      "n_samples": 372,
+      "freq": 1.5
+    },
+    {
+      "gene": "PRKD1",
+      "n_mut": 410,
+      "n_samples": 372,
+      "freq": 1.9
+    },
+    {
+      "gene": "AXL",
+      "n_mut": 397,
+      "n_samples": 369,
+      "freq": 1.5
+    },
+    {
+      "gene": "B2M",
+      "n_mut": 526,
+      "n_samples": 368,
+      "freq": 1.5
+    },
+    {
+      "gene": "DDR2",
+      "n_mut": 397,
+      "n_samples": 366,
+      "freq": 1.5
+    },
+    {
+      "gene": "AXIN1",
+      "n_mut": 418,
+      "n_samples": 365,
+      "freq": 1.5
+    },
+    {
+      "gene": "RUNX1",
+      "n_mut": 385,
+      "n_samples": 364,
+      "freq": 1.5
+    },
+    {
+      "gene": "LATS1",
+      "n_mut": 404,
+      "n_samples": 363,
+      "freq": 1.4
+    },
+    {
+      "gene": "SMAD3",
+      "n_mut": 393,
+      "n_samples": 362,
+      "freq": 1.4
+    },
+    {
+      "gene": "ABL1",
+      "n_mut": 404,
+      "n_samples": 361,
+      "freq": 1.4
+    },
+    {
+      "gene": "TSC1",
+      "n_mut": 388,
+      "n_samples": 356,
+      "freq": 1.4
+    },
+    {
+      "gene": "NFE2L2",
+      "n_mut": 383,
+      "n_samples": 356,
+      "freq": 1.4
+    },
+    {
+      "gene": "BLM",
+      "n_mut": 390,
+      "n_samples": 353,
+      "freq": 1.4
+    },
+    {
+      "gene": "PALB2",
+      "n_mut": 375,
+      "n_samples": 352,
+      "freq": 1.4
+    },
+    {
+      "gene": "HNF1A",
+      "n_mut": 387,
+      "n_samples": 351,
+      "freq": 1.4
+    },
+    {
+      "gene": "FGFR4",
+      "n_mut": 377,
+      "n_samples": 350,
+      "freq": 1.4
+    },
+    {
+      "gene": "INHBA",
+      "n_mut": 368,
+      "n_samples": 344,
+      "freq": 1.4
+    },
+    {
+      "gene": "BRIP1",
+      "n_mut": 383,
+      "n_samples": 339,
+      "freq": 1.4
+    },
+    {
+      "gene": "CSF1R",
+      "n_mut": 357,
+      "n_samples": 338,
+      "freq": 1.3
+    },
+    {
+      "gene": "JAK2",
+      "n_mut": 371,
+      "n_samples": 337,
+      "freq": 1.3
+    },
+    {
+      "gene": "PRKN",
+      "n_mut": 357,
+      "n_samples": 337,
+      "freq": 1.3
+    },
+    {
+      "gene": "NTRK2",
+      "n_mut": 351,
+      "n_samples": 337,
+      "freq": 1.3
+    },
+    {
+      "gene": "FLT3",
+      "n_mut": 370,
+      "n_samples": 336,
+      "freq": 1.3
+    },
+    {
+      "gene": "DNMT3B",
+      "n_mut": 354,
+      "n_samples": 334,
+      "freq": 1.3
+    },
+    {
+      "gene": "FOXP1",
+      "n_mut": 352,
+      "n_samples": 332,
+      "freq": 1.3
+    },
+    {
+      "gene": "TP63",
+      "n_mut": 344,
+      "n_samples": 330,
+      "freq": 1.3
+    },
+    {
+      "gene": "MSH2",
+      "n_mut": 390,
+      "n_samples": 328,
+      "freq": 1.3
+    },
+    {
+      "gene": "WT1",
+      "n_mut": 346,
+      "n_samples": 327,
+      "freq": 1.3
+    },
+    {
+      "gene": "ARID5B",
+      "n_mut": 363,
+      "n_samples": 326,
+      "freq": 1.3
+    },
+    {
+      "gene": "RPS6KA4",
+      "n_mut": 358,
+      "n_samples": 324,
+      "freq": 1.3
+    },
+    {
+      "gene": "IL7R",
+      "n_mut": 353,
+      "n_samples": 323,
+      "freq": 1.3
+    },
+    {
+      "gene": "RAD50",
+      "n_mut": 364,
+      "n_samples": 322,
+      "freq": 1.3
+    },
+    {
+      "gene": "TGFBR1",
+      "n_mut": 349,
+      "n_samples": 319,
+      "freq": 1.3
+    },
+    {
+      "gene": "PIK3CB",
+      "n_mut": 356,
+      "n_samples": 317,
+      "freq": 1.3
+    },
+    {
+      "gene": "NCOA3",
+      "n_mut": 348,
+      "n_samples": 317,
+      "freq": 1.3
+    },
+    {
+      "gene": "MST1R",
+      "n_mut": 349,
+      "n_samples": 314,
+      "freq": 1.3
+    },
+    {
+      "gene": "U2AF1",
+      "n_mut": 322,
+      "n_samples": 314,
+      "freq": 1.3
+    },
+    {
+      "gene": "NRAS",
+      "n_mut": 314,
+      "n_samples": 313,
+      "freq": 1.2
+    },
+    {
+      "gene": "INSR",
+      "n_mut": 325,
+      "n_samples": 308,
+      "freq": 1.2
+    },
+    {
+      "gene": "PIK3CD",
+      "n_mut": 331,
+      "n_samples": 307,
+      "freq": 1.2
+    },
+    {
+      "gene": "BAP1",
+      "n_mut": 327,
+      "n_samples": 307,
+      "freq": 1.2
+    },
+    {
+      "gene": "CBFB",
+      "n_mut": 309,
+      "n_samples": 307,
+      "freq": 1.2
+    },
+    {
+      "gene": "CUL3",
+      "n_mut": 331,
+      "n_samples": 302,
+      "freq": 1.2
+    },
+    {
+      "gene": "TSHR",
+      "n_mut": 319,
+      "n_samples": 302,
+      "freq": 1.2
+    },
+    {
+      "gene": "INPP4A",
+      "n_mut": 323,
+      "n_samples": 301,
+      "freq": 1.2
+    },
+    {
+      "gene": "NSD2",
+      "n_mut": 337,
+      "n_samples": 299,
+      "freq": 1.5
+    },
+    {
+      "gene": "BARD1",
+      "n_mut": 317,
+      "n_samples": 299,
+      "freq": 1.2
+    },
+    {
+      "gene": "ARAF",
+      "n_mut": 318,
+      "n_samples": 295,
+      "freq": 1.2
+    },
+    {
+      "gene": "PLK2",
+      "n_mut": 313,
+      "n_samples": 295,
+      "freq": 1.2
+    },
+    {
+      "gene": "NBN",
+      "n_mut": 316,
+      "n_samples": 292,
+      "freq": 1.2
+    },
+    {
+      "gene": "TCF3",
+      "n_mut": 312,
+      "n_samples": 290,
+      "freq": 1.2
+    },
+    {
+      "gene": "NSD3",
+      "n_mut": 338,
+      "n_samples": 289,
+      "freq": 1.4
+    },
+    {
+      "gene": "NKX2-1",
+      "n_mut": 325,
+      "n_samples": 288,
+      "freq": 1.2
+    },
+    {
+      "gene": "TEK",
+      "n_mut": 320,
+      "n_samples": 286,
+      "freq": 1.4
+    },
+    {
+      "gene": "DIS3",
+      "n_mut": 310,
+      "n_samples": 286,
+      "freq": 1.1
+    },
+    {
+      "gene": "PPP2R1A",
+      "n_mut": 298,
+      "n_samples": 279,
+      "freq": 1.1
+    },
+    {
+      "gene": "ERF",
+      "n_mut": 321,
+      "n_samples": 278,
+      "freq": 1.4
+    },
+    {
+      "gene": "COP1",
+      "n_mut": 296,
+      "n_samples": 278,
+      "freq": 1.1
+    },
+    {
+      "gene": "FGFR1",
+      "n_mut": 290,
+      "n_samples": 277,
+      "freq": 1.1
+    },
+    {
+      "gene": "MAP3K13",
+      "n_mut": 299,
+      "n_samples": 276,
+      "freq": 1.1
+    },
+    {
+      "gene": "FLCN",
+      "n_mut": 292,
+      "n_samples": 275,
+      "freq": 1.1
+    },
+    {
+      "gene": "CSF3R",
+      "n_mut": 291,
+      "n_samples": 275,
+      "freq": 1.1
+    },
+    {
+      "gene": "PIK3R2",
+      "n_mut": 290,
+      "n_samples": 274,
+      "freq": 1.1
+    },
+    {
+      "gene": "BTK",
+      "n_mut": 285,
+      "n_samples": 274,
+      "freq": 1.1
+    },
+    {
+      "gene": "HLA-B",
+      "n_mut": 343,
+      "n_samples": 273,
+      "freq": 1.4
+    },
+    {
+      "gene": "MLH1",
+      "n_mut": 302,
+      "n_samples": 272,
+      "freq": 1.1
+    },
+    {
+      "gene": "PIK3C3",
+      "n_mut": 285,
+      "n_samples": 271,
+      "freq": 1.1
+    },
+    {
+      "gene": "SOS1",
+      "n_mut": 290,
+      "n_samples": 267,
+      "freq": 1.3
+    },
+    {
+      "gene": "ELF3",
+      "n_mut": 277,
+      "n_samples": 263,
+      "freq": 1.3
+    },
+    {
+      "gene": "AGO2",
+      "n_mut": 280,
+      "n_samples": 262,
+      "freq": 1.3
+    },
+    {
+      "gene": "ETV1",
+      "n_mut": 276,
+      "n_samples": 262,
+      "freq": 1.0
+    },
+    {
+      "gene": "DAXX",
+      "n_mut": 275,
+      "n_samples": 261,
+      "freq": 1.0
+    },
+    {
+      "gene": "PARP1",
+      "n_mut": 273,
+      "n_samples": 261,
+      "freq": 1.0
+    },
+    {
+      "gene": "FGFR2",
+      "n_mut": 274,
+      "n_samples": 260,
+      "freq": 1.0
+    },
+    {
+      "gene": "ERCC2",
+      "n_mut": 271,
+      "n_samples": 255,
+      "freq": 1.0
+    },
+    {
+      "gene": "SH2B3",
+      "n_mut": 269,
+      "n_samples": 255,
+      "freq": 1.1
+    },
+    {
+      "gene": "UPF1",
+      "n_mut": 275,
+      "n_samples": 251,
+      "freq": 1.3
+    },
+    {
+      "gene": "NUP93",
+      "n_mut": 263,
+      "n_samples": 251,
+      "freq": 1.0
+    },
+    {
+      "gene": "ERCC4",
+      "n_mut": 271,
+      "n_samples": 248,
+      "freq": 1.0
+    },
+    {
+      "gene": "MYOD1",
+      "n_mut": 259,
+      "n_samples": 246,
+      "freq": 1.0
+    },
+    {
+      "gene": "PDCD1",
+      "n_mut": 251,
+      "n_samples": 246,
+      "freq": 1.0
+    },
+    {
+      "gene": "PPM1D",
+      "n_mut": 272,
+      "n_samples": 243,
+      "freq": 1.0
+    },
+    {
+      "gene": "FGFR3",
+      "n_mut": 266,
+      "n_samples": 242,
+      "freq": 1.0
+    },
+    {
+      "gene": "TRAF7",
+      "n_mut": 254,
+      "n_samples": 242,
+      "freq": 1.0
+    },
+    {
+      "gene": "ERG",
+      "n_mut": 253,
+      "n_samples": 242,
+      "freq": 1.0
+    },
+    {
+      "gene": "XPO1",
+      "n_mut": 273,
+      "n_samples": 241,
+      "freq": 1.0
+    },
+    {
+      "gene": "PRDM14",
+      "n_mut": 255,
+      "n_samples": 241,
+      "freq": 1.2
+    },
+    {
+      "gene": "PAX5",
+      "n_mut": 251,
+      "n_samples": 240,
+      "freq": 1.0
+    },
+    {
+      "gene": "MRE11",
+      "n_mut": 257,
+      "n_samples": 239,
+      "freq": 1.0
+    },
+    {
+      "gene": "CBL",
+      "n_mut": 252,
+      "n_samples": 238,
+      "freq": 1.0
+    },
+    {
+      "gene": "CDC73",
+      "n_mut": 251,
+      "n_samples": 238,
+      "freq": 1.0
+    },
+    {
+      "gene": "HLA-A",
+      "n_mut": 262,
+      "n_samples": 236,
+      "freq": 1.0
+    },
+    {
+      "gene": "PRDM1",
+      "n_mut": 247,
+      "n_samples": 236,
+      "freq": 0.9
+    },
+    {
+      "gene": "AKT3",
+      "n_mut": 253,
+      "n_samples": 235,
+      "freq": 0.9
+    },
+    {
+      "gene": "PMS1",
+      "n_mut": 252,
+      "n_samples": 234,
+      "freq": 0.9
+    },
+    {
+      "gene": "IRF4",
+      "n_mut": 243,
+      "n_samples": 234,
+      "freq": 0.9
+    },
+    {
+      "gene": "TNFAIP3",
+      "n_mut": 257,
+      "n_samples": 233,
+      "freq": 0.9
+    },
+    {
+      "gene": "ETV6",
+      "n_mut": 236,
+      "n_samples": 230,
+      "freq": 0.9
+    },
+    {
+      "gene": "GATA2",
+      "n_mut": 235,
+      "n_samples": 223,
+      "freq": 0.9
+    },
+    {
+      "gene": "H1-2",
+      "n_mut": 231,
+      "n_samples": 222,
+      "freq": 0.9
+    },
+    {
+      "gene": "MYCN",
+      "n_mut": 232,
+      "n_samples": 221,
+      "freq": 0.9
+    },
+    {
+      "gene": "STAT5B",
+      "n_mut": 232,
+      "n_samples": 221,
+      "freq": 0.9
+    },
+    {
+      "gene": "RARA",
+      "n_mut": 234,
+      "n_samples": 219,
+      "freq": 0.9
+    },
+    {
+      "gene": "CDKN1B",
+      "n_mut": 223,
+      "n_samples": 217,
+      "freq": 0.9
+    },
+    {
+      "gene": "RAF1",
+      "n_mut": 226,
+      "n_samples": 216,
+      "freq": 0.9
+    },
+    {
+      "gene": "KLF4",
+      "n_mut": 222,
+      "n_samples": 216,
+      "freq": 0.9
+    },
+    {
+      "gene": "CYLD",
+      "n_mut": 227,
+      "n_samples": 213,
+      "freq": 1.1
+    },
+    {
+      "gene": "STAT3",
+      "n_mut": 225,
+      "n_samples": 212,
+      "freq": 0.9
+    },
+    {
+      "gene": "NF2",
+      "n_mut": 218,
+      "n_samples": 212,
+      "freq": 0.8
+    },
+    {
+      "gene": "BCL6",
+      "n_mut": 225,
+      "n_samples": 211,
+      "freq": 0.8
+    },
+    {
+      "gene": "IKBKE",
+      "n_mut": 215,
+      "n_samples": 207,
+      "freq": 0.8
+    },
+    {
+      "gene": "FOXO1",
+      "n_mut": 226,
+      "n_samples": 205,
+      "freq": 0.9
+    },
+    {
+      "gene": "FUBP1",
+      "n_mut": 210,
+      "n_samples": 204,
+      "freq": 0.8
+    },
+    {
+      "gene": "FGF3",
+      "n_mut": 210,
+      "n_samples": 203,
+      "freq": 0.8
+    },
+    {
+      "gene": "MAP2K1",
+      "n_mut": 206,
+      "n_samples": 202,
+      "freq": 0.8
+    },
+    {
+      "gene": "NEGR1",
+      "n_mut": 207,
+      "n_samples": 201,
+      "freq": 0.8
+    },
+    {
+      "gene": "TOP1",
+      "n_mut": 216,
+      "n_samples": 200,
+      "freq": 0.8
+    },
+    {
+      "gene": "SDHA",
+      "n_mut": 207,
+      "n_samples": 199,
+      "freq": 0.8
+    },
+    {
+      "gene": "FH",
+      "n_mut": 201,
+      "n_samples": 199,
+      "freq": 0.8
+    },
+    {
+      "gene": "ERCC3",
+      "n_mut": 209,
+      "n_samples": 198,
+      "freq": 0.8
+    },
+    {
+      "gene": "RAD21",
+      "n_mut": 209,
+      "n_samples": 196,
+      "freq": 0.8
+    },
+    {
+      "gene": "CSDE1",
+      "n_mut": 209,
+      "n_samples": 195,
+      "freq": 1.0
+    },
+    {
+      "gene": "PMS2",
+      "n_mut": 203,
+      "n_samples": 193,
+      "freq": 0.8
+    },
+    {
+      "gene": "FOXL2",
+      "n_mut": 200,
+      "n_samples": 193,
+      "freq": 0.8
+    },
+    {
+      "gene": "TAP2",
+      "n_mut": 233,
+      "n_samples": 191,
+      "freq": 1.0
+    },
+    {
+      "gene": "CHEK2",
+      "n_mut": 205,
+      "n_samples": 191,
+      "freq": 0.8
+    },
+    {
+      "gene": "EZH2",
+      "n_mut": 210,
+      "n_samples": 189,
+      "freq": 0.8
+    },
+    {
+      "gene": "EPAS1",
+      "n_mut": 197,
+      "n_samples": 186,
+      "freq": 0.9
+    },
+    {
+      "gene": "ALOX12B",
+      "n_mut": 192,
+      "n_samples": 184,
+      "freq": 0.7
+    },
+    {
+      "gene": "JUN",
+      "n_mut": 191,
+      "n_samples": 184,
+      "freq": 0.7
+    },
+    {
+      "gene": "RAD54L",
+      "n_mut": 197,
+      "n_samples": 183,
+      "freq": 0.7
+    },
+    {
+      "gene": "FYN",
+      "n_mut": 194,
+      "n_samples": 182,
+      "freq": 0.8
+    },
+    {
+      "gene": "TRAF2",
+      "n_mut": 192,
+      "n_samples": 182,
+      "freq": 0.8
+    },
+    {
+      "gene": "IDH1",
+      "n_mut": 189,
+      "n_samples": 182,
+      "freq": 0.7
+    },
+    {
+      "gene": "SMARCB1",
+      "n_mut": 189,
+      "n_samples": 182,
+      "freq": 0.7
+    },
+    {
+      "gene": "SRC",
+      "n_mut": 187,
+      "n_samples": 181,
+      "freq": 0.7
+    },
+    {
+      "gene": "PHOX2B",
+      "n_mut": 184,
+      "n_samples": 181,
+      "freq": 0.7
+    },
+    {
+      "gene": "RECQL",
+      "n_mut": 193,
+      "n_samples": 180,
+      "freq": 0.9
+    },
+    {
+      "gene": "MEF2B",
+      "n_mut": 187,
+      "n_samples": 180,
+      "freq": 0.7
+    },
+    {
+      "gene": "MPL",
+      "n_mut": 189,
+      "n_samples": 179,
+      "freq": 0.7
+    },
+    {
+      "gene": "TMPRSS2",
+      "n_mut": 185,
+      "n_samples": 178,
+      "freq": 0.7
+    },
+    {
+      "gene": "PTPN11",
+      "n_mut": 184,
+      "n_samples": 174,
+      "freq": 0.7
+    },
+    {
+      "gene": "SYK",
+      "n_mut": 187,
+      "n_samples": 173,
+      "freq": 0.7
+    },
+    {
+      "gene": "PRKCI",
+      "n_mut": 180,
+      "n_samples": 173,
+      "freq": 0.9
+    },
+    {
+      "gene": "GATA1",
+      "n_mut": 177,
+      "n_samples": 171,
+      "freq": 0.7
+    },
+    {
+      "gene": "MITF",
+      "n_mut": 176,
+      "n_samples": 169,
+      "freq": 0.7
+    },
+    {
+      "gene": "MUTYH",
+      "n_mut": 171,
+      "n_samples": 167,
+      "freq": 0.7
+    },
+    {
+      "gene": "SOX2",
+      "n_mut": 171,
+      "n_samples": 167,
+      "freq": 0.7
+    },
+    {
+      "gene": "ARHGAP35",
+      "n_mut": 192,
+      "n_samples": 166,
+      "freq": 2.3
+    },
+    {
+      "gene": "CDK8",
+      "n_mut": 178,
+      "n_samples": 166,
+      "freq": 0.7
+    },
+    {
+      "gene": "MALT1",
+      "n_mut": 173,
+      "n_samples": 166,
+      "freq": 0.7
+    },
+    {
+      "gene": "BMPR1A",
+      "n_mut": 179,
+      "n_samples": 165,
+      "freq": 0.7
+    },
+    {
+      "gene": "MAX",
+      "n_mut": 165,
+      "n_samples": 164,
+      "freq": 0.7
+    },
+    {
+      "gene": "GPS2",
+      "n_mut": 175,
+      "n_samples": 163,
+      "freq": 0.7
+    },
+    {
+      "gene": "TAP1",
+      "n_mut": 196,
+      "n_samples": 162,
+      "freq": 0.8
+    },
+    {
+      "gene": "SMARCA2",
+      "n_mut": 188,
+      "n_samples": 160,
+      "freq": 2.2
+    },
+    {
+      "gene": "EZH1",
+      "n_mut": 171,
+      "n_samples": 160,
+      "freq": 0.8
+    },
+    {
+      "gene": "RXRA",
+      "n_mut": 167,
+      "n_samples": 158,
+      "freq": 0.8
+    },
+    {
+      "gene": "SHQ1",
+      "n_mut": 163,
+      "n_samples": 157,
+      "freq": 0.6
+    },
+    {
+      "gene": "STAT5A",
+      "n_mut": 167,
+      "n_samples": 156,
+      "freq": 0.6
+    },
+    {
+      "gene": "LYN",
+      "n_mut": 157,
+      "n_samples": 155,
+      "freq": 0.8
+    },
+    {
+      "gene": "H3C2",
+      "n_mut": 159,
+      "n_samples": 154,
+      "freq": 0.6
+    },
+    {
+      "gene": "REL",
+      "n_mut": 168,
+      "n_samples": 152,
+      "freq": 0.6
+    },
+    {
+      "gene": "MYC",
+      "n_mut": 160,
+      "n_samples": 152,
+      "freq": 0.6
+    },
+    {
+      "gene": "SUZ12",
+      "n_mut": 156,
+      "n_samples": 152,
+      "freq": 0.6
+    },
+    {
+      "gene": "EIF4A2",
+      "n_mut": 156,
+      "n_samples": 151,
+      "freq": 0.6
+    },
+    {
+      "gene": "GSK3B",
+      "n_mut": 155,
+      "n_samples": 148,
+      "freq": 0.6
+    },
+    {
+      "gene": "PAK1",
+      "n_mut": 153,
+      "n_samples": 148,
+      "freq": 0.6
+    },
+    {
+      "gene": "BIRC3",
+      "n_mut": 157,
+      "n_samples": 147,
+      "freq": 0.6
+    },
+    {
+      "gene": "CHEK1",
+      "n_mut": 148,
+      "n_samples": 146,
+      "freq": 0.6
+    },
+    {
+      "gene": "RHOA",
+      "n_mut": 148,
+      "n_samples": 146,
+      "freq": 0.6
+    },
+    {
+      "gene": "INHA",
+      "n_mut": 147,
+      "n_samples": 146,
+      "freq": 0.6
+    },
+    {
+      "gene": "NUF2",
+      "n_mut": 150,
+      "n_samples": 145,
+      "freq": 0.7
+    },
+    {
+      "gene": "PIK3R3",
+      "n_mut": 154,
+      "n_samples": 144,
+      "freq": 0.6
+    },
+    {
+      "gene": "RPS6KB2",
+      "n_mut": 154,
+      "n_samples": 144,
+      "freq": 0.6
+    },
+    {
+      "gene": "CARM1",
+      "n_mut": 152,
+      "n_samples": 144,
+      "freq": 0.7
+    },
+    {
+      "gene": "ZNRF3",
+      "n_mut": 194,
+      "n_samples": 143,
+      "freq": 2.0
+    },
+    {
+      "gene": "E2F3",
+      "n_mut": 148,
+      "n_samples": 143,
+      "freq": 0.6
+    },
+    {
+      "gene": "SPRED1",
+      "n_mut": 149,
+      "n_samples": 142,
+      "freq": 0.7
+    },
+    {
+      "gene": "IGF2",
+      "n_mut": 145,
+      "n_samples": 142,
+      "freq": 0.6
+    },
+    {
+      "gene": "YAP1",
+      "n_mut": 147,
+      "n_samples": 139,
+      "freq": 0.6
+    },
+    {
+      "gene": "AKT2",
+      "n_mut": 145,
+      "n_samples": 139,
+      "freq": 0.6
+    },
+    {
+      "gene": "MSI1",
+      "n_mut": 141,
+      "n_samples": 138,
+      "freq": 0.7
+    },
+    {
+      "gene": "SMARCD1",
+      "n_mut": 145,
+      "n_samples": 137,
+      "freq": 0.5
+    },
+    {
+      "gene": "YES1",
+      "n_mut": 145,
+      "n_samples": 136,
+      "freq": 0.5
+    },
+    {
+      "gene": "FANCC",
+      "n_mut": 139,
+      "n_samples": 136,
+      "freq": 0.5
+    },
+    {
+      "gene": "IFNGR1",
+      "n_mut": 146,
+      "n_samples": 135,
+      "freq": 0.5
+    },
+    {
+      "gene": "IDH2",
+      "n_mut": 145,
+      "n_samples": 135,
+      "freq": 0.5
+    },
+    {
+      "gene": "CCNE1",
+      "n_mut": 140,
+      "n_samples": 134,
+      "freq": 0.5
+    },
+    {
+      "gene": "MAP2K2",
+      "n_mut": 139,
+      "n_samples": 133,
+      "freq": 0.5
+    },
+    {
+      "gene": "PPARG",
+      "n_mut": 139,
+      "n_samples": 133,
+      "freq": 0.7
+    },
+    {
+      "gene": "XIAP",
+      "n_mut": 137,
+      "n_samples": 133,
+      "freq": 0.5
+    },
+    {
+      "gene": "CD79A",
+      "n_mut": 138,
+      "n_samples": 132,
+      "freq": 0.5
+    },
+    {
+      "gene": "CYSLTR2",
+      "n_mut": 133,
+      "n_samples": 130,
+      "freq": 0.6
+    },
+    {
+      "gene": "FGF4",
+      "n_mut": 131,
+      "n_samples": 129,
+      "freq": 0.5
+    },
+    {
+      "gene": "ERRFI1",
+      "n_mut": 134,
+      "n_samples": 128,
+      "freq": 0.5
+    },
+    {
+      "gene": "NFKBIA",
+      "n_mut": 134,
+      "n_samples": 128,
+      "freq": 0.5
+    },
+    {
+      "gene": "RTEL1",
+      "n_mut": 136,
+      "n_samples": 127,
+      "freq": 0.6
+    },
+    {
+      "gene": "MDM2",
+      "n_mut": 133,
+      "n_samples": 127,
+      "freq": 0.5
+    },
+    {
+      "gene": "SUFU",
+      "n_mut": 130,
+      "n_samples": 127,
+      "freq": 0.5
+    },
+    {
+      "gene": "RTEL1-TNFRSF6B",
+      "n_mut": 137,
+      "n_samples": 126,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMYD3",
+      "n_mut": 127,
+      "n_samples": 124,
+      "freq": 0.6
+    },
+    {
+      "gene": "CD276",
+      "n_mut": 126,
+      "n_samples": 124,
+      "freq": 0.5
+    },
+    {
+      "gene": "HRAS",
+      "n_mut": 128,
+      "n_samples": 122,
+      "freq": 0.5
+    },
+    {
+      "gene": "H3-5",
+      "n_mut": 128,
+      "n_samples": 120,
+      "freq": 0.5
+    },
+    {
+      "gene": "LZTR1",
+      "n_mut": 125,
+      "n_samples": 120,
+      "freq": 1.7
+    },
+    {
+      "gene": "SETDB1",
+      "n_mut": 145,
+      "n_samples": 119,
+      "freq": 1.7
+    },
+    {
+      "gene": "AURKA",
+      "n_mut": 126,
+      "n_samples": 119,
+      "freq": 0.5
+    },
+    {
+      "gene": "HOXB13",
+      "n_mut": 120,
+      "n_samples": 118,
+      "freq": 0.5
+    },
+    {
+      "gene": "MAPKAP1",
+      "n_mut": 122,
+      "n_samples": 117,
+      "freq": 0.6
+    },
+    {
+      "gene": "ZRSR2",
+      "n_mut": 122,
+      "n_samples": 117,
+      "freq": 0.5
+    },
+    {
+      "gene": "MCL1",
+      "n_mut": 119,
+      "n_samples": 116,
+      "freq": 0.5
+    },
+    {
+      "gene": "CEBPA",
+      "n_mut": 116,
+      "n_samples": 116,
+      "freq": 0.5
+    },
+    {
+      "gene": "SESN2",
+      "n_mut": 116,
+      "n_samples": 115,
+      "freq": 0.6
+    },
+    {
+      "gene": "POT1",
+      "n_mut": 127,
+      "n_samples": 114,
+      "freq": 1.6
+    },
+    {
+      "gene": "GNA11",
+      "n_mut": 121,
+      "n_samples": 114,
+      "freq": 0.5
+    },
+    {
+      "gene": "TENT5C",
+      "n_mut": 117,
+      "n_samples": 114,
+      "freq": 0.5
+    },
+    {
+      "gene": "CTR9",
+      "n_mut": 124,
+      "n_samples": 113,
+      "freq": 1.6
+    },
+    {
+      "gene": "ACVR1",
+      "n_mut": 117,
+      "n_samples": 113,
+      "freq": 0.5
+    },
+    {
+      "gene": "PRKAR1A",
+      "n_mut": 116,
+      "n_samples": 111,
+      "freq": 0.4
+    },
+    {
+      "gene": "EED",
+      "n_mut": 118,
+      "n_samples": 110,
+      "freq": 0.4
+    },
+    {
+      "gene": "IGF1",
+      "n_mut": 111,
+      "n_samples": 108,
+      "freq": 0.4
+    },
+    {
+      "gene": "ICOSLG",
+      "n_mut": 113,
+      "n_samples": 107,
+      "freq": 0.4
+    },
+    {
+      "gene": "RAD51C",
+      "n_mut": 111,
+      "n_samples": 107,
+      "freq": 0.4
+    },
+    {
+      "gene": "FGF19",
+      "n_mut": 110,
+      "n_samples": 107,
+      "freq": 0.4
+    },
+    {
+      "gene": "ABRAXAS1",
+      "n_mut": 114,
+      "n_samples": 106,
+      "freq": 0.4
+    },
+    {
+      "gene": "RIT1",
+      "n_mut": 111,
+      "n_samples": 106,
+      "freq": 0.4
+    },
+    {
+      "gene": "NKX3-1",
+      "n_mut": 107,
+      "n_samples": 106,
+      "freq": 0.4
+    },
+    {
+      "gene": "MDM4",
+      "n_mut": 109,
+      "n_samples": 105,
+      "freq": 0.4
+    },
+    {
+      "gene": "DNAJB1",
+      "n_mut": 111,
+      "n_samples": 104,
+      "freq": 0.4
+    },
+    {
+      "gene": "STK40",
+      "n_mut": 111,
+      "n_samples": 104,
+      "freq": 0.4
+    },
+    {
+      "gene": "CXCR4",
+      "n_mut": 107,
+      "n_samples": 104,
+      "freq": 0.4
+    },
+    {
+      "gene": "CCND2",
+      "n_mut": 105,
+      "n_samples": 104,
+      "freq": 0.4
+    },
+    {
+      "gene": "CALR",
+      "n_mut": 110,
+      "n_samples": 103,
+      "freq": 0.4
+    },
+    {
+      "gene": "SESN3",
+      "n_mut": 106,
+      "n_samples": 103,
+      "freq": 0.5
+    },
+    {
+      "gene": "MAPK3",
+      "n_mut": 105,
+      "n_samples": 103,
+      "freq": 0.4
+    },
+    {
+      "gene": "MST1",
+      "n_mut": 105,
+      "n_samples": 102,
+      "freq": 0.4
+    },
+    {
+      "gene": "MYCL",
+      "n_mut": 103,
+      "n_samples": 102,
+      "freq": 0.4
+    },
+    {
+      "gene": "SHOC2",
+      "n_mut": 105,
+      "n_samples": 101,
+      "freq": 0.5
+    },
+    {
+      "gene": "CTLA4",
+      "n_mut": 102,
+      "n_samples": 101,
+      "freq": 0.4
+    },
+    {
+      "gene": "ATXN7",
+      "n_mut": 112,
+      "n_samples": 99,
+      "freq": 1.4
+    },
+    {
+      "gene": "XRCC2",
+      "n_mut": 105,
+      "n_samples": 98,
+      "freq": 0.4
+    },
+    {
+      "gene": "RYBP",
+      "n_mut": 100,
+      "n_samples": 98,
+      "freq": 0.4
+    },
+    {
+      "gene": "CRLF2",
+      "n_mut": 98,
+      "n_samples": 97,
+      "freq": 0.4
+    },
+    {
+      "gene": "WWTR1",
+      "n_mut": 102,
+      "n_samples": 96,
+      "freq": 0.5
+    },
+    {
+      "gene": "BABAM1",
+      "n_mut": 98,
+      "n_samples": 96,
+      "freq": 0.5
+    },
+    {
+      "gene": "TNFRSF14",
+      "n_mut": 98,
+      "n_samples": 96,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3-4",
+      "n_mut": 96,
+      "n_samples": 95,
+      "freq": 0.4
+    },
+    {
+      "gene": "SLFN11",
+      "n_mut": 98,
+      "n_samples": 93,
+      "freq": 1.3
+    },
+    {
+      "gene": "SRSF2",
+      "n_mut": 98,
+      "n_samples": 93,
+      "freq": 0.4
+    },
+    {
+      "gene": "RAD52",
+      "n_mut": 96,
+      "n_samples": 93,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3C3",
+      "n_mut": 95,
+      "n_samples": 93,
+      "freq": 0.4
+    },
+    {
+      "gene": "EIF1AX",
+      "n_mut": 94,
+      "n_samples": 93,
+      "freq": 0.4
+    },
+    {
+      "gene": "REST",
+      "n_mut": 100,
+      "n_samples": 91,
+      "freq": 1.3
+    },
+    {
+      "gene": "CDK6",
+      "n_mut": 92,
+      "n_samples": 91,
+      "freq": 0.4
+    },
+    {
+      "gene": "SESN1",
+      "n_mut": 92,
+      "n_samples": 91,
+      "freq": 0.5
+    },
+    {
+      "gene": "MYD88",
+      "n_mut": 92,
+      "n_samples": 90,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3C6",
+      "n_mut": 90,
+      "n_samples": 90,
+      "freq": 0.4
+    },
+    {
+      "gene": "CD79B",
+      "n_mut": 93,
+      "n_samples": 89,
+      "freq": 0.4
+    },
+    {
+      "gene": "PNRC1",
+      "n_mut": 92,
+      "n_samples": 89,
+      "freq": 0.4
+    },
+    {
+      "gene": "AURKB",
+      "n_mut": 93,
+      "n_samples": 87,
+      "freq": 0.3
+    },
+    {
+      "gene": "CCND1",
+      "n_mut": 90,
+      "n_samples": 86,
+      "freq": 0.3
+    },
+    {
+      "gene": "USP8",
+      "n_mut": 99,
+      "n_samples": 85,
+      "freq": 1.2
+    },
+    {
+      "gene": "BBC3",
+      "n_mut": 88,
+      "n_samples": 85,
+      "freq": 0.3
+    },
+    {
+      "gene": "RAD51B",
+      "n_mut": 87,
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "EGFL7",
+      "n_mut": 85,
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "GNAQ",
+      "n_mut": 86,
+      "n_samples": 83,
+      "freq": 0.3
+    },
+    {
+      "gene": "H2BC5",
+      "n_mut": 83,
+      "n_samples": 82,
+      "freq": 0.3
+    },
+    {
+      "gene": "SDHB",
+      "n_mut": 81,
+      "n_samples": 81,
+      "freq": 0.3
+    },
+    {
+      "gene": "PPP6C",
+      "n_mut": 85,
+      "n_samples": 80,
+      "freq": 0.3
+    },
+    {
+      "gene": "KNSTRN",
+      "n_mut": 81,
+      "n_samples": 80,
+      "freq": 0.4
+    },
+    {
+      "gene": "LMO1",
+      "n_mut": 81,
+      "n_samples": 80,
+      "freq": 0.3
+    },
+    {
+      "gene": "WHR1",
+      "n_mut": 80,
+      "n_samples": 80,
+      "freq": 0.4
+    },
+    {
+      "gene": "DUSP4",
+      "n_mut": 82,
+      "n_samples": 79,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3C8",
+      "n_mut": 80,
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "MAPK1",
+      "n_mut": 79,
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "BCL10",
+      "n_mut": 80,
+      "n_samples": 78,
+      "freq": 0.3
+    },
+    {
+      "gene": "H3C4",
+      "n_mut": 79,
+      "n_samples": 78,
+      "freq": 0.3
+    },
+    {
+      "gene": "KLF5",
+      "n_mut": 84,
+      "n_samples": 77,
+      "freq": 1.1
+    },
+    {
+      "gene": "SOCS1",
+      "n_mut": 78,
+      "n_samples": 77,
+      "freq": 0.3
+    },
+    {
+      "gene": "VTCN1",
+      "n_mut": 78,
+      "n_samples": 77,
+      "freq": 0.3
+    },
+    {
+      "gene": "CDKN1A",
+      "n_mut": 77,
+      "n_samples": 77,
+      "freq": 0.3
+    },
+    {
+      "gene": "CCNQ",
+      "n_mut": 78,
+      "n_samples": 76,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3C12",
+      "n_mut": 78,
+      "n_samples": 76,
+      "freq": 0.3
+    },
+    {
+      "gene": "CDKN2C",
+      "n_mut": 76,
+      "n_samples": 76,
+      "freq": 0.3
+    },
+    {
+      "gene": "H3C11",
+      "n_mut": 76,
+      "n_samples": 75,
+      "freq": 0.3
+    },
+    {
+      "gene": "EPCAM",
+      "n_mut": 76,
+      "n_samples": 74,
+      "freq": 0.3
+    },
+    {
+      "gene": "BCL2L11",
+      "n_mut": 75,
+      "n_samples": 74,
+      "freq": 0.3
+    },
+    {
+      "gene": "CDKN2B",
+      "n_mut": 75,
+      "n_samples": 74,
+      "freq": 0.3
+    },
+    {
+      "gene": "RAC1",
+      "n_mut": 74,
+      "n_samples": 74,
+      "freq": 0.3
+    },
+    {
+      "gene": "FOXF1",
+      "n_mut": 79,
+      "n_samples": 73,
+      "freq": 1.0
+    },
+    {
+      "gene": "CDK4",
+      "n_mut": 74,
+      "n_samples": 73,
+      "freq": 0.3
+    },
+    {
+      "gene": "RRAS",
+      "n_mut": 73,
+      "n_samples": 73,
+      "freq": 0.4
+    },
+    {
+      "gene": "DCUN1D1",
+      "n_mut": 76,
+      "n_samples": 72,
+      "freq": 0.3
+    },
+    {
+      "gene": "KMT5A",
+      "n_mut": 76,
+      "n_samples": 72,
+      "freq": 0.4
+    },
+    {
+      "gene": "VEGFA",
+      "n_mut": 72,
+      "n_samples": 72,
+      "freq": 0.3
+    },
+    {
+      "gene": "H3C1",
+      "n_mut": 70,
+      "n_samples": 70,
+      "freq": 0.3
+    },
+    {
+      "gene": "ALB",
+      "n_mut": 73,
+      "n_samples": 69,
+      "freq": 1.0
+    },
+    {
+      "gene": "GAB1",
+      "n_mut": 73,
+      "n_samples": 69,
+      "freq": 1.0
+    },
+    {
+      "gene": "IL10",
+      "n_mut": 71,
+      "n_samples": 69,
+      "freq": 0.3
+    },
+    {
+      "gene": "RRAS2",
+      "n_mut": 71,
+      "n_samples": 68,
+      "freq": 0.3
+    },
+    {
+      "gene": "SH2D1A",
+      "n_mut": 69,
+      "n_samples": 68,
+      "freq": 0.3
+    },
+    {
+      "gene": "VHL",
+      "n_mut": 71,
+      "n_samples": 67,
+      "freq": 0.3
+    },
+    {
+      "gene": "TMEM127",
+      "n_mut": 68,
+      "n_samples": 67,
+      "freq": 0.3
+    },
+    {
+      "gene": "ETAA1",
+      "n_mut": 75,
+      "n_samples": 66,
+      "freq": 0.9
+    },
+    {
+      "gene": "PIM1",
+      "n_mut": 68,
+      "n_samples": 66,
+      "freq": 0.3
+    },
+    {
+      "gene": "H3C10",
+      "n_mut": 66,
+      "n_samples": 66,
+      "freq": 0.3
+    },
+    {
+      "gene": "RAD51D",
+      "n_mut": 67,
+      "n_samples": 65,
+      "freq": 0.3
+    },
+    {
+      "gene": "NTHL1",
+      "n_mut": 66,
+      "n_samples": 65,
+      "freq": 0.3
+    },
+    {
+      "gene": "NPM1",
+      "n_mut": 65,
+      "n_samples": 64,
+      "freq": 0.3
+    },
+    {
+      "gene": "RRAGC",
+      "n_mut": 65,
+      "n_samples": 64,
+      "freq": 0.3
+    },
+    {
+      "gene": "RAB35",
+      "n_mut": 64,
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "PPP4R2",
+      "n_mut": 65,
+      "n_samples": 62,
+      "freq": 0.3
+    },
+    {
+      "gene": "PGBD5",
+      "n_mut": 63,
+      "n_samples": 61,
+      "freq": 0.9
+    },
+    {
+      "gene": "BCL2",
+      "n_mut": 61,
+      "n_samples": 61,
+      "freq": 0.2
+    },
+    {
+      "gene": "HLA-C",
+      "n_mut": 67,
+      "n_samples": 60,
+      "freq": 0.8
+    },
+    {
+      "gene": "APLNR",
+      "n_mut": 62,
+      "n_samples": 60,
+      "freq": 0.8
+    },
+    {
+      "gene": "RAD51",
+      "n_mut": 61,
+      "n_samples": 60,
+      "freq": 0.2
+    },
+    {
+      "gene": "CCND3",
+      "n_mut": 61,
+      "n_samples": 58,
+      "freq": 0.2
+    },
+    {
+      "gene": "CD274",
+      "n_mut": 59,
+      "n_samples": 57,
+      "freq": 0.2
+    },
+    {
+      "gene": "MSI2",
+      "n_mut": 59,
+      "n_samples": 57,
+      "freq": 0.3
+    },
+    {
+      "gene": "H3C7",
+      "n_mut": 56,
+      "n_samples": 56,
+      "freq": 0.2
+    },
+    {
+      "gene": "CRKL",
+      "n_mut": 57,
+      "n_samples": 55,
+      "freq": 0.2
+    },
+    {
+      "gene": "GREM1",
+      "n_mut": 56,
+      "n_samples": 55,
+      "freq": 0.2
+    },
+    {
+      "gene": "MLLT1",
+      "n_mut": 61,
+      "n_samples": 54,
+      "freq": 0.8
+    },
+    {
+      "gene": "SDHC",
+      "n_mut": 54,
+      "n_samples": 54,
+      "freq": 0.2
+    },
+    {
+      "gene": "SDHAF2",
+      "n_mut": 53,
+      "n_samples": 53,
+      "freq": 0.2
+    },
+    {
+      "gene": "CENPA",
+      "n_mut": 54,
+      "n_samples": 51,
+      "freq": 0.2
+    },
+    {
+      "gene": "SERPINB4",
+      "n_mut": 53,
+      "n_samples": 51,
+      "freq": 0.7
+    },
+    {
+      "gene": "NADK",
+      "n_mut": 52,
+      "n_samples": 51,
+      "freq": 0.7
+    },
+    {
+      "gene": "RAC2",
+      "n_mut": 52,
+      "n_samples": 51,
+      "freq": 0.3
+    },
+    {
+      "gene": "GAB2",
+      "n_mut": 53,
+      "n_samples": 50,
+      "freq": 0.7
+    },
+    {
+      "gene": "PDPK1",
+      "n_mut": 52,
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "EIF4E",
+      "n_mut": 50,
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "CYP19A1",
+      "n_mut": 50,
+      "n_samples": 49,
+      "freq": 0.7
+    },
+    {
+      "gene": "KBTBD4",
+      "n_mut": 50,
+      "n_samples": 48,
+      "freq": 0.7
+    },
+    {
+      "gene": "BCL2L1",
+      "n_mut": 48,
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "RHEB",
+      "n_mut": 48,
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "SPRTN",
+      "n_mut": 47,
+      "n_samples": 43,
+      "freq": 0.6
+    },
+    {
+      "gene": "SERPINB3",
+      "n_mut": 45,
+      "n_samples": 43,
+      "freq": 0.6
+    },
+    {
+      "gene": "CDC42",
+      "n_mut": 43,
+      "n_samples": 43,
+      "freq": 0.2
+    },
+    {
+      "gene": "PTP4A1",
+      "n_mut": 43,
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "PDCD1LG2",
+      "n_mut": 43,
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "H3-3B",
+      "n_mut": 36,
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "SDHD",
+      "n_mut": 36,
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3-3A",
+      "n_mut": 36,
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "SMARCE1",
+      "n_mut": 36,
+      "n_samples": 34,
+      "freq": 0.5
+    },
+    {
+      "gene": "TRIP13",
+      "n_mut": 35,
+      "n_samples": 31,
+      "freq": 0.4
+    },
+    {
+      "gene": "GNB1",
+      "n_mut": 31,
+      "n_samples": 30,
+      "freq": 0.4
+    },
+    {
+      "gene": "ID3",
+      "n_mut": 28,
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "PHF6",
+      "n_mut": 28,
+      "n_samples": 28,
+      "freq": 0.4
+    },
+    {
+      "gene": "SCG5",
+      "n_mut": 21,
+      "n_samples": 21,
+      "freq": 0.3
+    },
+    {
+      "gene": "ELOC",
+      "n_mut": 20,
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAD2L2",
+      "n_mut": 19,
+      "n_samples": 19,
+      "freq": 0.3
+    },
+    {
+      "gene": "MTAP",
+      "n_mut": 18,
+      "n_samples": 18,
+      "freq": 0.3
+    },
+    {
+      "gene": "PMAIP1",
+      "n_mut": 14,
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C13",
+      "n_mut": 12,
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "FIP1L1",
+      "n_mut": 3,
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "IKBKE-AS1",
+      "n_mut": 3,
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "INSRR",
+      "n_mut": 3,
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "GTF2I",
+      "n_mut": 1,
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "INS-IGF2",
+      "n_mut": 1,
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP3K14",
+      "n_mut": 1,
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "TIMM8B",
+      "n_mut": 1,
+      "n_samples": 1,
+      "freq": 0.0
+    }
+  ],
+  "cna_genes": [
+    {
+      "gene": "CDKN2A",
+      "cna_type": "HOMDEL",
+      "n_samples": 1546,
+      "freq": 6.2
+    },
+    {
+      "gene": "MYC",
+      "cna_type": "AMP",
+      "n_samples": 1533,
+      "freq": 6.1
+    },
+    {
+      "gene": "CDKN2B",
+      "cna_type": "HOMDEL",
+      "n_samples": 1459,
+      "freq": 5.8
+    },
+    {
+      "gene": "CCND1",
+      "cna_type": "AMP",
+      "n_samples": 1263,
+      "freq": 5.0
+    },
+    {
+      "gene": "FGF19",
+      "cna_type": "AMP",
+      "n_samples": 1167,
+      "freq": 4.7
+    },
+    {
+      "gene": "FGF4",
+      "cna_type": "AMP",
+      "n_samples": 1117,
+      "freq": 4.5
+    },
+    {
+      "gene": "FGF3",
+      "cna_type": "AMP",
+      "n_samples": 1085,
+      "freq": 4.3
+    },
+    {
+      "gene": "FGFR1",
+      "cna_type": "AMP",
+      "n_samples": 1078,
+      "freq": 4.3
+    },
+    {
+      "gene": "ERBB2",
+      "cna_type": "AMP",
+      "n_samples": 960,
+      "freq": 3.8
+    },
+    {
+      "gene": "NSD3",
+      "cna_type": "AMP",
+      "n_samples": 825,
+      "freq": 4.1
+    },
+    {
+      "gene": "RECQL4",
+      "cna_type": "AMP",
+      "n_samples": 808,
+      "freq": 3.2
+    },
+    {
+      "gene": "CDK12",
+      "cna_type": "AMP",
+      "n_samples": 671,
+      "freq": 2.7
+    },
+    {
+      "gene": "RAD21",
+      "cna_type": "AMP",
+      "n_samples": 662,
+      "freq": 2.8
+    },
+    {
+      "gene": "MDM2",
+      "cna_type": "AMP",
+      "n_samples": 652,
+      "freq": 2.6
+    },
+    {
+      "gene": "AGO2",
+      "cna_type": "AMP",
+      "n_samples": 638,
+      "freq": 3.2
+    },
+    {
+      "gene": "EGFR",
+      "cna_type": "AMP",
+      "n_samples": 567,
+      "freq": 2.3
+    },
+    {
+      "gene": "RTEL1",
+      "cna_type": "AMP",
+      "n_samples": 566,
+      "freq": 2.8
+    },
+    {
+      "gene": "TERT",
+      "cna_type": "AMP",
+      "n_samples": 549,
+      "freq": 2.2
+    },
+    {
+      "gene": "GNAS",
+      "cna_type": "AMP",
+      "n_samples": 546,
+      "freq": 2.2
+    },
+    {
+      "gene": "PTEN",
+      "cna_type": "HOMDEL",
+      "n_samples": 541,
+      "freq": 2.2
+    },
+    {
+      "gene": "PAK1",
+      "cna_type": "AMP",
+      "n_samples": 489,
+      "freq": 2.0
+    },
+    {
+      "gene": "NKX2-1",
+      "cna_type": "AMP",
+      "n_samples": 487,
+      "freq": 1.9
+    },
+    {
+      "gene": "FOXA1",
+      "cna_type": "AMP",
+      "n_samples": 473,
+      "freq": 1.9
+    },
+    {
+      "gene": "NBN",
+      "cna_type": "AMP",
+      "n_samples": 432,
+      "freq": 1.7
+    },
+    {
+      "gene": "SDHA",
+      "cna_type": "AMP",
+      "n_samples": 428,
+      "freq": 1.7
+    },
+    {
+      "gene": "AURKA",
+      "cna_type": "AMP",
+      "n_samples": 416,
+      "freq": 1.7
+    },
+    {
+      "gene": "NKX3-1",
+      "cna_type": "HOMDEL",
+      "n_samples": 402,
+      "freq": 1.6
+    },
+    {
+      "gene": "ELOC",
+      "cna_type": "AMP",
+      "n_samples": 391,
+      "freq": 1.6
+    },
+    {
+      "gene": "CDK4",
+      "cna_type": "AMP",
+      "n_samples": 390,
+      "freq": 1.6
+    },
+    {
+      "gene": "NFKBIA",
+      "cna_type": "AMP",
+      "n_samples": 386,
+      "freq": 1.6
+    },
+    {
+      "gene": "MCL1",
+      "cna_type": "AMP",
+      "n_samples": 378,
+      "freq": 1.5
+    },
+    {
+      "gene": "CCNE1",
+      "cna_type": "AMP",
+      "n_samples": 373,
+      "freq": 1.5
+    },
+    {
+      "gene": "BCL2L1",
+      "cna_type": "AMP",
+      "n_samples": 373,
+      "freq": 1.5
+    },
+    {
+      "gene": "SMAD4",
+      "cna_type": "HOMDEL",
+      "n_samples": 373,
+      "freq": 1.5
+    },
+    {
+      "gene": "MTAP",
+      "cna_type": "HOMDEL",
+      "n_samples": 360,
+      "freq": 5.0
+    },
+    {
+      "gene": "PPM1D",
+      "cna_type": "AMP",
+      "n_samples": 350,
+      "freq": 1.5
+    },
+    {
+      "gene": "DUSP4",
+      "cna_type": "HOMDEL",
+      "n_samples": 324,
+      "freq": 1.6
+    },
+    {
+      "gene": "RPS6KB2",
+      "cna_type": "AMP",
+      "n_samples": 311,
+      "freq": 1.2
+    },
+    {
+      "gene": "AKT2",
+      "cna_type": "AMP",
+      "n_samples": 301,
+      "freq": 1.2
+    },
+    {
+      "gene": "KRAS",
+      "cna_type": "AMP",
+      "n_samples": 294,
+      "freq": 1.2
+    },
+    {
+      "gene": "FLT3",
+      "cna_type": "AMP",
+      "n_samples": 293,
+      "freq": 1.2
+    },
+    {
+      "gene": "AR",
+      "cna_type": "AMP",
+      "n_samples": 288,
+      "freq": 1.2
+    },
+    {
+      "gene": "NCOA3",
+      "cna_type": "AMP",
+      "n_samples": 285,
+      "freq": 1.2
+    },
+    {
+      "gene": "SRC",
+      "cna_type": "AMP",
+      "n_samples": 283,
+      "freq": 1.1
+    },
+    {
+      "gene": "PRDM14",
+      "cna_type": "AMP",
+      "n_samples": 283,
+      "freq": 1.4
+    },
+    {
+      "gene": "ASXL1",
+      "cna_type": "AMP",
+      "n_samples": 279,
+      "freq": 1.1
+    },
+    {
+      "gene": "RARA",
+      "cna_type": "AMP",
+      "n_samples": 275,
+      "freq": 1.1
+    },
+    {
+      "gene": "BRIP1",
+      "cna_type": "AMP",
+      "n_samples": 274,
+      "freq": 1.1
+    },
+    {
+      "gene": "RAD52",
+      "cna_type": "AMP",
+      "n_samples": 264,
+      "freq": 1.1
+    },
+    {
+      "gene": "KDM5A",
+      "cna_type": "AMP",
+      "n_samples": 258,
+      "freq": 1.0
+    },
+    {
+      "gene": "FLT1",
+      "cna_type": "AMP",
+      "n_samples": 256,
+      "freq": 1.0
+    },
+    {
+      "gene": "DNMT3B",
+      "cna_type": "AMP",
+      "n_samples": 250,
+      "freq": 1.0
+    },
+    {
+      "gene": "PREX2",
+      "cna_type": "AMP",
+      "n_samples": 250,
+      "freq": 1.2
+    },
+    {
+      "gene": "CCND2",
+      "cna_type": "AMP",
+      "n_samples": 249,
+      "freq": 1.0
+    },
+    {
+      "gene": "RB1",
+      "cna_type": "HOMDEL",
+      "n_samples": 249,
+      "freq": 1.0
+    },
+    {
+      "gene": "RAD51C",
+      "cna_type": "AMP",
+      "n_samples": 244,
+      "freq": 1.0
+    },
+    {
+      "gene": "CD79B",
+      "cna_type": "AMP",
+      "n_samples": 239,
+      "freq": 1.0
+    },
+    {
+      "gene": "SOX17",
+      "cna_type": "AMP",
+      "n_samples": 233,
+      "freq": 0.9
+    },
+    {
+      "gene": "PTPRT",
+      "cna_type": "AMP",
+      "n_samples": 226,
+      "freq": 0.9
+    },
+    {
+      "gene": "TOP1",
+      "cna_type": "AMP",
+      "n_samples": 226,
+      "freq": 0.9
+    },
+    {
+      "gene": "ELF3",
+      "cna_type": "AMP",
+      "n_samples": 221,
+      "freq": 1.1
+    },
+    {
+      "gene": "H3C14",
+      "cna_type": "AMP",
+      "n_samples": 221,
+      "freq": 0.9
+    },
+    {
+      "gene": "RNF43",
+      "cna_type": "AMP",
+      "n_samples": 213,
+      "freq": 0.9
+    },
+    {
+      "gene": "SOX2",
+      "cna_type": "AMP",
+      "n_samples": 211,
+      "freq": 0.8
+    },
+    {
+      "gene": "SPOP",
+      "cna_type": "AMP",
+      "n_samples": 210,
+      "freq": 0.8
+    },
+    {
+      "gene": "H3C13",
+      "cna_type": "AMP",
+      "n_samples": 207,
+      "freq": 0.9
+    },
+    {
+      "gene": "PRKAR1A",
+      "cna_type": "AMP",
+      "n_samples": 206,
+      "freq": 0.8
+    },
+    {
+      "gene": "CDK8",
+      "cna_type": "AMP",
+      "n_samples": 206,
+      "freq": 0.8
+    },
+    {
+      "gene": "PIK3CA",
+      "cna_type": "AMP",
+      "n_samples": 203,
+      "freq": 0.8
+    },
+    {
+      "gene": "AXIN2",
+      "cna_type": "AMP",
+      "n_samples": 202,
+      "freq": 0.8
+    },
+    {
+      "gene": "CEBPA",
+      "cna_type": "AMP",
+      "n_samples": 200,
+      "freq": 0.8
+    },
+    {
+      "gene": "MAP2K4",
+      "cna_type": "HOMDEL",
+      "n_samples": 192,
+      "freq": 0.8
+    },
+    {
+      "gene": "IRS2",
+      "cna_type": "AMP",
+      "n_samples": 188,
+      "freq": 0.8
+    },
+    {
+      "gene": "KMT2B",
+      "cna_type": "AMP",
+      "n_samples": 187,
+      "freq": 0.9
+    },
+    {
+      "gene": "MET",
+      "cna_type": "AMP",
+      "n_samples": 185,
+      "freq": 0.7
+    },
+    {
+      "gene": "RIT1",
+      "cna_type": "AMP",
+      "n_samples": 185,
+      "freq": 0.7
+    },
+    {
+      "gene": "MDM4",
+      "cna_type": "AMP",
+      "n_samples": 184,
+      "freq": 0.7
+    },
+    {
+      "gene": "TEK",
+      "cna_type": "HOMDEL",
+      "n_samples": 183,
+      "freq": 0.9
+    },
+    {
+      "gene": "LYN",
+      "cna_type": "AMP",
+      "n_samples": 182,
+      "freq": 0.9
+    },
+    {
+      "gene": "RICTOR",
+      "cna_type": "AMP",
+      "n_samples": 181,
+      "freq": 0.7
+    },
+    {
+      "gene": "TP53",
+      "cna_type": "HOMDEL",
+      "n_samples": 180,
+      "freq": 0.7
+    },
+    {
+      "gene": "IL7R",
+      "cna_type": "AMP",
+      "n_samples": 175,
+      "freq": 0.7
+    },
+    {
+      "gene": "PRKCI",
+      "cna_type": "AMP",
+      "n_samples": 173,
+      "freq": 0.9
+    },
+    {
+      "gene": "DCUN1D1",
+      "cna_type": "AMP",
+      "n_samples": 173,
+      "freq": 0.7
+    },
+    {
+      "gene": "LATS2",
+      "cna_type": "AMP",
+      "n_samples": 171,
+      "freq": 0.7
+    },
+    {
+      "gene": "VEGFA",
+      "cna_type": "AMP",
+      "n_samples": 168,
+      "freq": 0.7
+    },
+    {
+      "gene": "IKBKE",
+      "cna_type": "AMP",
+      "n_samples": 162,
+      "freq": 0.6
+    },
+    {
+      "gene": "CDKN1B",
+      "cna_type": "HOMDEL",
+      "n_samples": 161,
+      "freq": 0.6
+    },
+    {
+      "gene": "CCND3",
+      "cna_type": "AMP",
+      "n_samples": 159,
+      "freq": 0.6
+    },
+    {
+      "gene": "FGFR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 156,
+      "freq": 0.6
+    },
+    {
+      "gene": "IL10",
+      "cna_type": "AMP",
+      "n_samples": 155,
+      "freq": 0.6
+    },
+    {
+      "gene": "GLI1",
+      "cna_type": "AMP",
+      "n_samples": 153,
+      "freq": 0.6
+    },
+    {
+      "gene": "PRKN",
+      "cna_type": "HOMDEL",
+      "n_samples": 152,
+      "freq": 0.6
+    },
+    {
+      "gene": "HOXB13",
+      "cna_type": "AMP",
+      "n_samples": 150,
+      "freq": 0.6
+    },
+    {
+      "gene": "MAP3K13",
+      "cna_type": "AMP",
+      "n_samples": 144,
+      "freq": 0.6
+    },
+    {
+      "gene": "SDHC",
+      "cna_type": "AMP",
+      "n_samples": 142,
+      "freq": 0.6
+    },
+    {
+      "gene": "TP63",
+      "cna_type": "AMP",
+      "n_samples": 142,
+      "freq": 0.6
+    },
+    {
+      "gene": "NOTCH2",
+      "cna_type": "AMP",
+      "n_samples": 137,
+      "freq": 0.5
+    },
+    {
+      "gene": "IGF1R",
+      "cna_type": "AMP",
+      "n_samples": 134,
+      "freq": 0.5
+    },
+    {
+      "gene": "CDK6",
+      "cna_type": "AMP",
+      "n_samples": 131,
+      "freq": 0.5
+    },
+    {
+      "gene": "CDKN1B",
+      "cna_type": "AMP",
+      "n_samples": 128,
+      "freq": 0.5
+    },
+    {
+      "gene": "BCL6",
+      "cna_type": "AMP",
+      "n_samples": 128,
+      "freq": 0.5
+    },
+    {
+      "gene": "NTRK1",
+      "cna_type": "AMP",
+      "n_samples": 127,
+      "freq": 0.5
+    },
+    {
+      "gene": "YES1",
+      "cna_type": "AMP",
+      "n_samples": 125,
+      "freq": 0.5
+    },
+    {
+      "gene": "PRDM1",
+      "cna_type": "AMP",
+      "n_samples": 122,
+      "freq": 0.5
+    },
+    {
+      "gene": "DROSHA",
+      "cna_type": "AMP",
+      "n_samples": 122,
+      "freq": 0.6
+    },
+    {
+      "gene": "EIF4A2",
+      "cna_type": "AMP",
+      "n_samples": 120,
+      "freq": 0.5
+    },
+    {
+      "gene": "PTPRD",
+      "cna_type": "HOMDEL",
+      "n_samples": 120,
+      "freq": 0.5
+    },
+    {
+      "gene": "MSI2",
+      "cna_type": "AMP",
+      "n_samples": 120,
+      "freq": 0.6
+    },
+    {
+      "gene": "BRCA2",
+      "cna_type": "AMP",
+      "n_samples": 119,
+      "freq": 0.5
+    },
+    {
+      "gene": "DDR2",
+      "cna_type": "AMP",
+      "n_samples": 118,
+      "freq": 0.5
+    },
+    {
+      "gene": "GAB2",
+      "cna_type": "AMP",
+      "n_samples": 117,
+      "freq": 1.6
+    },
+    {
+      "gene": "SOX9",
+      "cna_type": "AMP",
+      "n_samples": 117,
+      "freq": 0.5
+    },
+    {
+      "gene": "INPPL1",
+      "cna_type": "AMP",
+      "n_samples": 113,
+      "freq": 0.6
+    },
+    {
+      "gene": "ETV6",
+      "cna_type": "AMP",
+      "n_samples": 112,
+      "freq": 0.4
+    },
+    {
+      "gene": "TRIP13",
+      "cna_type": "AMP",
+      "n_samples": 107,
+      "freq": 1.5
+    },
+    {
+      "gene": "CRLF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 105,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3-5",
+      "cna_type": "AMP",
+      "n_samples": 105,
+      "freq": 0.4
+    },
+    {
+      "gene": "H3-3B",
+      "cna_type": "AMP",
+      "n_samples": 103,
+      "freq": 0.4
+    },
+    {
+      "gene": "PRKD1",
+      "cna_type": "AMP",
+      "n_samples": 102,
+      "freq": 0.5
+    },
+    {
+      "gene": "EPHA7",
+      "cna_type": "HOMDEL",
+      "n_samples": 99,
+      "freq": 0.4
+    },
+    {
+      "gene": "CRKL",
+      "cna_type": "AMP",
+      "n_samples": 98,
+      "freq": 0.4
+    },
+    {
+      "gene": "ETV1",
+      "cna_type": "AMP",
+      "n_samples": 98,
+      "freq": 0.4
+    },
+    {
+      "gene": "CARD11",
+      "cna_type": "AMP",
+      "n_samples": 98,
+      "freq": 0.4
+    },
+    {
+      "gene": "ZFHX3",
+      "cna_type": "HOMDEL",
+      "n_samples": 97,
+      "freq": 0.4
+    },
+    {
+      "gene": "FAT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 97,
+      "freq": 0.4
+    },
+    {
+      "gene": "RAC1",
+      "cna_type": "AMP",
+      "n_samples": 96,
+      "freq": 0.4
+    },
+    {
+      "gene": "NSD3",
+      "cna_type": "HOMDEL",
+      "n_samples": 95,
+      "freq": 0.5
+    },
+    {
+      "gene": "MYCL",
+      "cna_type": "AMP",
+      "n_samples": 94,
+      "freq": 0.4
+    },
+    {
+      "gene": "FANCA",
+      "cna_type": "HOMDEL",
+      "n_samples": 94,
+      "freq": 0.4
+    },
+    {
+      "gene": "STK11",
+      "cna_type": "HOMDEL",
+      "n_samples": 93,
+      "freq": 0.4
+    },
+    {
+      "gene": "TBX3",
+      "cna_type": "AMP",
+      "n_samples": 91,
+      "freq": 0.4
+    },
+    {
+      "gene": "PLCG2",
+      "cna_type": "HOMDEL",
+      "n_samples": 90,
+      "freq": 0.4
+    },
+    {
+      "gene": "GATA3",
+      "cna_type": "AMP",
+      "n_samples": 90,
+      "freq": 0.4
+    },
+    {
+      "gene": "FGFR2",
+      "cna_type": "AMP",
+      "n_samples": 90,
+      "freq": 0.4
+    },
+    {
+      "gene": "ARID5B",
+      "cna_type": "AMP",
+      "n_samples": 89,
+      "freq": 0.4
+    },
+    {
+      "gene": "ANKRD11",
+      "cna_type": "HOMDEL",
+      "n_samples": 88,
+      "freq": 0.4
+    },
+    {
+      "gene": "PMS2",
+      "cna_type": "AMP",
+      "n_samples": 88,
+      "freq": 0.4
+    },
+    {
+      "gene": "RECQL",
+      "cna_type": "AMP",
+      "n_samples": 88,
+      "freq": 0.4
+    },
+    {
+      "gene": "IKZF1",
+      "cna_type": "AMP",
+      "n_samples": 87,
+      "freq": 0.3
+    },
+    {
+      "gene": "APC",
+      "cna_type": "HOMDEL",
+      "n_samples": 87,
+      "freq": 0.3
+    },
+    {
+      "gene": "SETDB1",
+      "cna_type": "AMP",
+      "n_samples": 85,
+      "freq": 1.2
+    },
+    {
+      "gene": "DIS3",
+      "cna_type": "AMP",
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "PIK3CB",
+      "cna_type": "AMP",
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "PMAIP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "SMAD2",
+      "cna_type": "HOMDEL",
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "BCL2",
+      "cna_type": "HOMDEL",
+      "n_samples": 84,
+      "freq": 0.3
+    },
+    {
+      "gene": "CYSLTR2",
+      "cna_type": "HOMDEL",
+      "n_samples": 84,
+      "freq": 0.4
+    },
+    {
+      "gene": "JAK2",
+      "cna_type": "HOMDEL",
+      "n_samples": 82,
+      "freq": 0.3
+    },
+    {
+      "gene": "SOCS1",
+      "cna_type": "AMP",
+      "n_samples": 82,
+      "freq": 0.3
+    },
+    {
+      "gene": "SRSF2",
+      "cna_type": "AMP",
+      "n_samples": 82,
+      "freq": 0.3
+    },
+    {
+      "gene": "ERBB3",
+      "cna_type": "AMP",
+      "n_samples": 81,
+      "freq": 0.3
+    },
+    {
+      "gene": "FOXL2",
+      "cna_type": "AMP",
+      "n_samples": 81,
+      "freq": 0.3
+    },
+    {
+      "gene": "BRD4",
+      "cna_type": "AMP",
+      "n_samples": 80,
+      "freq": 0.3
+    },
+    {
+      "gene": "PIK3C2G",
+      "cna_type": "AMP",
+      "n_samples": 80,
+      "freq": 0.3
+    },
+    {
+      "gene": "MAP3K1",
+      "cna_type": "HOMDEL",
+      "n_samples": 80,
+      "freq": 0.3
+    },
+    {
+      "gene": "NOTCH3",
+      "cna_type": "AMP",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "BRCA2",
+      "cna_type": "HOMDEL",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "ERCC5",
+      "cna_type": "AMP",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "MAPK3",
+      "cna_type": "AMP",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "WT1",
+      "cna_type": "AMP",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "NCOR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "AKT1",
+      "cna_type": "AMP",
+      "n_samples": 79,
+      "freq": 0.3
+    },
+    {
+      "gene": "CD274",
+      "cna_type": "HOMDEL",
+      "n_samples": 78,
+      "freq": 0.3
+    },
+    {
+      "gene": "MALT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 77,
+      "freq": 0.3
+    },
+    {
+      "gene": "ERCC2",
+      "cna_type": "AMP",
+      "n_samples": 77,
+      "freq": 0.3
+    },
+    {
+      "gene": "RPTOR",
+      "cna_type": "AMP",
+      "n_samples": 76,
+      "freq": 0.3
+    },
+    {
+      "gene": "INHBA",
+      "cna_type": "AMP",
+      "n_samples": 75,
+      "freq": 0.3
+    },
+    {
+      "gene": "ESR1",
+      "cna_type": "AMP",
+      "n_samples": 74,
+      "freq": 0.3
+    },
+    {
+      "gene": "KIT",
+      "cna_type": "AMP",
+      "n_samples": 74,
+      "freq": 0.3
+    },
+    {
+      "gene": "AMER1",
+      "cna_type": "AMP",
+      "n_samples": 73,
+      "freq": 0.3
+    },
+    {
+      "gene": "FH",
+      "cna_type": "AMP",
+      "n_samples": 73,
+      "freq": 0.3
+    },
+    {
+      "gene": "YAP1",
+      "cna_type": "AMP",
+      "n_samples": 73,
+      "freq": 0.3
+    },
+    {
+      "gene": "CXCR4",
+      "cna_type": "HOMDEL",
+      "n_samples": 71,
+      "freq": 0.3
+    },
+    {
+      "gene": "INSR",
+      "cna_type": "AMP",
+      "n_samples": 71,
+      "freq": 0.3
+    },
+    {
+      "gene": "RRAGC",
+      "cna_type": "AMP",
+      "n_samples": 71,
+      "freq": 0.4
+    },
+    {
+      "gene": "FOXO1",
+      "cna_type": "AMP",
+      "n_samples": 70,
+      "freq": 0.3
+    },
+    {
+      "gene": "WWTR1",
+      "cna_type": "AMP",
+      "n_samples": 70,
+      "freq": 0.3
+    },
+    {
+      "gene": "ETV6",
+      "cna_type": "HOMDEL",
+      "n_samples": 69,
+      "freq": 0.3
+    },
+    {
+      "gene": "ALOX12B",
+      "cna_type": "HOMDEL",
+      "n_samples": 69,
+      "freq": 0.3
+    },
+    {
+      "gene": "AKT3",
+      "cna_type": "AMP",
+      "n_samples": 69,
+      "freq": 0.3
+    },
+    {
+      "gene": "KDR",
+      "cna_type": "AMP",
+      "n_samples": 69,
+      "freq": 0.3
+    },
+    {
+      "gene": "PRDM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 68,
+      "freq": 0.3
+    },
+    {
+      "gene": "FLCN",
+      "cna_type": "HOMDEL",
+      "n_samples": 68,
+      "freq": 0.3
+    },
+    {
+      "gene": "GPS2",
+      "cna_type": "HOMDEL",
+      "n_samples": 67,
+      "freq": 0.3
+    },
+    {
+      "gene": "PDGFRA",
+      "cna_type": "AMP",
+      "n_samples": 66,
+      "freq": 0.3
+    },
+    {
+      "gene": "MPL",
+      "cna_type": "AMP",
+      "n_samples": 65,
+      "freq": 0.3
+    },
+    {
+      "gene": "BIRC3",
+      "cna_type": "AMP",
+      "n_samples": 65,
+      "freq": 0.3
+    },
+    {
+      "gene": "FGFR3",
+      "cna_type": "AMP",
+      "n_samples": 65,
+      "freq": 0.3
+    },
+    {
+      "gene": "PPP2R1A",
+      "cna_type": "AMP",
+      "n_samples": 64,
+      "freq": 0.3
+    },
+    {
+      "gene": "PARP1",
+      "cna_type": "AMP",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "CDC73",
+      "cna_type": "AMP",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "CD274",
+      "cna_type": "AMP",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "ZRSR2",
+      "cna_type": "HOMDEL",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "AURKB",
+      "cna_type": "HOMDEL",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "KDM6A",
+      "cna_type": "HOMDEL",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "PAX5",
+      "cna_type": "AMP",
+      "n_samples": 63,
+      "freq": 0.3
+    },
+    {
+      "gene": "RBM10",
+      "cna_type": "AMP",
+      "n_samples": 62,
+      "freq": 0.2
+    },
+    {
+      "gene": "PAK5",
+      "cna_type": "AMP",
+      "n_samples": 62,
+      "freq": 0.2
+    },
+    {
+      "gene": "FGFR4",
+      "cna_type": "AMP",
+      "n_samples": 62,
+      "freq": 0.2
+    },
+    {
+      "gene": "RAC2",
+      "cna_type": "HOMDEL",
+      "n_samples": 62,
+      "freq": 0.3
+    },
+    {
+      "gene": "IDH2",
+      "cna_type": "AMP",
+      "n_samples": 61,
+      "freq": 0.2
+    },
+    {
+      "gene": "MAPK1",
+      "cna_type": "AMP",
+      "n_samples": 60,
+      "freq": 0.2
+    },
+    {
+      "gene": "NSD1",
+      "cna_type": "AMP",
+      "n_samples": 60,
+      "freq": 0.2
+    },
+    {
+      "gene": "SMAD3",
+      "cna_type": "HOMDEL",
+      "n_samples": 60,
+      "freq": 0.2
+    },
+    {
+      "gene": "PLK2",
+      "cna_type": "HOMDEL",
+      "n_samples": 60,
+      "freq": 0.2
+    },
+    {
+      "gene": "TGFBR2",
+      "cna_type": "HOMDEL",
+      "n_samples": 59,
+      "freq": 0.2
+    },
+    {
+      "gene": "TRAF7",
+      "cna_type": "AMP",
+      "n_samples": 59,
+      "freq": 0.2
+    },
+    {
+      "gene": "PIK3R1",
+      "cna_type": "HOMDEL",
+      "n_samples": 59,
+      "freq": 0.2
+    },
+    {
+      "gene": "NUF2",
+      "cna_type": "AMP",
+      "n_samples": 58,
+      "freq": 0.3
+    },
+    {
+      "gene": "TSC2",
+      "cna_type": "AMP",
+      "n_samples": 58,
+      "freq": 0.2
+    },
+    {
+      "gene": "ARID1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 58,
+      "freq": 0.2
+    },
+    {
+      "gene": "FOXP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 58,
+      "freq": 0.2
+    },
+    {
+      "gene": "SMYD3",
+      "cna_type": "AMP",
+      "n_samples": 57,
+      "freq": 0.3
+    },
+    {
+      "gene": "AXIN1",
+      "cna_type": "AMP",
+      "n_samples": 57,
+      "freq": 0.2
+    },
+    {
+      "gene": "PDCD1LG2",
+      "cna_type": "HOMDEL",
+      "n_samples": 57,
+      "freq": 0.3
+    },
+    {
+      "gene": "TET1",
+      "cna_type": "AMP",
+      "n_samples": 56,
+      "freq": 0.2
+    },
+    {
+      "gene": "FOXO1",
+      "cna_type": "HOMDEL",
+      "n_samples": 56,
+      "freq": 0.2
+    },
+    {
+      "gene": "RRAS",
+      "cna_type": "AMP",
+      "n_samples": 56,
+      "freq": 0.3
+    },
+    {
+      "gene": "PIK3C3",
+      "cna_type": "HOMDEL",
+      "n_samples": 54,
+      "freq": 0.2
+    },
+    {
+      "gene": "SESN1",
+      "cna_type": "HOMDEL",
+      "n_samples": 54,
+      "freq": 0.3
+    },
+    {
+      "gene": "BMPR1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 54,
+      "freq": 0.2
+    },
+    {
+      "gene": "ERCC4",
+      "cna_type": "AMP",
+      "n_samples": 54,
+      "freq": 0.2
+    },
+    {
+      "gene": "EED",
+      "cna_type": "AMP",
+      "n_samples": 54,
+      "freq": 0.2
+    },
+    {
+      "gene": "MEF2B",
+      "cna_type": "AMP",
+      "n_samples": 53,
+      "freq": 0.2
+    },
+    {
+      "gene": "BAP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "DNAJB1",
+      "cna_type": "AMP",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "GRIN2A",
+      "cna_type": "AMP",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "AXL",
+      "cna_type": "AMP",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "SDHAF2",
+      "cna_type": "AMP",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "TCF3",
+      "cna_type": "HOMDEL",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "EIF1AX",
+      "cna_type": "HOMDEL",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "DIS3",
+      "cna_type": "HOMDEL",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "CYLD",
+      "cna_type": "AMP",
+      "n_samples": 52,
+      "freq": 0.3
+    },
+    {
+      "gene": "IRF4",
+      "cna_type": "HOMDEL",
+      "n_samples": 52,
+      "freq": 0.2
+    },
+    {
+      "gene": "ATR",
+      "cna_type": "AMP",
+      "n_samples": 51,
+      "freq": 0.2
+    },
+    {
+      "gene": "DNMT1",
+      "cna_type": "AMP",
+      "n_samples": 51,
+      "freq": 0.2
+    },
+    {
+      "gene": "RB1",
+      "cna_type": "AMP",
+      "n_samples": 51,
+      "freq": 0.2
+    },
+    {
+      "gene": "CREBBP",
+      "cna_type": "AMP",
+      "n_samples": 51,
+      "freq": 0.2
+    },
+    {
+      "gene": "ARAF",
+      "cna_type": "AMP",
+      "n_samples": 51,
+      "freq": 0.2
+    },
+    {
+      "gene": "PDCD1LG2",
+      "cna_type": "AMP",
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "SMARCA4",
+      "cna_type": "HOMDEL",
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "FYN",
+      "cna_type": "HOMDEL",
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "H3-4",
+      "cna_type": "AMP",
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "TMPRSS2",
+      "cna_type": "AMP",
+      "n_samples": 50,
+      "freq": 0.2
+    },
+    {
+      "gene": "PIM1",
+      "cna_type": "AMP",
+      "n_samples": 49,
+      "freq": 0.2
+    },
+    {
+      "gene": "LATS2",
+      "cna_type": "HOMDEL",
+      "n_samples": 49,
+      "freq": 0.2
+    },
+    {
+      "gene": "AMER1",
+      "cna_type": "HOMDEL",
+      "n_samples": 49,
+      "freq": 0.2
+    },
+    {
+      "gene": "PAK5",
+      "cna_type": "HOMDEL",
+      "n_samples": 49,
+      "freq": 0.2
+    },
+    {
+      "gene": "JAK2",
+      "cna_type": "AMP",
+      "n_samples": 49,
+      "freq": 0.2
+    },
+    {
+      "gene": "PDCD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "GATA1",
+      "cna_type": "AMP",
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "GATA2",
+      "cna_type": "AMP",
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "PNRC1",
+      "cna_type": "HOMDEL",
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "SESN1",
+      "cna_type": "AMP",
+      "n_samples": 48,
+      "freq": 0.2
+    },
+    {
+      "gene": "NTHL1",
+      "cna_type": "AMP",
+      "n_samples": 47,
+      "freq": 0.2
+    },
+    {
+      "gene": "TMPRSS2",
+      "cna_type": "HOMDEL",
+      "n_samples": 47,
+      "freq": 0.2
+    },
+    {
+      "gene": "CCNQ",
+      "cna_type": "AMP",
+      "n_samples": 47,
+      "freq": 0.2
+    },
+    {
+      "gene": "KEAP1",
+      "cna_type": "AMP",
+      "n_samples": 47,
+      "freq": 0.2
+    },
+    {
+      "gene": "BABAM1",
+      "cna_type": "AMP",
+      "n_samples": 47,
+      "freq": 0.2
+    },
+    {
+      "gene": "KDM5C",
+      "cna_type": "HOMDEL",
+      "n_samples": 46,
+      "freq": 0.2
+    },
+    {
+      "gene": "GATA1",
+      "cna_type": "HOMDEL",
+      "n_samples": 46,
+      "freq": 0.2
+    },
+    {
+      "gene": "TNFAIP3",
+      "cna_type": "AMP",
+      "n_samples": 46,
+      "freq": 0.2
+    },
+    {
+      "gene": "KLF5",
+      "cna_type": "AMP",
+      "n_samples": 45,
+      "freq": 0.6
+    },
+    {
+      "gene": "NSD2",
+      "cna_type": "AMP",
+      "n_samples": 45,
+      "freq": 0.2
+    },
+    {
+      "gene": "PIK3CG",
+      "cna_type": "AMP",
+      "n_samples": 45,
+      "freq": 0.2
+    },
+    {
+      "gene": "COP1",
+      "cna_type": "AMP",
+      "n_samples": 45,
+      "freq": 0.2
+    },
+    {
+      "gene": "IFNGR1",
+      "cna_type": "AMP",
+      "n_samples": 44,
+      "freq": 0.2
+    },
+    {
+      "gene": "SMARCE1",
+      "cna_type": "AMP",
+      "n_samples": 43,
+      "freq": 0.6
+    },
+    {
+      "gene": "EZH2",
+      "cna_type": "AMP",
+      "n_samples": 43,
+      "freq": 0.2
+    },
+    {
+      "gene": "CALR",
+      "cna_type": "AMP",
+      "n_samples": 43,
+      "freq": 0.2
+    },
+    {
+      "gene": "RASA1",
+      "cna_type": "HOMDEL",
+      "n_samples": 43,
+      "freq": 0.2
+    },
+    {
+      "gene": "FLCN",
+      "cna_type": "AMP",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "ATM",
+      "cna_type": "HOMDEL",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "PGR",
+      "cna_type": "AMP",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "DOT1L",
+      "cna_type": "HOMDEL",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "NF1",
+      "cna_type": "HOMDEL",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "RBM10",
+      "cna_type": "HOMDEL",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "JAK3",
+      "cna_type": "AMP",
+      "n_samples": 42,
+      "freq": 0.2
+    },
+    {
+      "gene": "POLD1",
+      "cna_type": "AMP",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "ARAF",
+      "cna_type": "HOMDEL",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "ICOSLG",
+      "cna_type": "AMP",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "KEAP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "U2AF1",
+      "cna_type": "AMP",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "GATA3",
+      "cna_type": "HOMDEL",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "SMARCA4",
+      "cna_type": "AMP",
+      "n_samples": 41,
+      "freq": 0.2
+    },
+    {
+      "gene": "H3-3A",
+      "cna_type": "AMP",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "CDH1",
+      "cna_type": "HOMDEL",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "PHOX2B",
+      "cna_type": "HOMDEL",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "PIK3R2",
+      "cna_type": "AMP",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "GNA11",
+      "cna_type": "HOMDEL",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "RAD51D",
+      "cna_type": "AMP",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "PDGFRB",
+      "cna_type": "AMP",
+      "n_samples": 40,
+      "freq": 0.2
+    },
+    {
+      "gene": "CYSLTR2",
+      "cna_type": "AMP",
+      "n_samples": 39,
+      "freq": 0.2
+    },
+    {
+      "gene": "CARM1",
+      "cna_type": "AMP",
+      "n_samples": 39,
+      "freq": 0.2
+    },
+    {
+      "gene": "UPF1",
+      "cna_type": "AMP",
+      "n_samples": 39,
+      "freq": 0.2
+    },
+    {
+      "gene": "STK40",
+      "cna_type": "AMP",
+      "n_samples": 38,
+      "freq": 0.2
+    },
+    {
+      "gene": "HGF",
+      "cna_type": "AMP",
+      "n_samples": 38,
+      "freq": 0.2
+    },
+    {
+      "gene": "EIF1AX",
+      "cna_type": "AMP",
+      "n_samples": 38,
+      "freq": 0.2
+    },
+    {
+      "gene": "RET",
+      "cna_type": "HOMDEL",
+      "n_samples": 38,
+      "freq": 0.2
+    },
+    {
+      "gene": "FLT4",
+      "cna_type": "AMP",
+      "n_samples": 38,
+      "freq": 0.2
+    },
+    {
+      "gene": "FGFR3",
+      "cna_type": "HOMDEL",
+      "n_samples": 38,
+      "freq": 0.2
+    },
+    {
+      "gene": "VTCN1",
+      "cna_type": "AMP",
+      "n_samples": 37,
+      "freq": 0.1
+    },
+    {
+      "gene": "PAX5",
+      "cna_type": "HOMDEL",
+      "n_samples": 37,
+      "freq": 0.1
+    },
+    {
+      "gene": "KDM6A",
+      "cna_type": "AMP",
+      "n_samples": 37,
+      "freq": 0.1
+    },
+    {
+      "gene": "CIC",
+      "cna_type": "HOMDEL",
+      "n_samples": 37,
+      "freq": 0.1
+    },
+    {
+      "gene": "CSF1R",
+      "cna_type": "AMP",
+      "n_samples": 37,
+      "freq": 0.1
+    },
+    {
+      "gene": "B2M",
+      "cna_type": "HOMDEL",
+      "n_samples": 37,
+      "freq": 0.1
+    },
+    {
+      "gene": "ARID1B",
+      "cna_type": "HOMDEL",
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "AR",
+      "cna_type": "HOMDEL",
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "SMO",
+      "cna_type": "AMP",
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "E2F3",
+      "cna_type": "AMP",
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "BCOR",
+      "cna_type": "AMP",
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "PIK3CD",
+      "cna_type": "HOMDEL",
+      "n_samples": 36,
+      "freq": 0.1
+    },
+    {
+      "gene": "PTP4A1",
+      "cna_type": "AMP",
+      "n_samples": 35,
+      "freq": 0.2
+    },
+    {
+      "gene": "PALB2",
+      "cna_type": "AMP",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "JAK1",
+      "cna_type": "HOMDEL",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "ARID2",
+      "cna_type": "AMP",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "SMARCB1",
+      "cna_type": "AMP",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "CD79A",
+      "cna_type": "AMP",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "RET",
+      "cna_type": "AMP",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "ROS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 35,
+      "freq": 0.1
+    },
+    {
+      "gene": "SLX4",
+      "cna_type": "AMP",
+      "n_samples": 34,
+      "freq": 0.2
+    },
+    {
+      "gene": "MEN1",
+      "cna_type": "HOMDEL",
+      "n_samples": 34,
+      "freq": 0.1
+    },
+    {
+      "gene": "PIK3C2G",
+      "cna_type": "HOMDEL",
+      "n_samples": 34,
+      "freq": 0.1
+    },
+    {
+      "gene": "SUZ12",
+      "cna_type": "AMP",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "RYBP",
+      "cna_type": "HOMDEL",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERG",
+      "cna_type": "AMP",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "SMARCA2",
+      "cna_type": "HOMDEL",
+      "n_samples": 33,
+      "freq": 0.5
+    },
+    {
+      "gene": "NF2",
+      "cna_type": "AMP",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "CSF3R",
+      "cna_type": "AMP",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "MYOD1",
+      "cna_type": "AMP",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERF",
+      "cna_type": "HOMDEL",
+      "n_samples": 33,
+      "freq": 0.2
+    },
+    {
+      "gene": "IGF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 33,
+      "freq": 0.1
+    },
+    {
+      "gene": "MUTYH",
+      "cna_type": "AMP",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "MGA",
+      "cna_type": "HOMDEL",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "BCOR",
+      "cna_type": "HOMDEL",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "CRLF2",
+      "cna_type": "AMP",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPHA3",
+      "cna_type": "AMP",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "XPO1",
+      "cna_type": "AMP",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "PTPRD",
+      "cna_type": "AMP",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERCC3",
+      "cna_type": "HOMDEL",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "CBFB",
+      "cna_type": "HOMDEL",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAF1",
+      "cna_type": "AMP",
+      "n_samples": 32,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C8",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "MDC1",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "TENT5C",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C7",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "MRE11",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "MST1R",
+      "cna_type": "HOMDEL",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "HRAS",
+      "cna_type": "HOMDEL",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "SDHD",
+      "cna_type": "HOMDEL",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "MYCN",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "NCOR1",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "FYN",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "BLM",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "NRAS",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "INPP4B",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C2",
+      "cna_type": "AMP",
+      "n_samples": 31,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C6",
+      "cna_type": "AMP",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "INPPL1",
+      "cna_type": "HOMDEL",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "PIK3R3",
+      "cna_type": "AMP",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "NTRK3",
+      "cna_type": "AMP",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERCC5",
+      "cna_type": "HOMDEL",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPHA3",
+      "cna_type": "HOMDEL",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "NSD2",
+      "cna_type": "HOMDEL",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPHB1",
+      "cna_type": "AMP",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "H1-2",
+      "cna_type": "AMP",
+      "n_samples": 30,
+      "freq": 0.1
+    },
+    {
+      "gene": "RRAS2",
+      "cna_type": "AMP",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "DUSP4",
+      "cna_type": "AMP",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "H2BC5",
+      "cna_type": "AMP",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "CD276",
+      "cna_type": "AMP",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "ZRSR2",
+      "cna_type": "AMP",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPHA5",
+      "cna_type": "HOMDEL",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "MSH2",
+      "cna_type": "HOMDEL",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "KDM5C",
+      "cna_type": "AMP",
+      "n_samples": 29,
+      "freq": 0.1
+    },
+    {
+      "gene": "IGF2",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "RHEB",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "TNFRSF14",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "JUN",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "STAT3",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C4",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "XIAP",
+      "cna_type": "AMP",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "NEGR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 28,
+      "freq": 0.1
+    },
+    {
+      "gene": "BRAF",
+      "cna_type": "AMP",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "PTPRS",
+      "cna_type": "HOMDEL",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "NF1",
+      "cna_type": "AMP",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "RPS6KA4",
+      "cna_type": "HOMDEL",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "BCL2",
+      "cna_type": "AMP",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "NPM1",
+      "cna_type": "AMP",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C3",
+      "cna_type": "AMP",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "MED12",
+      "cna_type": "HOMDEL",
+      "n_samples": 27,
+      "freq": 0.1
+    },
+    {
+      "gene": "ROS1",
+      "cna_type": "AMP",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "RNF43",
+      "cna_type": "HOMDEL",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "PBRM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAD54L",
+      "cna_type": "AMP",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "ID3",
+      "cna_type": "HOMDEL",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "REL",
+      "cna_type": "AMP",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C1",
+      "cna_type": "AMP",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "FLT4",
+      "cna_type": "HOMDEL",
+      "n_samples": 26,
+      "freq": 0.1
+    },
+    {
+      "gene": "PLK2",
+      "cna_type": "AMP",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "CDKN1A",
+      "cna_type": "AMP",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAP2K2",
+      "cna_type": "HOMDEL",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "CIC",
+      "cna_type": "AMP",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "SMAD2",
+      "cna_type": "AMP",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "LATS1",
+      "cna_type": "AMP",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "INSR",
+      "cna_type": "HOMDEL",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "SERPINB4",
+      "cna_type": "HOMDEL",
+      "n_samples": 25,
+      "freq": 0.3
+    },
+    {
+      "gene": "SMARCB1",
+      "cna_type": "HOMDEL",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "NOTCH2",
+      "cna_type": "HOMDEL",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "STAT5A",
+      "cna_type": "AMP",
+      "n_samples": 25,
+      "freq": 0.1
+    },
+    {
+      "gene": "SHQ1",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "ARID5B",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPHA5",
+      "cna_type": "AMP",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "SPRED1",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "ASXL2",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAPKAP1",
+      "cna_type": "AMP",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "SF3B1",
+      "cna_type": "AMP",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "RUNX1",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "PGR",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "PTPRT",
+      "cna_type": "HOMDEL",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "PIK3C3",
+      "cna_type": "AMP",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "STAT5B",
+      "cna_type": "AMP",
+      "n_samples": 24,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAP3K14",
+      "cna_type": "AMP",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "MITF",
+      "cna_type": "HOMDEL",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "SUFU",
+      "cna_type": "HOMDEL",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "ARID2",
+      "cna_type": "HOMDEL",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "TEK",
+      "cna_type": "AMP",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "PPARG",
+      "cna_type": "AMP",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "CSDE1",
+      "cna_type": "AMP",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "CD79A",
+      "cna_type": "HOMDEL",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "BMPR1A",
+      "cna_type": "AMP",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "MSH3",
+      "cna_type": "HOMDEL",
+      "n_samples": 23,
+      "freq": 0.1
+    },
+    {
+      "gene": "SERPINB3",
+      "cna_type": "HOMDEL",
+      "n_samples": 23,
+      "freq": 0.3
+    },
+    {
+      "gene": "MED12",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "NFE2L2",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPHB1",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERF",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "PPP6C",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAD51B",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "SOX9",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "TNFRSF14",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "KNSTRN",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "NKX2-1",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "FBXW7",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C10",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "NF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "IRS2",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "JAK1",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "VHL",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "HLA-A",
+      "cna_type": "AMP",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "FOXF1",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.3
+    },
+    {
+      "gene": "GREM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 22,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPCAM",
+      "cna_type": "AMP",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAD51D",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "AXIN1",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "MSH6",
+      "cna_type": "AMP",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "CDK8",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "TCF7L2",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAD51",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "SESN3",
+      "cna_type": "AMP",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "ESR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "TRAF2",
+      "cna_type": "AMP",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "CHEK2",
+      "cna_type": "HOMDEL",
+      "n_samples": 21,
+      "freq": 0.1
+    },
+    {
+      "gene": "STAT5B",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "CARD11",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "GAB1",
+      "cna_type": "AMP",
+      "n_samples": 20,
+      "freq": 0.3
+    },
+    {
+      "gene": "FUBP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "JUN",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "CBL",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C11",
+      "cna_type": "AMP",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "EPCAM",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "CDH1",
+      "cna_type": "AMP",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "STAT5A",
+      "cna_type": "HOMDEL",
+      "n_samples": 20,
+      "freq": 0.1
+    },
+    {
+      "gene": "NOTCH4",
+      "cna_type": "AMP",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "WHR1",
+      "cna_type": "AMP",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "MSH6",
+      "cna_type": "HOMDEL",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "TP53BP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAX",
+      "cna_type": "AMP",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "PTPRS",
+      "cna_type": "AMP",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "FLT3",
+      "cna_type": "HOMDEL",
+      "n_samples": 19,
+      "freq": 0.1
+    },
+    {
+      "gene": "EP300",
+      "cna_type": "AMP",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "RUNX1",
+      "cna_type": "AMP",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "CREBBP",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "MSH2",
+      "cna_type": "AMP",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "CTNNB1",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "RPS6KA4",
+      "cna_type": "AMP",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "PPP4R2",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "IKZF1",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERCC2",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C12",
+      "cna_type": "AMP",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "GRIN2A",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "POLE",
+      "cna_type": "HOMDEL",
+      "n_samples": 18,
+      "freq": 0.1
+    },
+    {
+      "gene": "IRF4",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "CHEK2",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C4",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAC2",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "ALB",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.2
+    },
+    {
+      "gene": "H3C10",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C11",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "KMT2A",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "LATS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "KMT2C",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "ATRX",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "FGF3",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "MEN1",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "MTOR",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "EGFL7",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "BIRC3",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "ATM",
+      "cna_type": "AMP",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "NOTCH1",
+      "cna_type": "HOMDEL",
+      "n_samples": 17,
+      "freq": 0.1
+    },
+    {
+      "gene": "NOTCH1",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "IGF1",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "CYLD",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "STAT3",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "YAP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "ERRFI1",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C12",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "SESN2",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "CARM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "KLF4",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "TCF7L2",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "KMT2D",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "SH2D1A",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "NTRK3",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "KLF5",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.2
+    },
+    {
+      "gene": "ERRFI1",
+      "cna_type": "AMP",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C6",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "CRKL",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "CHEK1",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "TENT5C",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "EP300",
+      "cna_type": "HOMDEL",
+      "n_samples": 16,
+      "freq": 0.1
+    },
+    {
+      "gene": "KDM5A",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "SPRTN",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.2
+    },
+    {
+      "gene": "STAG2",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "AKT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "LZTR1",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.2
+    },
+    {
+      "gene": "FBXW7",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "PPP2R1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "FGFR2",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "BCL10",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "MYOD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "CBL",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "KMT2A",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "CCND2",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAP2K2",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "CASP8",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "CTCF",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "MST1",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "H2BC5",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "FUBP1",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "YES1",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C8",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "H3C7",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "SHQ1",
+      "cna_type": "AMP",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "FLT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 15,
+      "freq": 0.1
+    },
+    {
+      "gene": "FGF19",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "PDGFRB",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "NRAS",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "CSF1R",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "TRAF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "PGBD5",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.2
+    },
+    {
+      "gene": "BRCA1",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "AKT2",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "RHOA",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "DAXX",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "WT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "FGF4",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "SH2B3",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAD51B",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "BRCA1",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "HRAS",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "VTCN1",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "DICER1",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "AXL",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "HLA-B",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "BBC3",
+      "cna_type": "HOMDEL",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "MALT1",
+      "cna_type": "AMP",
+      "n_samples": 14,
+      "freq": 0.1
+    },
+    {
+      "gene": "INPP4B",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "BTK",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "ZNRF3",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.2
+    },
+    {
+      "gene": "NUP93",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "CDKN2C",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "TET2",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "GNA11",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "KMT5A",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "FOXP1",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "CTNNB1",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "AGO2",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "CDKN2C",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "BTK",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "PMAIP1",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "MITF",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "EZH1",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "PHOX2B",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "RYBP",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAPK1",
+      "cna_type": "HOMDEL",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "MLH1",
+      "cna_type": "AMP",
+      "n_samples": 13,
+      "freq": 0.1
+    },
+    {
+      "gene": "REST",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.2
+    },
+    {
+      "gene": "GREM1",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "POLE",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "HLA-A",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "RECQL4",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "ACVR1",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "SESN3",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.1
+    },
+    {
+      "gene": "CALR",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAD50",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "LZTR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.2
+    },
+    {
+      "gene": "CDKN2A",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDKN2B",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMARCA2",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.2
+    },
+    {
+      "gene": "CDKN1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "ICOSLG",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "TAP1",
+      "cna_type": "AMP",
+      "n_samples": 12,
+      "freq": 0.1
+    },
+    {
+      "gene": "SOX17",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "DNMT3A",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "SUZ12",
+      "cna_type": "HOMDEL",
+      "n_samples": 12,
+      "freq": 0.0
+    },
+    {
+      "gene": "TP63",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "FOXA1",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "HLA-B",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.1
+    },
+    {
+      "gene": "PMS1",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "EED",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "EGFL7",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "TSHR",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "EPHA7",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "CBFB",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "SHOC2",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.1
+    },
+    {
+      "gene": "XRCC2",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "CMTR2",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.2
+    },
+    {
+      "gene": "ALK",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "FH",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "KMT2C",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "PTPN11",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "DNMT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "NUP93",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMARCD1",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "STAG2",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "TSC1",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "TERT",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "EPAS1",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.1
+    },
+    {
+      "gene": "STK11",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "TSC2",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "INPP4A",
+      "cna_type": "AMP",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "MRE11",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "POLD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 11,
+      "freq": 0.0
+    },
+    {
+      "gene": "MLH1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "NEGR1",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "IFNGR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAX",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "EPAS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "MYD88",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDK12",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "LMO1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "TGFBR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP3K1",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "ZFHX3",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "TNFAIP3",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "AGO1",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.1
+    },
+    {
+      "gene": "SH2D1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "NFKBIA",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERBB4",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "ALK",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "NTRK1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "PRKD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "IGF1R",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "PARP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "TAP2",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "MSI1",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "MYD88",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "EZHIP",
+      "cna_type": "AMP",
+      "n_samples": 10,
+      "freq": 0.1
+    },
+    {
+      "gene": "RPS6KB2",
+      "cna_type": "HOMDEL",
+      "n_samples": 10,
+      "freq": 0.0
+    },
+    {
+      "gene": "DNMT3A",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "TBX3",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "CHEK1",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "RXRA",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "PHF6",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.1
+    },
+    {
+      "gene": "EZHIP",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.1
+    },
+    {
+      "gene": "TSC1",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "TOP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAB35",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "SLFN11",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.1
+    },
+    {
+      "gene": "RECQL",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "PPP4R2",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "AURKB",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "HNF1A",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "FGFR4",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMO",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "ATRX",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "BCL10",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "XRCC2",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "SETD2",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "HNF1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "CCND1",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "PRKAR1A",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "IRS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "ALOX12B",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "CENPA",
+      "cna_type": "AMP",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "SRC",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "SLX4",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "BARD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP3K14",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "PTP4A1",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "FANCC",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "PTCH1",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "NCOA3",
+      "cna_type": "HOMDEL",
+      "n_samples": 9,
+      "freq": 0.0
+    },
+    {
+      "gene": "RRAS",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "XIAP",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "BCL2L11",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "GNAQ",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "EGFR",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3CD",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "TMEM127",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "ATXN7",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.1
+    },
+    {
+      "gene": "DICER1",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "CTCF",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "SRSF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3-5",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "AXIN2",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "TET1",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "MTOR",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "CSDE1",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "NADK",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.1
+    },
+    {
+      "gene": "BCL6",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "KLF4",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "KRAS",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "SDHAF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "TGFBR2",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "CD79B",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "PREX2",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "SCG5",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.1
+    },
+    {
+      "gene": "SDHD",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "SPEN",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "EIF4A2",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "SLFN11",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.1
+    },
+    {
+      "gene": "SUFU",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "CUL3",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERG",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "NTHL1",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "ABL1",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "NFE2L2",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "STK40",
+      "cna_type": "HOMDEL",
+      "n_samples": 8,
+      "freq": 0.0
+    },
+    {
+      "gene": "GNB1",
+      "cna_type": "AMP",
+      "n_samples": 8,
+      "freq": 0.1
+    },
+    {
+      "gene": "PTCH1",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "IDH1",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "RARA",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "GSK3B",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "ETV1",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "LYN",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "SYK",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "SPEN",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "CTR9",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.1
+    },
+    {
+      "gene": "FOXL2",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "IRS1",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "CASP8",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "CEBPA",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "AKT3",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "ASXL2",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "KMT2B",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAD52",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "U2AF1",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "CTLA4",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "CCND3",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "ACVR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "NTRK2",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3R3",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "TSHR",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP2K1",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "LMO1",
+      "cna_type": "AMP",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "RHEB",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "EZH2",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "RXRA",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3-3B",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "DNAJB1",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 7,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMAD4",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "FANCC",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3C2",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "INPP4A",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "ABRAXAS1",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "B2M",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "TRAF7",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "SERPINB4",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.1
+    },
+    {
+      "gene": "SDHB",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "SERPINB3",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.1
+    },
+    {
+      "gene": "PNRC1",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "KMT2D",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "KIT",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "WWTR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAD51",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP2K4",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "NSD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "APC",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "CCNQ",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "SOS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3CG",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3R2",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "ZNRF3",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAB35",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "PALB2",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "ABRAXAS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "INHA",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "ARID1B",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "GNAQ",
+      "cna_type": "AMP",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "MUTYH",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "HGF",
+      "cna_type": "HOMDEL",
+      "n_samples": 6,
+      "freq": 0.0
+    },
+    {
+      "gene": "FAT1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3C1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "MLLT1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.1
+    },
+    {
+      "gene": "H1-2",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "BBC3",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "IKBKE",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3C3",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "MSI2",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "EZH1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "GPS2",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "BABAM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "MTAP",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.1
+    },
+    {
+      "gene": "RAD51C",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "KDR",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3-4",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "DCUN1D1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "KNSTRN",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "SCG5",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.1
+    },
+    {
+      "gene": "SMYD3",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERCC3",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDC42",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "PTEN",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAD54L",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "CD276",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "SPRED1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "SHOC2",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "TGFBR1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "CSF3R",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "PDCD1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "DOT1L",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "GSK3B",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3CA",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "PLCG2",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "ATXN7",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.1
+    },
+    {
+      "gene": "CCNE1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "PMS2",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "NOTCH3",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "NKX3-1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "PAK1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "WHR1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "ETAA1",
+      "cna_type": "AMP",
+      "n_samples": 5,
+      "freq": 0.1
+    },
+    {
+      "gene": "IL10",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "IDH1",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "MET",
+      "cna_type": "HOMDEL",
+      "n_samples": 5,
+      "freq": 0.0
+    },
+    {
+      "gene": "DROSHA",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MEF2B",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "RRAS2",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP3K13",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "INHA",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "PDGFRA",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "TAP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MSI1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "VEGFA",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "RPTOR",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "FANCA",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "CENPA",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "RASA1",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "NTRK2",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAPKAP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "ARHGAP35",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.1
+    },
+    {
+      "gene": "ID3",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "DAXX",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMAD3",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "POT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.1
+    },
+    {
+      "gene": "MAPK3",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERBB2",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MYCL",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MYCN",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "CXCR4",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "COP1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "PRDM14",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "SYK",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "MGA",
+      "cna_type": "AMP",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "PMS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "NOTCH4",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "SOX2",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "BRAF",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "IL7R",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMARCE1",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.1
+    },
+    {
+      "gene": "IDH2",
+      "cna_type": "HOMDEL",
+      "n_samples": 4,
+      "freq": 0.0
+    },
+    {
+      "gene": "TP53",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "ABL1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAF1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "BARD1",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "CUL3",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "JAK3",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "TAP2",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "TCF3",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAP2K1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "SDHA",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "SMARCD1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "MSH3",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "E2F3",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "REL",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "CTLA4",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERBB4",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAD2L2",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "MAD2L2",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "NPM1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "PBRM1",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "CMTR2",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "BRD4",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "ARHGAP35",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERCC4",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDC42",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "ANKRD11",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAC1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "BCL2L11",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "ATR",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "IGF1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "BAP1",
+      "cna_type": "AMP",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "MPL",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "GLI1",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "EIF4E",
+      "cna_type": "HOMDEL",
+      "n_samples": 3,
+      "freq": 0.0
+    },
+    {
+      "gene": "EIF4E",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "APLNR",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "GNAS",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "BLM",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "HOXB13",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "TP53BP1",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3R1",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "RIT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "SH2B3",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "NBN",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "PTPN11",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "SOCS1",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "CYP19A1",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "KBTBD4",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "USP8",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDK6",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "GATA2",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "PPARG",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "KMT5A",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "SDHB",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "AURKA",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "ASXL1",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDC73",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "CTR9",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "PPP6C",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "TMEM127",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "HLA-C",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "MST1R",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "GAB2",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "PRKCI",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "SPOP",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "H3-3A",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "ELF3",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "APLNR",
+      "cna_type": "AMP",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "MLLT1",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "REST",
+      "cna_type": "HOMDEL",
+      "n_samples": 2,
+      "freq": 0.0
+    },
+    {
+      "gene": "GNB1",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "MDM4",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "MYC",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "RTEL1",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "VHL",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "MST1",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "SF3B1",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "DDR2",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "SDHC",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "CDK4",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "SETD2",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "POT1",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "RAD50",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "NADK",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "RHOA",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "USP8",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "ELOC",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "CYP19A1",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "ERBB3",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "TET2",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "SESN2",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "PGBD5",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "PPM1D",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "ALB",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "SPRTN",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "PRKN",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "PIK3CB",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "PHF6",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "ARID1A",
+      "cna_type": "AMP",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "NUF2",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "MDC1",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    },
+    {
+      "gene": "DNMT3B",
+      "cna_type": "HOMDEL",
+      "n_samples": 1,
+      "freq": 0.0
+    }
+  ],
+  "sv_genes": [
+    {
+      "gene": "TMPRSS2",
+      "n_sv": 957,
+      "n_samples": 896,
+      "freq": 3.6
+    },
+    {
+      "gene": "ERG",
+      "n_sv": 722,
+      "n_samples": 717,
+      "freq": 2.9
+    },
+    {
+      "gene": "ALK",
+      "n_sv": 269,
+      "n_samples": 246,
+      "freq": 1.0
+    },
+    {
+      "gene": "EML4",
+      "n_sv": 211,
+      "n_samples": 207,
+      "freq": 0.0
+    },
+    {
+      "gene": "RET",
+      "n_sv": 167,
+      "n_samples": 140,
+      "freq": 0.6
+    },
+    {
+      "gene": "ROS1",
+      "n_sv": 150,
+      "n_samples": 133,
+      "freq": 0.5
+    },
+    {
+      "gene": "TP53",
+      "n_sv": 148,
+      "n_samples": 148,
+      "freq": 0.6
+    },
+    {
+      "gene": "BRAF",
+      "n_sv": 110,
+      "n_samples": 88,
+      "freq": 0.4
+    },
+    {
+      "gene": "KIF5B",
+      "n_sv": 91,
+      "n_samples": 83,
+      "freq": 0.0
+    },
+    {
+      "gene": "ETV6",
+      "n_sv": 90,
+      "n_samples": 85,
+      "freq": 0.3
+    },
+    {
+      "gene": "NF1",
+      "n_sv": 78,
+      "n_samples": 77,
+      "freq": 0.3
+    },
+    {
+      "gene": "CD74",
+      "n_sv": 75,
+      "n_samples": 68,
+      "freq": 0.0
+    },
+    {
+      "gene": "AR",
+      "n_sv": 73,
+      "n_samples": 72,
+      "freq": 0.3
+    },
+    {
+      "gene": "APC",
+      "n_sv": 70,
+      "n_samples": 68,
+      "freq": 0.3
+    },
+    {
+      "gene": "MET",
+      "n_sv": 70,
+      "n_samples": 59,
+      "freq": 0.2
+    },
+    {
+      "gene": "CDKN2A",
+      "n_sv": 68,
+      "n_samples": 68,
+      "freq": 0.3
+    },
+    {
+      "gene": "STK11",
+      "n_sv": 61,
+      "n_samples": 60,
+      "freq": 0.2
+    },
+    {
+      "gene": "KMT2C",
+      "n_sv": 59,
+      "n_samples": 59,
+      "freq": 0.2
+    },
+    {
+      "gene": "EGFR",
+      "n_sv": 57,
+      "n_samples": 53,
+      "freq": 0.2
+    },
+    {
+      "gene": "SMARCA4",
+      "n_sv": 57,
+      "n_samples": 56,
+      "freq": 0.2
+    }
+  ]
+}

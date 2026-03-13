@@ -29,3 +29,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cbioportal"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "playwright>=1.58.0",
+    "pytest>=9.0.2",
+]

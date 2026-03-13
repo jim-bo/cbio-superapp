@@ -1,0 +1,127 @@
+{
+  "scenario": "tp53_filter",
+  "study_id": "msk_chord_2024",
+  "filter_applied": false,
+  "mutated_genes": [
+    {
+      "gene": "TP53",
+      "n_mut": 13876,
+      "n_samples": 13124,
+      "freq": 52.4
+    },
+    {
+      "gene": "KRAS",
+      "n_mut": 7231,
+      "n_samples": 7128,
+      "freq": 28.5
+    },
+    {
+      "gene": "APC",
+      "n_mut": 7187,
+      "n_samples": 4777,
+      "freq": 19.1
+    },
+    {
+      "gene": "PIK3CA",
+      "n_mut": 4178,
+      "n_samples": 3708,
+      "freq": 14.8
+    },
+    {
+      "gene": "EGFR",
+      "n_mut": 2556,
+      "n_samples": 2159,
+      "freq": 8.6
+    },
+    {
+      "gene": "ARID1A",
+      "n_mut": 2205,
+      "n_samples": 1843,
+      "freq": 7.4
+    },
+    {
+      "gene": "SMAD4",
+      "n_mut": 1925,
+      "n_samples": 1796,
+      "freq": 7.2
+    },
+    {
+      "gene": "KMT2D",
+      "n_mut": 2390,
+      "n_samples": 1783,
+      "freq": 7.1
+    },
+    {
+      "gene": "KMT2C",
+      "n_mut": 1979,
+      "n_samples": 1629,
+      "freq": 6.5
+    },
+    {
+      "gene": "ATM",
+      "n_mut": 1681,
+      "n_samples": 1388,
+      "freq": 5.5
+    },
+    {
+      "gene": "CDKN2A",
+      "n_mut": 1396,
+      "n_samples": 1338,
+      "freq": 5.3
+    },
+    {
+      "gene": "ZFHX3",
+      "n_mut": 1571,
+      "n_samples": 1218,
+      "freq": 5.1
+    },
+    {
+      "gene": "FAT1",
+      "n_mut": 1620,
+      "n_samples": 1250,
+      "freq": 5.0
+    },
+    {
+      "gene": "NF1",
+      "n_mut": 1469,
+      "n_samples": 1221,
+      "freq": 4.9
+    },
+    {
+      "gene": "STK11",
+      "n_mut": 1258,
+      "n_samples": 1207,
+      "freq": 4.8
+    },
+    {
+      "gene": "PTPRT",
+      "n_mut": 1399,
+      "n_samples": 1199,
+      "freq": 4.8
+    },
+    {
+      "gene": "PTEN",
+      "n_mut": 1391,
+      "n_samples": 1199,
+      "freq": 4.8
+    },
+    {
+      "gene": "KEAP1",
+      "n_mut": 1253,
+      "n_samples": 1198,
+      "freq": 4.8
+    },
+    {
+      "gene": "BRAF",
+      "n_mut": 1188,
+      "n_samples": 1142,
+      "freq": 4.6
+    },
+    {
+      "gene": "FBXW7",
+      "n_mut": 1277,
+      "n_samples": 1120,
+      "freq": 4.5
+    }
+  ]
+}

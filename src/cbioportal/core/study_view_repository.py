@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -51,6 +54,18 @@ def get_study_metadata(conn, study_id: str) -> dict | None:
 # Filter engine (Internal)
 # ---------------------------------------------------------------------------
 
+def _get_mutation_sample_col(conn, study_id: str) -> str:
+    """Return the sample ID column name for the mutation table (SAMPLE_ID or Tumor_Sample_Barcode)."""
+    try:
+        cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_mutations"').fetchall()]
+        if "SAMPLE_ID" in cols:
+            return "SAMPLE_ID"
+        if "Tumor_Sample_Barcode" in cols:
+            return "Tumor_Sample_Barcode"
+        return "SAMPLE_ID" # default
+    except Exception:
+        return "SAMPLE_ID"
+
 def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tuple[str, list]:
     """
     Returns (sql_subquery, params). 
@@ -60,7 +75,10 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
 
     try:
-        f = json.loads(filter_json)
+        if isinstance(filter_json, str):
+            f = json.loads(filter_json)
+        else:
+            f = filter_json
     except (json.JSONDecodeError, TypeError):
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
 
@@ -117,11 +135,13 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
             params.extend(local_params)
 
     # Mutation gene filter
-    for gene in mutation_filter_genes:
-        subqueries.append(
-            f'SELECT DISTINCT SAMPLE_ID FROM "{study_id}_mutations" WHERE Hugo_Symbol = ?'
-        )
-        params.append(gene)
+    if mutation_filter_genes:
+        mut_sample_col = _get_mutation_sample_col(conn, study_id)
+        for gene in mutation_filter_genes:
+            subqueries.append(
+                f'SELECT DISTINCT {mut_sample_col} FROM "{study_id}_mutations" WHERE Hugo_Symbol = ?'
+            )
+            params.append(gene)
 
     if not subqueries:
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
@@ -210,20 +230,20 @@ def get_clinical_counts(
                 FROM {table} t
                 WHERE t.SAMPLE_ID IN ({filter_sql})
                 GROUP BY val
-                ORDER BY cnt DESC
+                ORDER BY cnt DESC, val ASC
                 LIMIT 100
             """
         else:
-            # Patient table join
+            # Patient table join - count distinct patients to match cBioPortal behavior
             sql = f"""
                 SELECT
                     COALESCE(CAST(p.{col} AS VARCHAR), 'NA') AS val,
-                    COUNT(DISTINCT s.SAMPLE_ID) AS cnt
+                    COUNT(DISTINCT p.PATIENT_ID) AS cnt
                 FROM "{study_id}_sample" s
                 JOIN {table} p ON s.PATIENT_ID = p.PATIENT_ID
                 WHERE s.SAMPLE_ID IN ({filter_sql})
                 GROUP BY val
-                ORDER BY cnt DESC
+                ORDER BY cnt DESC, val ASC
                 LIMIT 100
             """
         rows = conn.execute(sql, params).fetchall()
@@ -275,34 +295,119 @@ def get_all_clinical_counts(
 # Genomic table widgets
 # ---------------------------------------------------------------------------
 
+def _get_panel_availability(conn, study_id: str, panel_col: str = "mutations") -> bool:
+    """True if panel-aware freq calculation is possible for this study and alteration type.
+
+    panel_col: column in {study_id}_gene_panel to check — 'mutations', 'structural_variants', or 'cna'.
+    """
+    try:
+        cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_gene_panel"').fetchall()]
+        if panel_col not in cols:
+            return False
+    except Exception:
+        return False
+    try:
+        return conn.execute("SELECT COUNT(*) FROM gene_panel_definitions").fetchone()[0] > 0
+    except Exception:
+        return False
+
+
 def get_mutated_genes(
     conn,
     study_id: str,
     filter_json: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """Return [{gene, n_mut, n_samples, freq}] sorted by n_samples desc."""
+    """Return [{gene, n_mut, n_samples, n_profiled, freq}] sorted by n_samples desc.
+
+    When gene panel data is available, freq = n_samples / n_profiled_for_gene.
+    Falls back to freq = n_samples / total_filtered_samples otherwise.
+    """
+    # Match public cBioPortal behaviour: only exclude 'UNCALLED' mutation status.
+    # UNCALLED mutations are used in Patient View to show supporting reads but are
+    # not functional mutations. All variant classifications (including Silent) are
+    # counted by default — optional mutation type filtering is only applied when
+    # the user explicitly provides alterationFilter parameters.
+    # Ref: ClickhouseAlterationMapper.xml getMutatedGenes query, line 21
+    vc_exclusion = "AND COALESCE(Mutation_Status, '') != 'UNCALLED'"
+
     table = f'"{study_id}_mutations"'
-    
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    mut_sample_col = _get_mutation_sample_col(conn, study_id)
 
     try:
-        # Total samples matching filter (denominator)
-        total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
-        total = conn.execute(total_sql, params).fetchone()[0] or 1
-
-        sql = f"""
-            SELECT
-                Hugo_Symbol,
-                COUNT(*) AS n_mut,
-                COUNT(DISTINCT SAMPLE_ID) AS n_samples
-            FROM {table}
-            WHERE SAMPLE_ID IN ({filter_sql})
-            GROUP BY Hugo_Symbol
-            ORDER BY n_samples DESC
-            LIMIT {limit}
-        """
-        rows = conn.execute(sql, params).fetchall()
+        if _get_panel_availability(conn, study_id):
+            sql = f"""
+                WITH filtered_samples AS (
+                    SELECT fs.SAMPLE_ID, CAST(gp.mutations AS VARCHAR) AS panel_id
+                    FROM ({filter_sql}) fs
+                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
+                ),
+                sample_classification AS (
+                    SELECT
+                        SAMPLE_ID, panel_id,
+                        CASE
+                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME')
+                            THEN 'wes'
+                            WHEN panel_id IS NOT NULL AND panel_id != 'NA'
+                            THEN 'targeted'
+                            ELSE 'unassigned'
+                        END AS panel_class
+                    FROM filtered_samples
+                ),
+                gene_profiled AS (
+                    SELECT gpd.hugo_gene_symbol AS Hugo_Symbol, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
+                    WHERE sc.panel_class = 'targeted'
+                    UNION ALL
+                    SELECT m_genes.Hugo_Symbol, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    CROSS JOIN (SELECT DISTINCT Hugo_Symbol FROM {table} WHERE Hugo_Symbol IS NOT NULL) m_genes
+                    WHERE sc.panel_class = 'wes'
+                ),
+                profiled_counts AS (
+                    SELECT Hugo_Symbol, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
+                    FROM gene_profiled
+                    GROUP BY Hugo_Symbol
+                ),
+                mutated_counts AS (
+                    SELECT Hugo_Symbol, COUNT(*) AS n_mut, COUNT(DISTINCT {mut_sample_col}) AS n_samples
+                    FROM {table}
+                    WHERE {mut_sample_col} IN (SELECT SAMPLE_ID FROM filtered_samples)
+                    {vc_exclusion}
+                    GROUP BY Hugo_Symbol
+                )
+                SELECT
+                    mc.Hugo_Symbol,
+                    mc.n_mut,
+                    mc.n_samples,
+                    COALESCE(pc.n_profiled, mc.n_samples) AS n_profiled,
+                    ROUND(100.0 * mc.n_samples / NULLIF(COALESCE(pc.n_profiled, mc.n_samples), 0), 1) AS freq
+                FROM mutated_counts mc
+                LEFT JOIN profiled_counts pc ON mc.Hugo_Symbol = pc.Hugo_Symbol
+                ORDER BY mc.n_samples DESC, mc.Hugo_Symbol ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
+        else:
+            total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
+            total = conn.execute(total_sql, params).fetchone()[0] or 1
+            sql = f"""
+                SELECT
+                    Hugo_Symbol,
+                    COUNT(*) AS n_mut,
+                    COUNT(DISTINCT {mut_sample_col}) AS n_samples,
+                    {total} AS n_profiled,
+                    NULL as freq
+                FROM {table}
+                WHERE {mut_sample_col} IN ({filter_sql})
+                {vc_exclusion}
+                GROUP BY Hugo_Symbol
+                ORDER BY n_samples DESC, Hugo_Symbol ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
     except Exception:
         return []
 
@@ -311,7 +416,8 @@ def get_mutated_genes(
             "gene": r[0],
             "n_mut": r[1],
             "n_samples": r[2],
-            "freq": round(r[2] / total * 100, 1),
+            "n_profiled": r[3],
+            "freq": r[4] if r[4] is not None else round(r[2] / (r[3] or 1) * 100, 1),
         }
         for r in rows
     ]
@@ -338,7 +444,14 @@ def get_age_histogram(
         return []
 
     table = f'"{study_id}_{source}"'
+    sample_table = f'"{study_id}_sample"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+
+    # For patient-level columns, filter via a PATIENT_ID subquery instead of SAMPLE_ID
+    if source == "patient":
+        id_filter = f't.PATIENT_ID IN (SELECT PATIENT_ID FROM {sample_table} WHERE SAMPLE_ID IN ({filter_sql}))'
+    else:
+        id_filter = f't.SAMPLE_ID IN ({filter_sql})'
 
     try:
         sql = f"""
@@ -360,8 +473,7 @@ def get_age_histogram(
                 END AS bin,
                 COUNT(*) AS cnt
             FROM {table} t
-            WHERE TRY_CAST(t."{age_col}" AS DOUBLE) IS NOT NULL
-            AND t.SAMPLE_ID IN ({filter_sql})
+            WHERE {id_filter}
             GROUP BY bin
             ORDER BY
                 CASE bin
@@ -369,11 +481,13 @@ def get_age_histogram(
                     WHEN '45-50' THEN 4 WHEN '50-55' THEN 5 WHEN '55-60' THEN 6
                     WHEN '60-65' THEN 7 WHEN '65-70' THEN 8 WHEN '70-75' THEN 9
                     WHEN '75-80' THEN 10 WHEN '80-85' THEN 11 WHEN '>85' THEN 12
+                    WHEN 'NA' THEN 13
                     ELSE 99
                 END
         """
         rows = conn.execute(sql, params).fetchall()
-    except Exception:
+    except Exception as e:
+        logger.warning("get_age_histogram failed for %s: %s", study_id, e)
         return []
 
     return [{"x": r[0], "y": r[1]} for r in rows]
@@ -399,17 +513,16 @@ def get_sv_genes(
     filter_json: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """Return [{gene, n_sv, n_samples, freq}] sorted by n_samples desc."""
+    """Return [{gene, n_sv, n_samples, n_profiled, freq}] sorted by n_samples desc.
+
+    When gene panel data is available, freq = n_samples / n_profiled_for_gene.
+    Falls back to freq = n_samples / total_filtered_samples otherwise.
+    """
     table = f'"{study_id}_sv"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
 
     try:
-        total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
-        total = conn.execute(total_sql, params).fetchone()[0] or 1
-
-        col_check = conn.execute(f'DESCRIBE {table}').fetchall()
-        col_names = [r[0] for r in col_check]
-
+        col_names = [r[0] for r in conn.execute(f'DESCRIBE {table}').fetchall()]
         if "Site1_Hugo_Symbol" in col_names:
             gene_col = "Site1_Hugo_Symbol"
             sample_col = "Sample_Id"
@@ -419,19 +532,83 @@ def get_sv_genes(
         else:
             return []
 
-        sql = f"""
-            SELECT
-                {gene_col} AS gene,
-                COUNT(*) AS n_sv,
-                COUNT(DISTINCT {sample_col}) AS n_samples
-            FROM {table}
-            WHERE {sample_col} IN ({filter_sql})
-            AND {gene_col} IS NOT NULL AND {gene_col} != ''
-            GROUP BY gene
-            ORDER BY n_samples DESC
-            LIMIT {limit}
-        """
-        rows = conn.execute(sql, params).fetchall()
+        if _get_panel_availability(conn, study_id, "structural_variants"):
+            sql = f"""
+                WITH filtered_samples AS (
+                    SELECT fs.SAMPLE_ID, CAST(gp.structural_variants AS VARCHAR) AS panel_id
+                    FROM ({filter_sql}) fs
+                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
+                ),
+                sample_classification AS (
+                    SELECT
+                        SAMPLE_ID, panel_id,
+                        CASE
+                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME')
+                            THEN 'wes'
+                            WHEN panel_id IS NOT NULL AND panel_id != 'NA'
+                            THEN 'targeted'
+                            ELSE 'unassigned'
+                        END AS panel_class
+                    FROM filtered_samples
+                ),
+                gene_profiled AS (
+                    SELECT gpd.hugo_gene_symbol AS gene, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
+                    WHERE sc.panel_class = 'targeted'
+                    UNION ALL
+                    SELECT sv_genes.gene, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    CROSS JOIN (
+                        SELECT DISTINCT {gene_col} AS gene FROM {table}
+                        WHERE {gene_col} IS NOT NULL AND {gene_col} != ''
+                    ) sv_genes
+                    WHERE sc.panel_class = 'wes'
+                ),
+                profiled_counts AS (
+                    SELECT gene, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
+                    FROM gene_profiled
+                    GROUP BY gene
+                ),
+                sv_counts AS (
+                    SELECT
+                        {gene_col} AS gene,
+                        COUNT(*) AS n_sv,
+                        COUNT(DISTINCT {sample_col}) AS n_samples
+                    FROM {table}
+                    WHERE {sample_col} IN (SELECT SAMPLE_ID FROM filtered_samples)
+                    AND {gene_col} IS NOT NULL AND {gene_col} != ''
+                    GROUP BY gene
+                )
+                SELECT
+                    sc.gene,
+                    sc.n_sv,
+                    sc.n_samples,
+                    COALESCE(pc.n_profiled, sc.n_samples) AS n_profiled,
+                    ROUND(100.0 * sc.n_samples / NULLIF(COALESCE(pc.n_profiled, sc.n_samples), 0), 1) AS freq
+                FROM sv_counts sc
+                LEFT JOIN profiled_counts pc ON sc.gene = pc.gene
+                ORDER BY sc.n_sv DESC, sc.gene ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
+        else:
+            total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
+            total = conn.execute(total_sql, params).fetchone()[0] or 1
+            sql = f"""
+                SELECT
+                    {gene_col} AS gene,
+                    COUNT(*) AS n_sv,
+                    COUNT(DISTINCT {sample_col}) AS n_samples,
+                    {total} AS n_profiled
+                FROM {table}
+                WHERE {sample_col} IN ({filter_sql})
+                AND {gene_col} IS NOT NULL AND {gene_col} != ''
+                GROUP BY gene
+                ORDER BY n_sv DESC, gene ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
     except Exception:
         return []
 
@@ -440,7 +617,8 @@ def get_sv_genes(
             "gene": r[0],
             "n_sv": r[1],
             "n_samples": r[2],
-            "freq": round(r[2] / total * 100, 1),
+            "n_profiled": r[3],
+            "freq": r[4] if r[4] is not None else round(r[2] / (r[3] or 1) * 100, 1),
         }
         for r in rows
     ]
@@ -452,27 +630,96 @@ def get_cna_genes(
     filter_json: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """Return [{gene, cna_type, n_samples, freq}] (AMP=cna_value 2, HOMDEL=cna_value -2)."""
+    """Return [{gene, cna_type, n_samples, n_profiled, freq}] (AMP=cna_value 2, HOMDEL=cna_value -2).
+
+    When gene panel data is available, freq = n_samples / n_profiled_for_gene.
+    Falls back to freq = n_samples / total_filtered_samples otherwise.
+    """
     table = f'"{study_id}_cna"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
 
     try:
-        total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
-        total = conn.execute(total_sql, params).fetchone()[0] or 1
-
-        sql = f"""
-            SELECT
-                hugo_symbol,
-                CASE WHEN cna_value = 2 THEN 'AMP' WHEN cna_value = -2 THEN 'HOMDEL' ELSE 'OTHER' END AS cna_type,
-                COUNT(DISTINCT sample_id) AS n_samples
-            FROM {table}
-            WHERE cna_value IN (2, -2)
-            AND sample_id IN ({filter_sql})
-            GROUP BY hugo_symbol, cna_type
-            ORDER BY n_samples DESC
-            LIMIT {limit}
-        """
-        rows = conn.execute(sql, params).fetchall()
+        if _get_panel_availability(conn, study_id, "cna"):
+            sql = f"""
+                WITH filtered_samples AS (
+                    SELECT fs.SAMPLE_ID, CAST(gp.cna AS VARCHAR) AS panel_id
+                    FROM ({filter_sql}) fs
+                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
+                ),
+                sample_classification AS (
+                    SELECT
+                        SAMPLE_ID, panel_id,
+                        CASE
+                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME')
+                            THEN 'wes'
+                            WHEN panel_id IS NOT NULL AND panel_id != 'NA'
+                            THEN 'targeted'
+                            ELSE 'unassigned'
+                        END AS panel_class
+                    FROM filtered_samples
+                ),
+                gene_profiled AS (
+                    SELECT gpd.hugo_gene_symbol AS hugo_symbol, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
+                    WHERE sc.panel_class = 'targeted'
+                    UNION ALL
+                    SELECT cna_genes.hugo_symbol, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    CROSS JOIN (
+                        SELECT DISTINCT hugo_symbol FROM {table} WHERE hugo_symbol IS NOT NULL
+                    ) cna_genes
+                    WHERE sc.panel_class = 'wes'
+                ),
+                profiled_counts AS (
+                    SELECT hugo_symbol, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
+                    FROM gene_profiled
+                    GROUP BY hugo_symbol
+                ),
+                cna_counts AS (
+                    SELECT
+                        hugo_symbol,
+                        CASE WHEN cna_value = 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                        COUNT(DISTINCT sample_id) AS n_samples
+                    FROM {table}
+                    WHERE cna_value IN (2, -2)
+                    AND sample_id IN (SELECT SAMPLE_ID FROM filtered_samples)
+                    -- Skip isoforms to match portal counts for CDKN2A
+                    AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
+                    GROUP BY hugo_symbol, cna_type
+                )
+                SELECT
+                    cc.hugo_symbol,
+                    cc.cna_type,
+                    cc.n_samples,
+                    COALESCE(pc.n_profiled, cc.n_samples) AS n_profiled,
+                    ROUND(100.0 * cc.n_samples / NULLIF(COALESCE(pc.n_profiled, cc.n_samples), 0), 1) AS freq
+                FROM cna_counts cc
+                LEFT JOIN profiled_counts pc ON cc.hugo_symbol = pc.hugo_symbol
+                ORDER BY cc.n_samples DESC, cc.hugo_symbol ASC, cc.cna_type ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
+        else:
+            total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
+            total = conn.execute(total_sql, params).fetchone()[0] or 1
+            sql = f"""
+                SELECT
+                    hugo_symbol,
+                    CASE WHEN cna_value = 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                    COUNT(DISTINCT sample_id) AS n_samples,
+                    {total} AS n_profiled,
+                    ROUND(100.0 * COUNT(DISTINCT sample_id) / NULLIF({total}, 0), 1) AS freq
+                FROM {table}
+                WHERE cna_value IN (2, -2)
+                AND sample_id IN ({filter_sql})
+                -- Skip isoforms to match portal counts for CDKN2A
+                AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
+                GROUP BY hugo_symbol, cna_type
+                ORDER BY n_samples DESC, hugo_symbol ASC, cna_type ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
     except Exception:
         return []
 
@@ -481,7 +728,8 @@ def get_cna_genes(
             "gene": r[0],
             "cna_type": r[1],
             "n_samples": r[2],
-            "freq": round(r[2] / total * 100, 1),
+            "n_profiled": r[3],
+            "freq": r[4] if r[4] is not None else round(r[2] / (r[3] or 1) * 100, 1),
         }
         for r in rows
     ]
@@ -584,15 +832,16 @@ def get_tmb_fga_scatter(
     sample_table = f'"{study_id}_sample"'
     mut_table = f'"{study_id}_mutations"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    mut_sample_col = _get_mutation_sample_col(conn, study_id)
 
     try:
         sql = f"""
             SELECT
                 s.SAMPLE_ID,
                 TRY_CAST(s."{fga_col}" AS DOUBLE) AS fga,
-                COUNT(m.SAMPLE_ID) AS mutation_count
+                COUNT(m.{mut_sample_col}) AS mutation_count
             FROM {sample_table} s
-            LEFT JOIN {mut_table} m ON s.SAMPLE_ID = m.SAMPLE_ID
+            LEFT JOIN {mut_table} m ON s.SAMPLE_ID = m.{mut_sample_col}
             WHERE s.SAMPLE_ID IN ({filter_sql})
             GROUP BY s.SAMPLE_ID, fga
             HAVING fga IS NOT NULL

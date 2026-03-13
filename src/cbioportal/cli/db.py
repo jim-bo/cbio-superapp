@@ -1,4 +1,6 @@
 import typer
+from pathlib import Path
+from typing import Optional
 from cbioportal.core import loader, database
 
 app = typer.Typer(help="Database maintenance commands")
@@ -7,23 +9,29 @@ app = typer.Typer(help="Database maintenance commands")
 def load_all(
     limit: int = typer.Option(None, help="Maximum number of studies to load"),
     offset: int = typer.Option(0, help="Number of studies to skip before starting"),
-    mutations: bool = typer.Option(False, help="Whether to load mutation data (heavy)"),
-    cna: bool = typer.Option(False, help="Whether to load CNA data (heavy)"),
-    sv: bool = typer.Option(False, help="Whether to load SV data"),
-    timeline: bool = typer.Option(False, help="Whether to load timeline data")
+    mutations: Optional[bool] = typer.Option(None, help="Load mutation data (default: True when no flags given)"),
+    cna: Optional[bool] = typer.Option(None, help="Load CNA data (default: True when no flags given)"),
+    sv: Optional[bool] = typer.Option(None, help="Load SV data (default: True when no flags given)"),
+    timeline: Optional[bool] = typer.Option(None, help="Load timeline data (default: True when no flags given)"),
 ):
     """Load studies from the source directory into DuckDB."""
     source_path = loader.get_source_path()
-    
+
     if not source_path:
         typer.echo("Error: Neither CBIO_DOWNLOADS nor CBIO_DATAHUB environment variables are set.")
         raise typer.Exit(code=1)
-    
+
+    load_all_types = all(x is None for x in [mutations, cna, sv, timeline])
+    load_mutations = load_all_types or mutations is True
+    load_cna       = load_all_types or cna is True
+    load_sv        = load_all_types or sv is True
+    load_timeline  = load_all_types or timeline is True
+
     conn = database.get_connection()
     typer.echo(f"Searching for studies in {source_path}...")
-    
+
     loaded_count, metrics = loader.load_all_studies(
-        conn, source_path, limit=limit, offset=offset, load_mutations=mutations, load_cna=cna, load_sv=sv, load_timeline=timeline
+        conn, source_path, limit=limit, offset=offset, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline
     )
     
     conn.close()
@@ -37,18 +45,24 @@ import subprocess
 @app.command()
 def load_lfs(
     study_id: str,
-    mutations: bool = typer.Option(True, help="Whether to load mutation data (heavy)"),
-    cna: bool = typer.Option(False, help="Whether to load CNA data (heavy)"),
-    sv: bool = typer.Option(False, help="Whether to load SV data"),
-    timeline: bool = typer.Option(False, help="Whether to load timeline data"),
-    keep_data: bool = typer.Option(False, help="Whether to keep the uncompressed data on disk after loading")
+    mutations: Optional[bool] = typer.Option(None, help="Load mutation data (default: True when no flags given)"),
+    cna: Optional[bool] = typer.Option(None, help="Load CNA data (default: True when no flags given)"),
+    sv: Optional[bool] = typer.Option(None, help="Load SV data (default: True when no flags given)"),
+    timeline: Optional[bool] = typer.Option(None, help="Load timeline data (default: True when no flags given)"),
+    keep_data: bool = typer.Option(False, help="Whether to keep the uncompressed data on disk after loading"),
 ):
     """Load an LFS-backed study by pulling, loading, and then hiding the data."""
     datahub_path = loader.get_source_path()
     if not datahub_path or "datahub" not in str(datahub_path).lower():
         typer.echo("Error: CBIO_DATAHUB must be set and point to a git repository.")
         raise typer.Exit(code=1)
-    
+
+    load_all_types = all(x is None for x in [mutations, cna, sv, timeline])
+    load_mutations = load_all_types or mutations is True
+    load_cna       = load_all_types or cna is True
+    load_sv        = load_all_types or sv is True
+    load_timeline  = load_all_types or timeline is True
+
     # 1. Pull data from LFS
     typer.echo(f"Pulling LFS data for {study_id}...")
     try:
@@ -58,15 +72,16 @@ def load_lfs(
         if not study_path:
             typer.echo(f"Error: Study '{study_id}' not found.")
             return
-            
+
         rel_path = study_path.relative_to(datahub_path)
         subprocess.run(["git", "lfs", "pull", "-I", f"{rel_path}/**"], cwd=datahub_path, check=True)
-        
+
         # 2. Load into DuckDB
         typer.echo(f"Ingesting into DuckDB...")
         conn = database.get_connection()
+        loader.ensure_gene_reference(conn)
         loader.load_study_metadata(conn, study_path)
-        success = loader.load_study(conn, study_path, load_mutations=mutations, load_cna=cna, load_sv=sv, load_timeline=timeline)
+        success = loader.load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline)
         loader.create_global_views(conn)
         conn.close()
         
@@ -87,33 +102,33 @@ def load_lfs(
 @app.command()
 def add(
     study_id: str,
-    mutations: bool = typer.Option(False, help="Whether to load mutation data (heavy)"),
-    cna: bool = typer.Option(False, help="Whether to load CNA data (heavy)"),
-    sv: bool = typer.Option(False, help="Whether to load SV data"),
-    timeline: bool = typer.Option(False, help="Whether to load timeline data")
+    mutations: Optional[bool] = typer.Option(None, help="Load mutation data (default: True when no flags given)"),
+    cna: Optional[bool] = typer.Option(None, help="Load CNA data (default: True when no flags given)"),
+    sv: Optional[bool] = typer.Option(None, help="Load SV data (default: True when no flags given)"),
+    timeline: Optional[bool] = typer.Option(None, help="Load timeline data (default: True when no flags given)"),
 ):
     """Add or update a single study by ID."""
-    source_path = loader.get_source_path()
-    if not source_path:
-        typer.echo("Error: No source directory (CBIO_DOWNLOADS or CBIO_DATAHUB) is set.")
-        raise typer.Exit(code=1)
-    
-    # Use discovery logic to find the exact path
-    all_studies = loader.discover_studies(source_path)
-    study_path = next((s for s in all_studies if s.name == study_id), None)
-    
+    load_all_types = all(x is None for x in [mutations, cna, sv, timeline])
+    load_mutations = load_all_types or mutations is True
+    load_cna       = load_all_types or cna is True
+    load_sv        = load_all_types or sv is True
+    load_timeline  = load_all_types or timeline is True
+
+    study_path = loader.find_study_path(study_id)
     if not study_path:
-        typer.echo(f"Error: Study '{study_id}' not found in datahub.")
+        typer.echo(f"Error: Study '{study_id}' not found in CBIO_DOWNLOADS or CBIO_DATAHUB.")
         raise typer.Exit(code=1)
-        
+
     conn = database.get_connection()
     typer.echo(f"Loading study from {study_path}...")
-    
+
+    loader.ensure_gene_reference(conn)
+
     # 1. Metadata
     loader.load_study_metadata(conn, study_path)
-    
+
     # 2. Data
-    success = loader.load_study(conn, study_path, load_mutations=mutations, load_cna=cna, load_sv=sv, load_timeline=timeline)
+    success = loader.load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline)
     
     # 3. Refresh Views
     loader.create_global_views(conn)
@@ -155,6 +170,42 @@ def sync_oncotree():
     """Fetch latest OncoTree data and sync to the database."""
     conn = database.get_connection()
     loader.sync_oncotree(conn)
+    conn.close()
+
+@app.command(name="sync-gene-panels")
+def sync_gene_panels(
+    json_path: Optional[Path] = typer.Option(None, help="Path to gene-panels.json (defaults to auto-discovery from CBIO_DATAHUB)")
+):
+    """Load gene panel definitions from gene-panels.json into the database."""
+    conn = database.get_connection()
+    loader.load_gene_panel_definitions(conn, json_path)
+    conn.close()
+
+@app.command(name="sync-gene-reference")
+def sync_gene_reference(
+    genes_json_path: Optional[Path] = typer.Option(None, help="Path to genes.json (defaults to CBIO_DATAHUB/.circleci/portalinfo/genes.json)")
+):
+    """Load gene reference (entrezGeneId → hugoGeneSymbol) into the database."""
+    conn = database.get_connection()
+    loader.load_gene_reference(conn, genes_json_path)
+    conn.close()
+
+@app.command(name="sync-gene-symbol-updates")
+def sync_gene_symbol_updates(
+    gene_update_md: Optional[Path] = typer.Option(None, help="Path to gene-update.md (defaults to CBIO_DATAHUB/seedDB/gene-update-list/gene-update.md)")
+):
+    """Load gene symbol update mappings (old alias → canonical) into the database."""
+    conn = database.get_connection()
+    loader.load_gene_symbol_updates(conn, gene_update_md)
+    conn.close()
+
+@app.command(name="sync-gene-aliases")
+def sync_gene_aliases(
+    seed_sql_path: Optional[Path] = typer.Option(None, help="Path to seed SQL gz (defaults to auto-discovery from CBIO_DATAHUB/seedDB/)")
+):
+    """Load gene alias mappings from seed SQL into the database."""
+    conn = database.get_connection()
+    loader.load_gene_aliases(conn, seed_sql_path)
     conn.close()
 
 if __name__ == "__main__":

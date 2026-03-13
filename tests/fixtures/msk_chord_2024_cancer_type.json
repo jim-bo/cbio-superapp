@@ -1,0 +1,250 @@
+{
+  "scenario": "cancer_type",
+  "study_id": "msk_chord_2024",
+  "filter_cancer_type": "Non-Small Cell Lung Cancer",
+  "filter_applied": true,
+  "mutated_genes": [
+    {
+      "gene": "TP53",
+      "n_mut": 4286,
+      "n_samples": 4005,
+      "freq": 51.3
+    },
+    {
+      "gene": "KRAS",
+      "n_mut": 2212,
+      "n_samples": 2183,
+      "freq": 28.0
+    },
+    {
+      "gene": "EGFR",
+      "n_mut": 2262,
+      "n_samples": 1890,
+      "freq": 24.2
+    },
+    {
+      "gene": "KEAP1",
+      "n_mut": 1074,
+      "n_samples": 1033,
+      "freq": 13.2
+    },
+    {
+      "gene": "STK11",
+      "n_mut": 1046,
+      "n_samples": 1013,
+      "freq": 13.0
+    },
+    {
+      "gene": "RBM10",
+      "n_mut": 816,
+      "n_samples": 786,
+      "freq": 10.1
+    },
+    {
+      "gene": "PTPRD",
+      "n_mut": 757,
+      "n_samples": 640,
+      "freq": 8.2
+    },
+    {
+      "gene": "KMT2D",
+      "n_mut": 732,
+      "n_samples": 621,
+      "freq": 8.0
+    },
+    {
+      "gene": "NF1",
+      "n_mut": 704,
+      "n_samples": 600,
+      "freq": 7.7
+    },
+    {
+      "gene": "SMARCA4",
+      "n_mut": 625,
+      "n_samples": 578,
+      "freq": 7.4
+    },
+    {
+      "gene": "FAT1",
+      "n_mut": 622,
+      "n_samples": 552,
+      "freq": 7.1
+    },
+    {
+      "gene": "CDKN2A",
+      "n_mut": 565,
+      "n_samples": 543,
+      "freq": 7.0
+    },
+    {
+      "gene": "ATM",
+      "n_mut": 611,
+      "n_samples": 540,
+      "freq": 6.9
+    },
+    {
+      "gene": "PTPRT",
+      "n_mut": 633,
+      "n_samples": 538,
+      "freq": 6.9
+    },
+    {
+      "gene": "ARID1A",
+      "n_mut": 587,
+      "n_samples": 526,
+      "freq": 6.7
+    },
+    {
+      "gene": "KMT2C",
+      "n_mut": 496,
+      "n_samples": 452,
+      "freq": 5.8
+    },
+    {
+      "gene": "PIK3CA",
+      "n_mut": 467,
+      "n_samples": 443,
+      "freq": 5.7
+    },
+    {
+      "gene": "EPHA5",
+      "n_mut": 487,
+      "n_samples": 442,
+      "freq": 5.7
+    },
+    {
+      "gene": "EPHA3",
+      "n_mut": 463,
+      "n_samples": 423,
+      "freq": 5.4
+    },
+    {
+      "gene": "RB1",
+      "n_mut": 420,
+      "n_samples": 402,
+      "freq": 5.1
+    }
+  ],
+  "cna_genes": [
+    {
+      "gene": "CDKN2A",
+      "cna_type": "HOMDEL",
+      "n_samples": 828,
+      "freq": 10.6
+    },
+    {
+      "gene": "CDKN2B",
+      "cna_type": "HOMDEL",
+      "n_samples": 781,
+      "freq": 10.0
+    },
+    {
+      "gene": "MTAP",
+      "cna_type": "HOMDEL",
+      "n_samples": 189,
+      "freq": 8.5
+    },
+    {
+      "gene": "TERT",
+      "cna_type": "AMP",
+      "n_samples": 441,
+      "freq": 5.6
+    },
+    {
+      "gene": "NKX2-1",
+      "cna_type": "AMP",
+      "n_samples": 431,
+      "freq": 5.5
+    },
+    {
+      "gene": "EGFR",
+      "cna_type": "AMP",
+      "n_samples": 426,
+      "freq": 5.5
+    },
+    {
+      "gene": "MDM2",
+      "cna_type": "AMP",
+      "n_samples": 415,
+      "freq": 5.3
+    },
+    {
+      "gene": "MYC",
+      "cna_type": "AMP",
+      "n_samples": 408,
+      "freq": 5.2
+    },
+    {
+      "gene": "SDHA",
+      "cna_type": "AMP",
+      "n_samples": 338,
+      "freq": 4.3
+    },
+    {
+      "gene": "NFKBIA",
+      "cna_type": "AMP",
+      "n_samples": 315,
+      "freq": 4.2
+    },
+    {
+      "gene": "TRIP13",
+      "cna_type": "AMP",
+      "n_samples": 87,
+      "freq": 3.9
+    },
+    {
+      "gene": "FOXA1",
+      "cna_type": "AMP",
+      "n_samples": 304,
+      "freq": 3.9
+    },
+    {
+      "gene": "CDK4",
+      "cna_type": "AMP",
+      "n_samples": 301,
+      "freq": 3.9
+    },
+    {
+      "gene": "CCND1",
+      "cna_type": "AMP",
+      "n_samples": 196,
+      "freq": 2.5
+    },
+    {
+      "gene": "FGFR1",
+      "cna_type": "AMP",
+      "n_samples": 182,
+      "freq": 2.3
+    },
+    {
+      "gene": "FGF19",
+      "cna_type": "AMP",
+      "n_samples": 178,
+      "freq": 2.3
+    },
+    {
+      "gene": "SOX2",
+      "cna_type": "AMP",
+      "n_samples": 173,
+      "freq": 2.2
+    },
+    {
+      "gene": "FGF4",
+      "cna_type": "AMP",
+      "n_samples": 172,
+      "freq": 2.2
+    },
+    {
+      "gene": "CCNE1",
+      "cna_type": "AMP",
+      "n_samples": 170,
+      "freq": 2.2
+    },
+    {
+      "gene": "RECQL4",
+      "cna_type": "AMP",
+      "n_samples": 169,
+      "freq": 2.2
+    }
+  ]
+}

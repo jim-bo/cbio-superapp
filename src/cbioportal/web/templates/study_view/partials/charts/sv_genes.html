@@ -15,6 +15,7 @@
                     <th style="padding:2px 4px;font-size:10px;text-align:left;">Gene</th>
                     <th style="padding:2px 4px;font-size:10px;text-align:right;">#SV</th>
                     <th style="padding:2px 4px;font-size:10px;text-align:right;">#Samples</th>
+                    <th style="padding:2px 4px;font-size:10px;text-align:right;">#Profiled</th>
                     <th style="padding:2px 4px;font-size:10px;" colspan="2">Freq</th>
                 </tr>
             </thead>
@@ -24,6 +25,7 @@
                 <td class="gene-name">{{ g.gene }}</td>
                 <td style="text-align:right;color:#555;">{{ g.n_sv }}</td>
                 <td style="text-align:right;color:#555;">{{ g.n_samples }}</td>
+                <td style="text-align:right;color:#888;">{{ g.n_profiled }}</td>
                 <td class="freq-bar-wrap">
                     <div class="freq-bar-bg">
                         <div class="freq-bar-fill" style="width: {{ g.freq }}%;background:#ff7043;"></div>
