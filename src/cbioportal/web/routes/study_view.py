@@ -208,12 +208,14 @@ async def chart_age(
     format: str | None = None,
 ):
     conn = request.app.state.db_conn
-    data = get_age_histogram(conn, study_id, filter_json)
+    all_bins = get_age_histogram(conn, study_id, filter_json)
+    na_count = next((r["y"] for r in all_bins if r["x"] == "NA"), 0)
+    bins = [r for r in all_bins if r["x"] != "NA"]
     if format == "json":
-        return data
+        return {"data": bins, "na_count": na_count}
     return request.app.state.templates.TemplateResponse(
         "study_view/partials/charts/histogram.html",
-        {"request": request, "age_histogram": data, "study_id": study_id, "filter_json": filter_json},
+        {"request": request, "age_histogram": bins, "age_na_count": na_count, "study_id": study_id, "filter_json": filter_json},
     )
 
 

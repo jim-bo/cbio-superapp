@@ -205,6 +205,22 @@
                 </div>
             </div>
         </div>
+        <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="30">
+            <div class="grid-stack-item-content">
+                <div class="cbio-widget" id="widget-age-histogram">
+                    <div class="cbio-widget-header">
+                        <div class="cbio-widget-title">Current Age</div>
+                        <div class="cbio-widget-controls" style="display:flex;align-items:center;gap:4px;">
+                            <span id="age-na-count" style="font-size:10px;color:#999;display:none;"></span>
+                            <button class="cbio-widget-btn"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="cbio-widget-content">
+                        <div id="chart-age-histogram" class="echarts-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -220,7 +236,7 @@
         filters: { clinicalDataFilters: [], mutationFilter: { genes: [] }, svFilter: { genes: [] } }
     };
 
-    const Charts = { Pies: {} };
+    const Charts = { Pies: {}, AgeHistogram: null };
 
     function broadcastUpdate() { window.dispatchEvent(new CustomEvent('cbio-filter-changed')); }
 
@@ -407,6 +423,34 @@
         broadcastUpdate();
     }
 
+    async function updateAgeWidget() {
+        const chartDom = document.getElementById('chart-age-histogram');
+        const naEl = document.getElementById('age-na-count');
+        if (!chartDom) return;
+        if (!Charts.AgeHistogram) Charts.AgeHistogram = echarts.init(chartDom);
+        const chart = Charts.AgeHistogram;
+        try {
+            const formData = new FormData();
+            formData.append('study_id', DashboardState.studyId);
+            formData.append('filter_json', JSON.stringify(DashboardState.filters));
+            const response = await fetch('/study/summary/chart/age?format=json', { method: 'POST', body: formData });
+            const json = await response.json();
+            const bins = json.data || json;
+            const naCount = json.na_count || 0;
+            if (naEl) {
+                naEl.textContent = naCount > 0 ? `NA: ${naCount}` : '';
+                naEl.style.display = naCount > 0 ? 'inline' : 'none';
+            }
+            chart.setOption({
+                tooltip: { trigger: 'axis', formatter: (params) => `${params[0].name}: ${params[0].value.toLocaleString()}` },
+                xAxis: { type: 'category', data: bins.map(d => d.x), axisLabel: { rotate: -45, fontSize: 9 } },
+                yAxis: { type: 'value', axisLabel: { fontSize: 9, formatter: (v) => v >= 1000 ? `${v/1000}k` : v } },
+                series: [{ type: 'bar', data: bins.map(d => d.y), itemStyle: { color: '#2986E2' }, barMaxWidth: 20 }],
+                grid: { left: 45, right: 10, top: 10, bottom: 55 }
+            });
+        } catch (e) {}
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const grid = GridStack.init({ cellHeight: 30, margin: 5, draggable: { handle: '.cbio-widget-header' } });
         const pies = ['CLINICAL_SUMMARY', 'DIAGNOSIS_DESCRIPTION', 'OS_STATUS', 'SAMPLE_TYPE', 'RACE', 'GENDER', 'MSI_TYPE', 'ETHNICITY', 'STAGE_HIGHEST_RECORDED'];
@@ -414,10 +458,11 @@
         function updateAll() {
             tables.forEach(updateTableWidget); pies.forEach(updatePieWidget);
             updateGenomicTableWidget(); updateCNATableWidget(); updateSVTableWidget();
+            updateAgeWidget();
         }
         updateAll();
         window.addEventListener('cbio-filter-changed', updateAll);
-        const resizer = () => { Object.values(Charts.Pies).forEach(c => c.resize()); };
+        const resizer = () => { Object.values(Charts.Pies).forEach(c => c.resize()); if (Charts.AgeHistogram) Charts.AgeHistogram.resize(); };
         grid.on('resizestop', resizer); window.addEventListener('resize', resizer);
     });
 </script>

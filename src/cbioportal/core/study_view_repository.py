@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -320,8 +323,12 @@ def get_mutated_genes(
     When gene panel data is available, freq = n_samples / n_profiled_for_gene.
     Falls back to freq = n_samples / total_filtered_samples otherwise.
     """
-    # Match public cBioPortal behaviour: include almost all variants in count, 
-    # but exclude 'UNCALLED' status which is only for supporting reads.
+    # Match public cBioPortal behaviour: only exclude 'UNCALLED' mutation status.
+    # UNCALLED mutations are used in Patient View to show supporting reads but are
+    # not functional mutations. All variant classifications (including Silent) are
+    # counted by default — optional mutation type filtering is only applied when
+    # the user explicitly provides alterationFilter parameters.
+    # Ref: ClickhouseAlterationMapper.xml getMutatedGenes query, line 21
     vc_exclusion = "AND COALESCE(Mutation_Status, '') != 'UNCALLED'"
 
     table = f'"{study_id}_mutations"'
@@ -437,7 +444,14 @@ def get_age_histogram(
         return []
 
     table = f'"{study_id}_{source}"'
+    sample_table = f'"{study_id}_sample"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+
+    # For patient-level columns, filter via a PATIENT_ID subquery instead of SAMPLE_ID
+    if source == "patient":
+        id_filter = f't.PATIENT_ID IN (SELECT PATIENT_ID FROM {sample_table} WHERE SAMPLE_ID IN ({filter_sql}))'
+    else:
+        id_filter = f't.SAMPLE_ID IN ({filter_sql})'
 
     try:
         sql = f"""
@@ -459,8 +473,7 @@ def get_age_histogram(
                 END AS bin,
                 COUNT(*) AS cnt
             FROM {table} t
-            WHERE TRY_CAST(t."{age_col}" AS DOUBLE) IS NOT NULL
-            AND t.SAMPLE_ID IN ({filter_sql})
+            WHERE {id_filter}
             GROUP BY bin
             ORDER BY
                 CASE bin
@@ -468,11 +481,13 @@ def get_age_histogram(
                     WHEN '45-50' THEN 4 WHEN '50-55' THEN 5 WHEN '55-60' THEN 6
                     WHEN '60-65' THEN 7 WHEN '65-70' THEN 8 WHEN '70-75' THEN 9
                     WHEN '75-80' THEN 10 WHEN '80-85' THEN 11 WHEN '>85' THEN 12
+                    WHEN 'NA' THEN 13
                     ELSE 99
                 END
         """
         rows = conn.execute(sql, params).fetchall()
-    except Exception:
+    except Exception as e:
+        logger.warning("get_age_histogram failed for %s: %s", study_id, e)
         return []
 
     return [{"x": r[0], "y": r[1]} for r in rows]
@@ -693,7 +708,8 @@ def get_cna_genes(
                     hugo_symbol,
                     CASE WHEN cna_value = 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
                     COUNT(DISTINCT sample_id) AS n_samples,
-                    {total} AS n_profiled
+                    {total} AS n_profiled,
+                    ROUND(100.0 * COUNT(DISTINCT sample_id) / NULLIF({total}, 0), 1) AS freq
                 FROM {table}
                 WHERE cna_value IN (2, -2)
                 AND sample_id IN ({filter_sql})

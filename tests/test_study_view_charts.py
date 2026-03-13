@@ -201,36 +201,29 @@ class TestMutatedGenesBaseline:
         )
 
     def test_all_gene_counts_match_fixture(self, client, fixture_baseline):
-        """Check counts for genes that appear in BOTH fixture and local results."""
+        """Every gene returned by the API must exactly match the fixture values."""
         fixture_genes = fixture_baseline.get("mutated_genes", [])
         if not fixture_genes:
             pytest.skip("No mutated_genes in baseline fixture")
 
         data = post_chart(client, "mutated-genes")
-        local_by_gene = {r["gene"]: r for r in data}
-        # Only check genes that appear in local results (fixture may have aliases/extra genes)
-        checked = 0
-        for frow in fixture_genes[:50]:  # limit to first 50 fixture entries
-            gene = frow["gene"]
-            lrow = local_by_gene.get(gene)
-            if lrow is None:
-                continue  # gene alias or not in local — skip
-            checked += 1
-            # n_samples is the primary correctness metric; n_mut is omitted since
-            # gene aliasing (e.g. KMT2D/MLL4) can cause large legitimate differences.
-            # Use relative tolerance (±15%) to accommodate known aliasing discrepancies.
-            sample_tol = max(COUNT_TOLERANCE, int(frow["n_samples"] * 0.20))
-            assert abs(lrow["n_samples"] - frow["n_samples"]) <= sample_tol, (
-                f"{gene} n_samples: local={lrow['n_samples']} fixture={frow['n_samples']} "
-                f"(tolerance ±{sample_tol})"
+        fixture_by_gene = {r["gene"]: r for r in fixture_genes}
+
+        for local_row in data:
+            gene = local_row["gene"]
+            fixture_row = fixture_by_gene.get(gene)
+            if fixture_row is None:
+                continue  # gene not in fixture — no expectation to enforce
+
+            assert local_row["n_samples"] == fixture_row["n_samples"], (
+                f"{gene} n_samples: local={local_row['n_samples']} fixture={fixture_row['n_samples']}"
             )
-            # Use relative freq tolerance consistent with sample tolerance
-            freq_tol = max(FREQ_TOLERANCE, frow["freq"] * 0.20)
-            assert abs(lrow["freq"] - frow["freq"]) <= freq_tol, (
-                f"{gene} freq: local={lrow['freq']} fixture={frow['freq']} "
-                f"(tolerance ±{round(freq_tol, 2)})"
+            assert local_row["n_mut"] == fixture_row["n_mut"], (
+                f"{gene} n_mut: local={local_row['n_mut']} fixture={fixture_row['n_mut']}"
             )
-        assert checked >= 5, f"Only {checked} genes matched fixture — gene name mismatch?"
+            assert local_row["freq"] == fixture_row["freq"], (
+                f"{gene} freq: local={local_row['freq']} fixture={fixture_row['freq']}"
+            )
 
     def test_top_n_gene_order_matches_fixture(self, client, fixture_baseline):
         """Top-20 gene order must match (skipping gene aliases not present locally)."""
@@ -549,7 +542,8 @@ class TestDataIntegrity:
 
     def test_age_histogram_bins_cover_range(self, client):
         """Age histogram should have multiple bins covering a reasonable range."""
-        data = post_chart(client, "age")
+        resp = post_chart(client, "age")
+        data = resp.get("data", resp) if isinstance(resp, dict) else resp
         if not data:
             pytest.skip("No age histogram data")
         assert len(data) >= 3, f"Age histogram has too few bins: {len(data)}"
