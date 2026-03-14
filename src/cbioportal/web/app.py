@@ -29,8 +29,18 @@ def create_app():
     app = FastAPI(title="cBioPortal Revamp", lifespan=lifespan)
 
     # Templates
-    templates_path = Path(__file__).parent / "templates"
+    templates_path = Path(__file__).parent.absolute() / "templates"
+    print(f"DEBUG: Loading templates from {templates_path}")
     templates = Jinja2Templates(directory=str(templates_path))
+    
+    # Custom filters
+    def comma_number(value):
+        try:
+            return "{:,}".format(int(value))
+        except (ValueError, TypeError):
+            return value
+    templates.env.filters["comma_number"] = comma_number
+    
     app.state.templates = templates
 
     # Static files

@@ -77,6 +77,33 @@ async def study_summary(request: Request, id: str):
     )
 
 
+@router.post("/study/summary/navbar-counts")
+async def navbar_counts(
+    request: Request,
+    study_id: Annotated[str, Form()],
+    filter_json: Annotated[str, Form()] = "{}",
+):
+    conn = request.app.state.db_conn
+    from cbioportal.core.study_view_repository import _build_filter_subquery
+    
+    filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    
+    try:
+        n_samples = conn.execute(
+            f"SELECT COUNT(DISTINCT SAMPLE_ID) FROM ({filter_sql})", params
+        ).fetchone()[0]
+        
+        n_patients = conn.execute(
+            f"SELECT COUNT(DISTINCT PATIENT_ID) FROM \"{study_id}_sample\" WHERE SAMPLE_ID IN ({filter_sql})", 
+            params
+        ).fetchone()[0]
+    except Exception:
+        n_samples = 0
+        n_patients = 0
+        
+    return {"n_patients": n_patients, "n_samples": n_samples}
+
+
 @router.post("/study/summary/chart/clinical")
 async def chart_clinical(
     request: Request,

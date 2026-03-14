@@ -1,0 +1,132 @@
+/* Study Navbar Styling */
+
+.study-view-header {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 20px 0 20px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.study-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.study-title-area {
+    flex: 1;
+}
+
+.study-title-area h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #337ab7;
+    font-weight: bold;
+}
+
+.study-title-area h2 a {
+    color: #337ab7;
+    text-decoration: none;
+}
+
+.study-description {
+    font-size: 13px;
+    color: #333;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.study-query-area {
+    width: 350px;
+    margin-left: 20px;
+}
+
+.query-input-group {
+    display: flex;
+}
+
+.query-input-group input {
+    border-radius: 4px 0 0 4px;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.query-input-group button {
+    border-radius: 0 4px 4px 0;
+    margin-left: -1px;
+}
+
+/* Tabs */
+.study-tabs-container {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: -1px; /* Overlap with bottom border */
+}
+
+.study-tab {
+    padding: 10px 15px;
+    font-size: 14px;
+    color: #337ab7;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    margin-right: 5px;
+}
+
+.study-tab:hover {
+    background-color: #eee;
+}
+
+.study-tab.active {
+    color: #555;
+    background-color: #fff;
+    border-color: #ddd;
+    font-weight: bold;
+}
+
+.study-tab .beta-tag {
+    color: #f0ad4e;
+    font-weight: bold;
+    font-size: 12px;
+    margin-left: 3px;
+}
+
+/* Selection Bar */
+.study-selection-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 5px 20px;
+    border-bottom: 1px solid #ddd;
+    font-size: 13px;
+}
+
+.selection-info {
+    font-weight: bold;
+}
+
+.selection-actions {
+    display: flex;
+    align-items: center;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
+
+.selection-actions .btn {
+    margin-left: 5px;
+}
+
+.selection-actions .btn-primary {
+    background-color: #337ab7;
+    border-color: #2e6da4;
+}

@@ -1,0 +1,41 @@
+<div class="study-view-header">
+    <div class="study-header-top">
+        <div class="study-title-area">
+            <h2><a href="#">{{ meta.name }}</a> <i class="fa fa-download" style="font-size: 14px; margin-left: 5px;"></i></h2>
+            <div class="study-description">
+                {{ meta.description | safe }}
+            </div>
+        </div>
+        <div class="study-query-area">
+            <div class="query-input-group">
+                <input type="text" placeholder="Click gene symbols below or enter here">
+                <button class="btn btn-primary btn-sm"><i class="fa fa-search"></i> Query</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="study-tabs-container">
+        <a href="/study/summary?id={{ meta.study_id }}" class="study-tab active">Summary</a>
+        <a href="/study/clinicalData?id={{ meta.study_id }}" class="study-tab">Clinical Data</a>
+        <a href="#" class="study-tab">CN Segments</a>
+        <a href="#" class="study-tab">Plots <span class="beta-tag">Beta!</span></a>
+    </div>
+</div>
+
+<div class="study-selection-bar">
+    <div class="selection-info">
+        Selected: <span id="navbar-selected-patients">{{ meta.n_patients | comma_number }}</span> patients | 
+        <span id="navbar-selected-samples">{{ meta.n_samples | comma_number }}</span> samples
+    </div>
+    <div class="selection-actions">
+        <div class="btn-group">
+            <button class="btn btn-default btn-sm" title="View selected cases"><i class="fa-regular fa-user-circle"></i></button>
+            <button class="btn btn-default btn-sm" title="Share Virtual Study"><i class="fa-regular fa-bookmark"></i></button>
+            <button class="btn btn-default btn-sm" title="Download clinical data"><i class="fa fa-download"></i></button>
+        </div>
+        <button class="btn btn-primary btn-sm">Custom Selection ▾</button>
+        <button class="btn btn-primary btn-sm">Charts ▾</button>
+        <button class="btn btn-primary btn-sm">Groups ▾</button>
+        <button class="btn btn-primary btn-sm" title="Settings"><i class="fa fa-cog"></i></button>
+    </div>
+</div>

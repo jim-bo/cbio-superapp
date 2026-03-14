@@ -7,6 +7,7 @@
 <!-- GridStack CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" />
 <link rel="stylesheet" href="/static/css/vanilla-dashboard.css">
+<link rel="stylesheet" href="/static/css/study-navbar.css">
 <style>
     .dashboard-container {
         padding: 10px;
@@ -75,6 +76,7 @@
 {% endblock %}
 
 {% block content %}
+{% include "study_view/partials/study_navbar.html" %}
 <div class="dashboard-container">
     <div class="grid-stack" id="dashboard-grid"></div>
 </div>
@@ -105,7 +107,26 @@
     // Age-like column names that should use the dedicated /age (binned histogram) endpoint
     const AGE_COLS = new Set(['AGE', 'CURRENT_AGE_DEID', 'DIAGNOSIS_AGE', 'AGE_AT_DIAGNOSIS']);
 
-    function broadcastUpdate() { window.dispatchEvent(new CustomEvent('cbio-filter-changed')); }
+    function broadcastUpdate() { 
+        window.dispatchEvent(new CustomEvent('cbio-filter-changed')); 
+        updateNavbarSelectionCounts();
+    }
+
+    async function updateNavbarSelectionCounts() {
+        const patientsEl = document.getElementById('navbar-selected-patients');
+        const samplesEl = document.getElementById('navbar-selected-samples');
+        if (!patientsEl || !samplesEl) return;
+        
+        try {
+            const formData = new FormData();
+            formData.append('study_id', DashboardState.studyId);
+            formData.append('filter_json', JSON.stringify(DashboardState.filters));
+            const response = await fetch('/study/summary/navbar-counts', { method: 'POST', body: formData });
+            const json = await response.json();
+            patientsEl.innerText = (json.n_patients || 0).toLocaleString();
+            samplesEl.innerText = (json.n_samples || 0).toLocaleString();
+        } catch (e) {}
+    }
 
     function getFiltersForWidget(excludeAttrId) {
         let f = JSON.parse(JSON.stringify(DashboardState.filters));
