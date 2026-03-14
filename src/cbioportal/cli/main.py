@@ -4,7 +4,7 @@ from cbioportal.cli import db, fetch, server
 
 from rich.console import Console
 from rich.table import Table
-from cbioportal.core import database
+from cbioportal.core import database, loader
 
 # Load environment variables from .env file
 load_dotenv()
@@ -13,6 +13,55 @@ app = typer.Typer(help="cBioPortal Revamp CLI")
 
 app.add_typer(db.app, name="db")
 app.add_typer(fetch.app, name="fetch")
+
+import subprocess
+import sys
+
+@app.command()
+def init():
+    """Initialize the database by syncing all reference data (OncoTree, genes, panels)."""
+    console = Console()
+    
+    commands = [
+        ["db", "sync-oncotree"],
+        ["db", "sync-gene-reference"],
+        ["db", "sync-gene-symbol-updates"],
+        ["db", "sync-gene-aliases"],
+        ["db", "sync-gene-panels"],
+    ]
+    
+    try:
+        console.print("[bold blue]Starting database initialization...[/bold blue]")
+        
+        for cmd_args in commands:
+            cmd_name = cmd_args[1]
+            console.print(f"[bold]Running {cmd_name}...[/bold]")
+            
+            # We call the CLI itself via sys.executable -m cbioportal.cli.main
+            # but it's easier to just call 'cbioportal' if it's in the path, 
+            # but since we are running with uv run, let's use sys.executable and the current script.
+            full_cmd = [sys.executable, "-m", "cbioportal.cli.main"] + cmd_args
+            
+            result = subprocess.run(full_cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                # Print only the success message from the command output
+                # (to avoid repeating "Loading..." etc. if we want clean output)
+                # But for now let's just print the whole output for transparency
+                console.print(result.stdout.strip())
+            else:
+                console.print(f"[bold red]Command {cmd_name} failed:[/bold red]")
+                console.print(result.stderr)
+                console.print(result.stdout)
+                raise typer.Exit(code=result.returncode)
+        
+        console.print("\n[bold green]Database initialization complete![/bold green]")
+        
+    except Exception as e:
+        if not isinstance(e, typer.Exit):
+            console.print(f"\n[bold red]Initialization failed:[/bold red] {e}")
+            raise typer.Exit(code=1)
+        raise e
 
 @app.command()
 def studies():
