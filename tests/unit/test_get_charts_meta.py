@@ -50,6 +50,44 @@ def test_mutated_genes_appended_when_mutation_data_type(db_with_clinical_meta):
     assert "_mutated_genes" in attr_ids
 
 
+def test_genomic_chart_priorities(db_with_clinical_meta):
+    """Genomic special charts must have correct non-zero priorities."""
+    charts = get_charts_meta(db_with_clinical_meta, STUDY)
+    by_id = {c["attr_id"]: c for c in charts}
+    # fixture only has "mutation" data type, so only _mutated_genes appears
+    assert by_id["_mutated_genes"]["priority"] == 90
+
+
+def test_genomic_chart_priorities_all_types():
+    """With mutation+cna+sv all genomic charts get correct priorities."""
+    conn = duckdb.connect(":memory:")
+    conn.execute(f'CREATE TABLE "{STUDY}_sample" (SAMPLE_ID VARCHAR, PATIENT_ID VARCHAR)')
+    conn.execute(f'CREATE TABLE "{STUDY}_patient" (PATIENT_ID VARCHAR)')
+    conn.execute("""
+        CREATE TABLE clinical_attribute_meta (
+            study_id VARCHAR, attr_id VARCHAR, display_name VARCHAR,
+            description VARCHAR, datatype VARCHAR, patient_attribute BOOLEAN,
+            priority INTEGER, PRIMARY KEY (study_id, attr_id)
+        )
+    """)
+    conn.execute("CREATE TABLE study_data_types (study_id VARCHAR, data_type VARCHAR, PRIMARY KEY (study_id, data_type))")
+    for dt in ("mutation", "cna", "sv"):
+        conn.execute("INSERT INTO study_data_types VALUES (?, ?)", (STUDY, dt))
+    charts = get_charts_meta(conn, STUDY)
+    conn.close()
+    by_id = {c["attr_id"]: c for c in charts}
+    assert by_id["_mutated_genes"]["priority"] == 90
+    assert by_id["_cna_genes"]["priority"] == 80
+    assert by_id["_sv_genes"]["priority"] == 70
+    assert by_id["_scatter"]["priority"] == 50
+
+
+def test_no_chart_has_priority_zero(db_with_clinical_meta):
+    charts = get_charts_meta(db_with_clinical_meta, STUDY)
+    zero_priority = [c["attr_id"] for c in charts if c["priority"] == 0]
+    assert zero_priority == [], f"Charts with priority=0: {zero_priority}"
+
+
 def test_no_special_charts_when_data_types_empty():
     conn = duckdb.connect(":memory:")
     conn.execute(f'CREATE TABLE "{STUDY}_sample" (SAMPLE_ID VARCHAR, PATIENT_ID VARCHAR, CANCER_TYPE VARCHAR)')
@@ -166,6 +204,72 @@ def test_exactly_threshold_stays_pie():
     conn.close()
     chart = next(c for c in charts if c["attr_id"] == "CLINICAL_GROUP")
     assert chart["chart_type"] == "pie", f"Expected 'pie', got '{chart['chart_type']}'"
+
+
+def test_single_value_pie_excluded():
+    """A STRING attr with exactly 1 distinct value must be excluded from charts."""
+    conn = duckdb.connect(":memory:")
+    conn.execute(f'CREATE TABLE "{STUDY}_sample" (SAMPLE_ID VARCHAR, PATIENT_ID VARCHAR, SAMPLE_CLASS VARCHAR)')
+    conn.execute(f'CREATE TABLE "{STUDY}_patient" (PATIENT_ID VARCHAR)')
+    conn.executemany(f'INSERT INTO "{STUDY}_sample" VALUES (?, ?, ?)', [
+        ("S1", "P1", "Tumor"),
+        ("S2", "P2", "Tumor"),
+    ])
+    conn.execute("""
+        CREATE TABLE clinical_attribute_meta (
+            study_id VARCHAR, attr_id VARCHAR, display_name VARCHAR,
+            description VARCHAR, datatype VARCHAR, patient_attribute BOOLEAN,
+            priority INTEGER, PRIMARY KEY (study_id, attr_id)
+        )
+    """)
+    conn.execute(
+        "INSERT INTO clinical_attribute_meta VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (STUDY, "SAMPLE_CLASS", "Sample Class", "", "STRING", False, 100),
+    )
+    conn.execute("CREATE TABLE study_data_types (study_id VARCHAR, data_type VARCHAR, PRIMARY KEY (study_id, data_type))")
+    charts = get_charts_meta(conn, STUDY)
+    conn.close()
+    attr_ids = [c["attr_id"] for c in charts]
+    assert "SAMPLE_CLASS" not in attr_ids, "Single-value pie chart should be excluded"
+
+
+def test_km_has_pie_dimensions(db_with_clinical_meta):
+    """_km chart must use compact dimensions (w=2, h=5), same as a pie chart."""
+    charts = get_charts_meta(db_with_clinical_meta, STUDY)
+    km = next((c for c in charts if c["attr_id"] == "_km"), None)
+    assert km is not None, "_km chart not found"
+    assert km["w"] == 2 and km["h"] == 5, f"_km dimensions wrong: w={km['w']} h={km['h']}"
+
+
+def test_clinical_charts_capped_at_20():
+    """More than 20 clinical attrs: only the top-20 by priority appear; special charts are uncapped."""
+    conn = duckdb.connect(":memory:")
+    # 25 sample columns with distinct priorities
+    cols = " ".join(f"ATTR_{i:02d} VARCHAR," for i in range(25))
+    conn.execute(f'CREATE TABLE "{STUDY}_sample" (SAMPLE_ID VARCHAR, PATIENT_ID VARCHAR, {cols[:-1]})')
+    conn.execute(f'CREATE TABLE "{STUDY}_patient" (PATIENT_ID VARCHAR)')
+    conn.execute("""
+        CREATE TABLE clinical_attribute_meta (
+            study_id VARCHAR, attr_id VARCHAR, display_name VARCHAR,
+            description VARCHAR, datatype VARCHAR, patient_attribute BOOLEAN,
+            priority INTEGER, PRIMARY KEY (study_id, attr_id)
+        )
+    """)
+    for i in range(25):
+        conn.execute(
+            "INSERT INTO clinical_attribute_meta VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (STUDY, f"ATTR_{i:02d}", f"Attr {i:02d}", "", "STRING", False, 100 - i),
+        )
+    conn.execute("CREATE TABLE study_data_types (study_id VARCHAR, data_type VARCHAR, PRIMARY KEY (study_id, data_type))")
+    charts = get_charts_meta(conn, STUDY)
+    conn.close()
+    clinical = [c for c in charts if not c["attr_id"].startswith("_")]
+    assert len(clinical) == 20, f"Expected 20 clinical charts, got {len(clinical)}"
+    # Highest-priority attrs must be the ones kept
+    kept_ids = {c["attr_id"] for c in clinical}
+    for i in range(20):
+        assert f"ATTR_{i:02d}" in kept_ids, f"ATTR_{i:02d} should be in top 20"
+    assert "ATTR_20" not in kept_ids, "ATTR_20 should be cut off"
 
 
 def test_cancer_type_always_table_regardless_of_cardinality():

@@ -107,6 +107,13 @@
 
     function broadcastUpdate() { window.dispatchEvent(new CustomEvent('cbio-filter-changed')); }
 
+    function formatFreq(freq, count) {
+        if (count > 0 && freq === 0) return '<0.1%';
+        if (freq === 0) return '0%';
+        if (freq >= 99.9) return '99.9%';
+        return freq.toFixed(1) + '%';
+    }
+
     function getFiltersForWidget(excludeAttrId) {
         let f = JSON.parse(JSON.stringify(DashboardState.filters));
         if (excludeAttrId === '_mutated_genes') f.mutationFilter.genes = [];
@@ -152,7 +159,7 @@
                 tr.innerHTML = `
                     <td><div class="cbio-color-swatch" style="background-color: ${item.color};"></div><span class="cbio-table-label" title="${item.value}">${item.value}</span></td>
                     <td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.count.toLocaleString()}</span></div></td>
-                    <td class="cbio-table-freq">${item.pct}%</td>
+                    <td class="cbio-table-freq">${formatFreq(item.pct, item.count)}</td>
                 `;
                 tr.onclick = (e) => { e.stopPropagation(); toggleFilter(attrId, item.value); };
                 tbody.appendChild(tr);
@@ -258,7 +265,7 @@
             data.forEach(item => {
                 const isSelected = selectedGenes.includes(item.gene);
                 const tr = document.createElement('tr'); if (isSelected) tr.className = 'selected';
-                tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: right;">${item.n_mut.toLocaleString()}</td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${item.freq}%</td>`;
+                tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: right;">${item.n_mut.toLocaleString()}</td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
                 tr.onclick = (e) => { e.stopPropagation(); toggleMutationFilter(item.gene); };
                 tbody.appendChild(tr);
             });
@@ -279,7 +286,7 @@
             tbody.innerHTML = '';
             data.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: center;"><span class="badge ${item.cna_type === 'AMP' ? 'bg-red-500' : 'bg-blue-500'}" style="color: white; padding: 0 4px; border-radius: 2px; font-size: 9px;">${item.cna_type}</span></td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox"><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${item.freq}%</td>`;
+                tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: center;"><span class="badge ${item.cna_type === 'AMP' ? 'bg-red-500' : 'bg-blue-500'}" style="color: white; padding: 0 4px; border-radius: 2px; font-size: 9px;">${item.cna_type}</span></td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox"><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
                 tbody.appendChild(tr);
             });
         } catch (e) {}
@@ -301,7 +308,7 @@
             data.forEach(item => {
                 const isSelected = selectedGenes.includes(item.gene);
                 const tr = document.createElement('tr'); if (isSelected) tr.className = 'selected';
-                tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: right;">${item.n_sv.toLocaleString()}</td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${item.freq}%</td>`;
+                tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: right;">${item.n_sv.toLocaleString()}</td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
                 tr.onclick = (e) => { e.stopPropagation(); toggleSVFilter(item.gene); };
                 tbody.appendChild(tr);
             });
@@ -318,12 +325,84 @@
             formData.append('filter_json', JSON.stringify(DashboardState.filters));
             const response = await fetch('/study/summary/chart/scatter?format=json', { method: 'POST', body: formData });
             const data = await response.json();
+
+            const PLASMA = [
+                '#0d0887','#46039f','#7201a8','#9c179e','#bd3786',
+                '#d8576b','#ed7953','#fb9f3a','#fdb42f'
+            ];
+
+            const logMin = Math.log(Math.max(1, data.count_min));
+            const logMax = Math.log(Math.max(1, data.count_max));
+            const toCoord = c => (logMax === logMin) ? 0.375
+                : 0.75 * (Math.log(c) - logMin) / (logMax - logMin);
+            const midCount = Math.round(Math.exp(0.375 * (logMax - logMin) / 0.75 + logMin));
+
+            const gridLeft = 65, gridRight = 85;
+            const plotWidth = chartDom.offsetWidth - gridLeft - gridRight;
+            const symbolSize = Math.max(4, Math.floor(plotWidth / 40));
+
+            const seriesData = data.bins.map(b => [
+                b.bin_x + data.x_bin_size / 2,
+                b.bin_y + data.y_bin_size / 2,
+                b.count,
+                toCoord(b.count),
+            ]);
+
             Charts.Scatter.setOption({
-                tooltip: { trigger: 'item', formatter: p => `${p.data[2]}<br/>FGA: ${p.data[0]}<br/>Mutations: ${p.data[1]}` },
-                xAxis: { type: 'value', name: 'FGA', nameLocation: 'end', axisLabel: { fontSize: 9 } },
-                yAxis: { type: 'value', name: 'Mut Count', nameLocation: 'end', axisLabel: { fontSize: 9 } },
-                series: [{ type: 'scatter', data: data.map(d => [d.fga, d.mutation_count, d.sample_id]), itemStyle: { color: '#2986E2', opacity: 0.6 }, symbolSize: 5 }],
-                grid: { left: 50, right: 10, top: 20, bottom: 30 }
+                grid: { left: 65, right: 85, top: 30, bottom: 45 },
+                xAxis: {
+                    type: 'value', min: 0, max: 1,
+                    name: 'Fraction Genome Altered',
+                    nameLocation: 'middle', nameGap: 30,
+                    axisLabel: { fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#eee' } }
+                },
+                yAxis: {
+                    type: 'value', min: 0,
+                    name: 'Mutation Count',
+                    nameLocation: 'middle', nameGap: 45,
+                    axisLabel: { fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#eee' } }
+                },
+                visualMap: {
+                    type: 'continuous',
+                    dimension: 3, min: 0, max: 0.75,
+                    orient: 'vertical',
+                    right: 5, top: 70,
+                    itemWidth: 10, itemHeight: 80,
+                    text: [data.count_max.toLocaleString(), '1'],
+                    textStyle: { fontSize: 10 },
+                    inRange: { color: PLASMA },
+                    show: true
+                },
+                series: [{
+                    type: 'scatter',
+                    data: seriesData,
+                    symbolSize: symbolSize,
+                    encode: { x: 0, y: 1, tooltip: 2 },
+                }],
+                graphic: [
+                    { type: 'text', right: 10, top: 55,
+                      style: { text: '# samples', fontSize: 10, fill: '#555' } },
+                    { type: 'text', right: 5, top: 107,
+                      style: { text: midCount.toLocaleString(), fontSize: 10, fill: '#555' } },
+                    { type: 'text', right: 5, top: 175,
+                      style: { text: 'Pearson:', fontSize: 10, fill: '#555', fontWeight: 'bold' } },
+                    { type: 'text', right: 5, top: 188,
+                      style: { text: data.pearson_corr.toFixed(4), fontSize: 10, fill: '#555' } },
+                    { type: 'text', right: 5, top: 201,
+                      style: { text: 'p=' + data.pearson_pval.toFixed(2), fontSize: 10, fill: '#555' } },
+                    { type: 'text', right: 5, top: 220,
+                      style: { text: 'Spearman:', fontSize: 10, fill: '#555', fontWeight: 'bold' } },
+                    { type: 'text', right: 5, top: 233,
+                      style: { text: data.spearman_corr.toFixed(4), fontSize: 10, fill: '#555' } },
+                    { type: 'text', right: 5, top: 246,
+                      style: { text: 'p=' + data.spearman_pval.toFixed(2), fontSize: 10, fill: '#555' } },
+                ],
+                tooltip: {
+                    trigger: 'item',
+                    formatter: p => `${p.data[2]} samples<br/>FGA ≈ ${p.data[0].toFixed(3)}<br/>Mut ≈ ${Math.round(p.data[1])}`
+                }
             });
         } catch (e) {}
     }
@@ -343,7 +422,7 @@
                 tr.innerHTML = `
                     <td style="padding-left:10px;">${item.display_name}</td>
                     <td style="text-align:right;">${item.count.toLocaleString()}</td>
-                    <td style="text-align:right;">${item.freq.toFixed(1)}%</td>`;
+                    <td style="text-align:right;">${formatFreq(item.freq, item.count)}</td>`;
                 tbody.appendChild(tr);
             });
         } catch (e) {}
@@ -764,52 +843,46 @@
         _menuAttrId = null;
     }
 
-    // Pure layout function — returns [{x, y}] for each item, same order as input.
-    // Uses the same bin-packing algorithm (left-to-right rows, gap-filling).
+    // Matrix-based bin-packing — direct port of the legacy cBioPortal calculateLayout algorithm.
+    //
+    // Key constraint (mirrors legacy isOccupied() in StudyViewUtils.tsx):
+    //   charts with w > 2 must start at x divisible by 4 (legacy: w>1 → x%2===0, scaled ×2)
+    //   charts with h > 5 must start at y divisible by 5  (legacy: h>1 → y%2===0, scaled ×5÷2)
+    // Effect: large charts (w=4 h=10) can start at y=0, 5, 10... allowing them to fill
+    // alongside the lower half of a KM column instead of leaving a 5-row gap.
     function computeLayout(items) {
-        const placed = new Set();
-        const result = items.map(() => ({ x: 0, y: 0 }));
+        const COLS = 12;
+        const matrix = [new Array(COLS).fill('')];
 
-        function place(idx, x, y) { result[idx] = { x, y }; placed.add(idx); }
-
-        let col = 0, rowY = 0, rowMaxH = 0;
-        const rowEntries = [];
-
-        function flushGaps() {
-            if (rowMaxH === 0) return;
-            let gapX = -1, gapW = 0, shortH = 0, cx = 0;
-            for (const { idx } of rowEntries) {
-                const h = items[idx].h;
-                if (h < rowMaxH) { if (gapX === -1) { gapX = cx; shortH = h; } gapW += items[idx].w; }
-                else { gapX = -1; gapW = 0; }
-                cx += items[idx].w;
-            }
-            if (gapX === -1 || gapW === 0) return;
-            const gy = rowY + shortH, availH = rowMaxH - shortH;
-            let gx = gapX;
-            for (let j = 0; j < items.length; j++) {
-                if (placed.has(j)) continue;
-                const c = items[j];
-                if (c.w <= (gapX + gapW - gx) && c.h <= availH) {
-                    place(j, gx, gy); gx += c.w;
-                    if (gx >= gapX + gapW) break;
+        function isOccupied(x, y, w, h) {
+            if (w > 2 && x % 4 !== 0) return true;
+            if (h > 5 && y % 5 !== 0) return true;
+            for (let i = y; i < y + h; i++) {
+                if (i >= matrix.length) break;
+                for (let j = x; j < x + w; j++) {
+                    if (j >= COLS || matrix[i][j]) return true;
                 }
             }
+            return false;
         }
 
-        for (let i = 0; i < items.length; i++) {
-            if (placed.has(i)) continue;
-            if (col + items[i].w > 12) {
-                flushGaps();
-                col = 0; rowY += rowMaxH; rowMaxH = 0; rowEntries.length = 0;
+        function findSpot(w, h) {
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (!matrix[y][x] && !isOccupied(x, y, w, h)) return { x, y };
+                }
             }
-            place(i, col, rowY);
-            rowEntries.push({ idx: i, x: col });
-            col += items[i].w;
-            rowMaxH = Math.max(rowMaxH, items[i].h);
+            return { x: 0, y: matrix.length };
         }
-        flushGaps();
-        return result;
+
+        return items.map(item => {
+            const { x, y } = findSpot(item.w, item.h);
+            while (y + item.h >= matrix.length) matrix.push(new Array(COLS).fill(''));
+            for (let i = y; i < y + item.h; i++)
+                for (let j = x; j < x + item.w; j++)
+                    matrix[i][j] = item.attr_id || 'x';
+            return { x, y };
+        });
     }
 
     function buildDashboard(chartsMeta, grid) {

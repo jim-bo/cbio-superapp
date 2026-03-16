@@ -86,11 +86,13 @@ def fixture_tp53_filter() -> dict:
 # Helper: post to a chart endpoint
 # ---------------------------------------------------------------------------
 
-def post_chart(client: TestClient, endpoint: str, study_id: str = STUDY_ID, filter_json: dict | None = None) -> list | dict:
+def post_chart(client: TestClient, endpoint: str, study_id: str = STUDY_ID, filter_json: dict | None = None, extra: dict | None = None) -> list | dict:
     """POST to /study/summary/chart/<endpoint>?format=json and return parsed body."""
     data: dict = {"study_id": study_id}
     if filter_json is not None:
         data["filter_json"] = json.dumps(filter_json)
+    if extra:
+        data.update(extra)
     resp = client.post(f"/study/summary/chart/{endpoint}", data=data, params={"format": "json"})
     resp.raise_for_status()
     return resp.json()

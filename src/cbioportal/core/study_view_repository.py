@@ -6,6 +6,8 @@ import logging
 import math
 from typing import Any
 
+from scipy import stats
+
 logger = logging.getLogger(__name__)
 
 
@@ -110,7 +112,7 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
             end = v.get("end")
             if val is not None:
                 if val == "NA":
-                    conditions.append(f'"{attr_id}" IS NULL')
+                    conditions.append(f'("{attr_id}" IS NULL OR "{attr_id}" = \'NA\')')
                 else:
                     conditions.append(f'"{attr_id}" = ?')
                     local_params.append(val)
@@ -813,13 +815,20 @@ def compute_km_curve(pairs: list[tuple[float, int]]) -> list[dict]:
     return curve
 
 
+_EMPTY_SCATTER = {
+    "bins": [], "pearson_corr": 0, "pearson_pval": 1,
+    "spearman_corr": 0, "spearman_pval": 1,
+    "count_min": 0, "count_max": 0,
+    "x_bin_size": 0.025, "y_bin_size": 1.0,
+}
+
+
 def get_tmb_fga_scatter(
     conn,
     study_id: str,
     filter_json: str | None = None,
-    max_points: int = 2000,
-) -> list[dict]:
-    """Return [{mutation_count, fga}] scatter data."""
+) -> dict:
+    """Return density-binned scatter data with Pearson/Spearman correlations."""
     attrs = get_clinical_attributes(conn, study_id)
     fga_col = None
     for candidate in ("FRACTION_GENOME_ALTERED", "FGA"):
@@ -827,7 +836,7 @@ def get_tmb_fga_scatter(
             fga_col = candidate
             break
     if not fga_col:
-        return []
+        return _EMPTY_SCATTER
 
     sample_table = f'"{study_id}_sample"'
     mut_table = f'"{study_id}_mutations"'
@@ -837,24 +846,65 @@ def get_tmb_fga_scatter(
     try:
         sql = f"""
             SELECT
-                s.SAMPLE_ID,
                 TRY_CAST(s."{fga_col}" AS DOUBLE) AS fga,
-                COUNT(m.{mut_sample_col}) AS mutation_count
+                COUNT(DISTINCT
+                    CASE WHEN m.Chromosome IS NOT NULL
+                    THEN CONCAT_WS('|', m.Chromosome,
+                                   CAST(m.Start_Position AS VARCHAR),
+                                   CAST(m.End_Position AS VARCHAR),
+                                   m.Reference_Allele,
+                                   m.Tumor_Seq_Allele1)
+                    ELSE NULL END
+                ) AS mutation_count
             FROM {sample_table} s
-            LEFT JOIN {mut_table} m ON s.SAMPLE_ID = m.{mut_sample_col}
+            LEFT JOIN {mut_table} m
+                ON s.SAMPLE_ID = m.{mut_sample_col}
+                AND COALESCE(m.Mutation_Status, '') <> 'GERMLINE'
+                AND COALESCE(m.Variant_Classification, '') <> 'Fusion'
             WHERE s.SAMPLE_ID IN ({filter_sql})
             GROUP BY s.SAMPLE_ID, fga
-            HAVING fga IS NOT NULL
-            LIMIT {max_points}
+            HAVING fga IS NOT NULL AND mutation_count > 0
         """
         rows = conn.execute(sql, params).fetchall()
     except Exception:
-        return []
+        return _EMPTY_SCATTER
 
-    return [
-        {"sample_id": r[0], "fga": round(r[1], 4), "mutation_count": r[2]}
-        for r in rows
-    ]
+    if not rows:
+        return _EMPTY_SCATTER
+
+    fga_arr = [r[0] for r in rows]
+    mut_arr = [r[1] for r in rows]
+
+    if len(fga_arr) > 2:
+        pearson_r, pearson_p = stats.pearsonr(fga_arr, mut_arr)
+        spearman_r, spearman_p = stats.spearmanr(fga_arr, mut_arr)
+    else:
+        pearson_r = pearson_p = spearman_r = spearman_p = 0.0
+
+    X_BINS, Y_BINS = 40, 35
+    x_bin_size = 1.0 / X_BINS
+    max_mut = max(mut_arr) if mut_arr else 1
+    y_bin_size = max_mut / Y_BINS
+
+    bin_counts: dict[tuple, int] = {}
+    for fga_val, mut_val in zip(fga_arr, mut_arr):
+        bx = round(min(int(fga_val / x_bin_size), X_BINS - 1) * x_bin_size, 6)
+        by = round(int(mut_val / y_bin_size) * y_bin_size, 6)
+        bin_counts[(bx, by)] = bin_counts.get((bx, by), 0) + 1
+
+    counts = list(bin_counts.values())
+    return {
+        "bins": [{"bin_x": bx, "bin_y": by, "count": c}
+                 for (bx, by), c in bin_counts.items()],
+        "pearson_corr":  round(float(pearson_r), 4),
+        "pearson_pval":  round(float(pearson_p), 4),
+        "spearman_corr": round(float(spearman_r), 4),
+        "spearman_pval": round(float(spearman_p), 4),
+        "count_min": min(counts) if counts else 0,
+        "count_max": max(counts) if counts else 0,
+        "x_bin_size": x_bin_size,
+        "y_bin_size": round(y_bin_size, 4),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -897,6 +947,7 @@ _CHART_DIMS: dict[str, dict] = {
 }
 
 _PIE_TO_TABLE_THRESHOLD = 20  # matches cBioPortal StudyViewConfig.ts `pieToTable`
+_MAX_CLINICAL_CHARTS = 20     # matches cBioPortal studyview_clinical_attribute_chart_count
 
 # Canonical priority overrides for well-known attrs (used in fallback path)
 _PRIORITY_OVERRIDES: dict[str, int] = {
@@ -961,6 +1012,7 @@ def get_charts_meta(conn, study_id: str) -> list[dict]:
     are appended based on ``study_data_types``.
     """
     charts: list[dict] = []
+    _distinct_counts: dict[str, int] = {}  # populated by whichever path runs; used post-cap
 
     # --- Primary path: clinical_attribute_meta table ---
     has_meta_rows = False
@@ -994,6 +1046,7 @@ def get_charts_meta(conn, study_id: str) -> list[dict]:
         ]
         if _pie_string_attrs:
             distinct_counts = _count_distinct_for_attrs(conn, study_id, _pie_string_attrs)
+            _distinct_counts = distinct_counts
             for c in charts:
                 if c["chart_type"] == "pie" and distinct_counts.get(c["attr_id"], 0) > _PIE_TO_TABLE_THRESHOLD:
                     c["chart_type"] = "table"
@@ -1035,10 +1088,24 @@ def get_charts_meta(conn, study_id: str) -> list[dict]:
         ]
         if _pie_string_attrs_fb:
             distinct_counts_fb = _count_distinct_for_attrs(conn, study_id, _pie_string_attrs_fb)
+            _distinct_counts = distinct_counts_fb
             for c in charts:
                 if c["chart_type"] == "pie" and distinct_counts_fb.get(c["attr_id"], 0) > _PIE_TO_TABLE_THRESHOLD:
                     c["chart_type"] = "table"
                     c.update(_CHART_DIMS["table"])
+
+    # --- Limit clinical attribute charts to top N (matches legacy portal default) ---
+    charts.sort(key=lambda c: (-c["priority"], c["attr_id"]))
+    charts = charts[:_MAX_CLINICAL_CHARTS]
+
+    # --- Exclude single-value pie charts after cap (matches legacy shouldShowChart logic) ---
+    # Applied post-cap so single-value attrs still consume a priority slot (matching legacy),
+    # which prevents lower-priority attrs from advancing into the visible set.
+    if _distinct_counts:
+        charts = [
+            c for c in charts
+            if not (c["chart_type"] == "pie" and _distinct_counts.get(c["attr_id"], 0) == 1)
+        ]
 
     # --- Append special genomic charts based on study_data_types ---
     try:
@@ -1055,28 +1122,28 @@ def get_charts_meta(conn, study_id: str) -> list[dict]:
         charts.append({
             "attr_id": "_mutated_genes", "display_name": "Mutated Genes",
             "chart_type": "_mutated_genes", "patient_attribute": False,
-            "priority": 0, "w": 4, "h": 10,
+            "priority": 90, "w": 4, "h": 10,
             "description": "Genes with somatic mutations in the study cohort.",
         })
     if "cna" in data_types:
         charts.append({
             "attr_id": "_cna_genes", "display_name": "CNA Genes",
             "chart_type": "_cna_genes", "patient_attribute": False,
-            "priority": 0, "w": 4, "h": 10,
+            "priority": 80, "w": 4, "h": 10,
             "description": "Genes with copy number alterations (amplification or deep deletion) detected in the cohort.",
         })
     if "sv" in data_types:
         charts.append({
             "attr_id": "_sv_genes", "display_name": "Structural Variant Genes",
             "chart_type": "_sv_genes", "patient_attribute": False,
-            "priority": 0, "w": 4, "h": 10,
+            "priority": 70, "w": 4, "h": 10,
             "description": "Genes involved in structural variants (fusions, rearrangements) detected in the cohort.",
         })
     if "mutation" in data_types and "cna" in data_types:
         charts.append({
             "attr_id": "_scatter", "display_name": "Mutation Count vs Fraction Genome Altered",
             "chart_type": "_scatter", "patient_attribute": False,
-            "priority": 0, "w": 4, "h": 10,
+            "priority": 50, "w": 4, "h": 10,
             "description": "Scatter plot of tumor mutational burden (mutation count) vs fraction of genome altered (FGA) per sample.",
         })
     if data_types:
@@ -1091,7 +1158,7 @@ def get_charts_meta(conn, study_id: str) -> list[dict]:
         charts.append({
             "attr_id": "_km", "display_name": "KM Plot: Overall (months)",
             "chart_type": "_km", "patient_attribute": False,
-            "priority": 400, "w": 4, "h": 10,
+            "priority": 400, "w": 2, "h": 5,
             "description": "Kaplan-Meier overall survival curve for the current cohort (OS_MONTHS / OS_STATUS).",
         })
 

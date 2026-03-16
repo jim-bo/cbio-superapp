@@ -62,7 +62,6 @@ ENDPOINT_SCHEMAS = [
     ("cna-genes", ["gene", "cna_type", "n_samples", "freq"]),
     ("sv-genes", ["gene", "n_sv", "n_samples", "freq"]),
     ("age", ["x", "y"]),
-    ("scatter", ["sample_id", "fga", "mutation_count"]),
     ("km", ["time", "survival"]),
 ]
 
@@ -546,15 +545,35 @@ class TestDataIntegrity:
                 f"Unexpected cna_type '{row['cna_type']}' for gene {row['gene']}"
             )
 
-    def test_scatter_fga_in_range(self, client):
-        """FGA values must be between 0 and 1."""
-        data = post_chart(client, "scatter")
-        if not data:
-            pytest.skip("No scatter data")
-        for row in data:
-            assert 0.0 <= row["fga"] <= 1.0, (
-                f"FGA out of range for sample {row['sample_id']}: {row['fga']}"
-            )
+    def test_scatter_density_format(self, client):
+        """Scatter returns binned density format with correlations."""
+        resp = client.post('/study/summary/chart/scatter',
+                           data={'study_id': STUDY_ID, 'filter_json': '{}'})
+        resp.raise_for_status()
+        data = resp.json()
+        assert "bins" in data
+        assert "pearson_corr" in data and "spearman_corr" in data
+        assert "pearson_pval" in data and "spearman_pval" in data
+        assert "count_min" in data and "count_max" in data
+        for b in data["bins"]:
+            assert 0.0 <= b["bin_x"] <= 1.0, f"bin_x out of range: {b['bin_x']}"
+            assert b["bin_y"] >= 0
+            assert b["count"] >= 1
+        assert -1.0 <= data["pearson_corr"] <= 1.0
+        assert -1.0 <= data["spearman_corr"] <= 1.0
+        assert 0.0 <= data["pearson_pval"] <= 1.0
+        assert 0.0 <= data["spearman_pval"] <= 1.0
+
+    def test_scatter_correlation_matches_legacy(self, client):
+        """Pearson and Spearman match known values for msk_chord_2024 (FGA from seg file)."""
+        data = client.post('/study/summary/chart/scatter',
+                           data={'study_id': STUDY_ID, 'filter_json': '{}'}).json()
+        if not data["bins"]:
+            pytest.skip(f"Study {STUDY_ID} has no FGA column — scatter empty")
+        assert data["pearson_corr"]  == -0.0554, f"Expected -0.0554, got {data['pearson_corr']}"
+        assert data["spearman_corr"] ==  0.1539, f"Expected 0.1539, got {data['spearman_corr']}"
+        assert data["pearson_pval"]  < 0.01
+        assert data["spearman_pval"] < 0.01
 
     def test_km_survival_decreasing(self, client):
         """KM curve survival values must be monotonically non-increasing."""
@@ -590,6 +609,56 @@ class TestDataIntegrity:
 # ---------------------------------------------------------------------------
 # charts-meta integration test
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Select All = No Filter regression test
+# ---------------------------------------------------------------------------
+
+class TestSelectAllEqualsNoFilter:
+    """Selecting all values of a clinical attribute must equal no filter."""
+
+    def _get_all_values(self, client, attr_id):
+        """Fetch all values for a clinical attribute."""
+        data = post_chart(client, "clinical", extra={"attribute_id": attr_id})
+        return [{"value": item["value"]} for item in data.get("data", [])]
+
+    def test_mutated_genes_select_all_equals_baseline(self, client):
+        all_values = self._get_all_values(client, "CANCER_TYPE_DETAILED")
+        assert len(all_values) > 1
+
+        baseline = post_chart(client, "mutated-genes")
+        all_filter = {
+            "clinicalDataFilters": [
+                {"attributeId": "CANCER_TYPE_DETAILED", "values": all_values}
+            ]
+        }
+        filtered = post_chart(client, "mutated-genes", filter_json=all_filter)
+
+        baseline_top5 = {g["gene"]: g["n_samples"] for g in baseline[:5]}
+        filtered_top5 = {g["gene"]: g["n_samples"] for g in filtered[:5]}
+        assert filtered_top5 == baseline_top5, (
+            f"Select-all changed mutation counts.\n"
+            f"Baseline: {baseline_top5}\nFiltered: {filtered_top5}"
+        )
+
+    def test_cna_genes_select_all_equals_baseline(self, client):
+        all_values = self._get_all_values(client, "CANCER_TYPE_DETAILED")
+
+        baseline = post_chart(client, "cna-genes")
+        all_filter = {
+            "clinicalDataFilters": [
+                {"attributeId": "CANCER_TYPE_DETAILED", "values": all_values}
+            ]
+        }
+        filtered = post_chart(client, "cna-genes", filter_json=all_filter)
+
+        baseline_top5 = {g["gene"]: g["n_samples"] for g in baseline[:5]}
+        filtered_top5 = {g["gene"]: g["n_samples"] for g in filtered[:5]}
+        assert filtered_top5 == baseline_top5, (
+            f"Select-all changed CNA counts.\n"
+            f"Baseline: {baseline_top5}\nFiltered: {filtered_top5}"
+        )
+
 
 def test_charts_meta_msk_chord(client):
     """GET /study/summary/charts-meta returns expected chart metadata for msk_chord_2024."""
@@ -628,6 +697,23 @@ def test_charts_meta_msk_chord(client):
     # Results must be sorted by priority descending
     priorities = [c["priority"] for c in charts]
     assert priorities == sorted(priorities, reverse=True), "charts-meta not sorted by priority desc"
+
+    # SAMPLE_CLASS must be excluded (only 1 distinct value — matches legacy shouldShowChart logic)
+    assert "SAMPLE_CLASS" not in by_attr, "SAMPLE_CLASS should be excluded (single-value pie)"
+
+    # SAMPLE_CLASS consumes a priority slot before exclusion, so GLEASON (priority 750) lands
+    # at position 21 and is cut by the top-20 cap — matching legacy exactly.
+    assert "GLEASON_HIGHEST_REPORTED" not in by_attr, "GLEASON_HIGHEST_REPORTED should be hidden (outside top-20)"
+    assert "HISTORY_OF_PDL1" not in by_attr, "HISTORY_OF_PDL1 should be hidden (outside top-20)"
+
+    # Sanity-check: clinical (non-special) charts must be capped at 20
+    clinical_charts = [c for c in charts if not c["attr_id"].startswith("_")]
+    assert len(clinical_charts) <= 20, f"More than 20 clinical charts returned: {len(clinical_charts)}"
+
+    # _km must be compact (same size as a pie chart)
+    if "_km" in by_attr:
+        km = by_attr["_km"]
+        assert km["w"] == 2 and km["h"] == 5, f"_km dimensions wrong: w={km['w']} h={km['h']}"
 
 
 def test_chart_order_msk_chord(client):

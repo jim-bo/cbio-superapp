@@ -51,6 +51,14 @@ uv run pytest tests/test_study_view_charts.py -v
 
 **Any new feature that touches a repository function must pass both test suites.**
 
+### Golden value protection
+Exact numeric assertions in `test_study_view_charts.py` (Pearson/Spearman correlations,
+gene counts, survival values, etc.) are pinned against the public cBioPortal portal.
+
+**Never change a golden value to make a failing test pass.** A failing golden test signals
+a computation divergence from the legacy portal — fix the code, not the number. Only update
+a golden value when the user explicitly approves it after reviewing the discrepancy.
+
 ## git
 - every feature needs to be implemented on a feature branch
 - don't credit the coding agents in commit messages, keep them short
