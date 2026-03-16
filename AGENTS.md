@@ -59,6 +59,37 @@ gene counts, survival values, etc.) are pinned against the public cBioPortal por
 a computation divergence from the legacy portal — fix the code, not the number. Only update
 a golden value when the user explicitly approves it after reviewing the discrepancy.
 
+### Smoke test before committing
+
+Any change to routes, schemas, or templates must be verified by running the server
+and hitting every affected endpoint — a 200 on the HTML page is not sufficient.
+
+```bash
+uv run cbioportal serve --port 8002 &
+STUDY=msk_chord_2024
+FILTER='{"clinicalDataFilters":[],"mutationFilter":{"genes":[]},"svFilter":{"genes":[]}}'
+BASE=http://127.0.0.1:8002/study/summary
+
+# Page load
+curl -sf "$BASE?id=$STUDY" > /dev/null && echo "OK page"
+
+# charts-meta (GET)
+curl -sf "$BASE/charts-meta?id=$STUDY" > /dev/null && echo "OK charts-meta"
+
+# All chart endpoints (POST)
+for ep in mutated-genes cna-genes sv-genes age scatter km data-types; do
+  curl -sf -X POST "$BASE/chart/$ep" \
+    -F "study_id=$STUDY" -F "filter_json=$FILTER" > /dev/null && echo "OK $ep"
+done
+
+# clinical (requires attribute_id)
+curl -sf -X POST "$BASE/chart/clinical" \
+  -F "study_id=$STUDY" -F "filter_json=$FILTER" -F "attribute_id=CANCER_TYPE" > /dev/null \
+  && echo "OK clinical"
+
+kill %1
+```
+
 ## git
 - every feature needs to be implemented on a feature branch
 - don't credit the coding agents in commit messages, keep them short
