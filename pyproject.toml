@@ -19,10 +19,15 @@ dependencies = [
     "tqdm>=4.67.3",
     "pyyaml>=6.0.3",
     "scipy",
+    "httpx>=0.28",
+    "questionary>=2.0",
+    "prompt-toolkit>=3.0",
+    "tomli-w>=1.0",
+    "pydantic>=2.0",
 ]
 
 [project.scripts]
-cbioportal = "cbioportal.cli.main:app"
+cbio = "cbioportal.cli.main:app"
 
 [build-system]
 requires = ["hatchling"]
