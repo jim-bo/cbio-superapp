@@ -49,6 +49,12 @@ def _search_stub(state, args) -> str:
     return ""
 
 
+@register("/sync", "Sync all studies and clinical data from cBioPortal")
+def _sync_stub(state, args) -> str:
+    # Handled specially in _submit before dispatch; entry exists for tab completion
+    return ""
+
+
 @register("/clear", "Clear history and reset session")
 def _clear(state, args) -> str:
     state.history.clear()

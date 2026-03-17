@@ -18,7 +18,7 @@ from cbioportal.cli.display.tui.history import HistoryStore, HistoryEntry, Messa
 from cbioportal.cli.display.tui.styles import STYLE
 from cbioportal.cli.display.tui.layout import build_layout
 from cbioportal.cli.display.tui.commands import SlashCommandCompleter, dispatch
-from cbioportal.cli.display.tui.flow import handle_search, handle_config
+from cbioportal.cli.display.tui.flow import handle_search, handle_config, handle_sync
 
 
 class AppState:
@@ -160,6 +160,11 @@ async def _submit(text: str, state: AppState, app: Application) -> None:
                 app.create_background_task(handle_search(slash_args, state, app))
             else:
                 _show_search_subprompt(state, app)
+            app.invalidate()
+            return
+
+        if slash_cmd == "/sync":
+            app.create_background_task(handle_sync(state, app))
             app.invalidate()
             return
 

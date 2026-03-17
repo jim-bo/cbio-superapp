@@ -227,3 +227,27 @@ async def handle_config(state, app) -> None:
 
     state.selector_callback = on_setting_selected
     app.invalidate()
+
+
+async def handle_sync(state, app) -> None:
+    """Fetch all studies + clinical data from cBioPortal and store in cache DB."""
+    from cbioportal.core.syncer import sync_all
+
+    state.is_thinking = True
+    app.invalidate()
+
+    def on_progress(msg: str) -> None:
+        state.history.add(HistoryEntry(MessageKind.NOTIFICATION, msg))
+        app.invalidate()
+
+    try:
+        stats = await sync_all(on_progress)
+        state.history.add(HistoryEntry(
+            MessageKind.COMMAND_RESPONSE,
+            f"✓ Sync complete: {stats['studies']} studies, {stats['clinical_rows']} clinical rows",
+        ))
+    except Exception as exc:
+        state.history.add(HistoryEntry(MessageKind.NOTIFICATION, f"Sync failed: {exc}"))
+    finally:
+        state.is_thinking = False
+        app.invalidate()

@@ -155,10 +155,40 @@ class CbioPortalClient:
             
         return all_data
 
+    def get_clinical_attributes(self, study_id: str) -> list[dict]:
+        """Fetch clinical attribute definitions for a study."""
+        r = self.http.get(
+            f"{self.base_url}/api/studies/{study_id}/clinical-attributes",
+            params={"projection": "SUMMARY", "pageSize": 1000},
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def get_clinical_data(self, study_id: str) -> list[dict]:
+        """Fetch all clinical data (SAMPLE + PATIENT) for a study."""
+        all_rows: list[dict] = []
+        for data_type in ("SAMPLE", "PATIENT"):
+            page = 0
+            while True:
+                r = self.http.get(
+                    f"{self.base_url}/api/studies/{study_id}/clinical-data",
+                    params={
+                        "clinicalDataType": data_type,
+                        "projection": "SUMMARY",
+                        "pageSize": 50000,
+                        "pageNumber": page,
+                    },
+                )
+                r.raise_for_status()
+                data = r.json()
+                if not data:
+                    break
+                all_rows.extend(data)
+                if len(data) < 50000:
+                    break
+                page += 1
+        return all_rows
+
     def get_cna_segments(self, study_id: str) -> list[CnaSegment]:
         """Fetch CNA segments for a study."""
-        raise NotImplementedError
-
-    def get_clinical_data(self, study_id: str) -> list[ClinicalRow]:
-        """Fetch clinical data for a study."""
         raise NotImplementedError
