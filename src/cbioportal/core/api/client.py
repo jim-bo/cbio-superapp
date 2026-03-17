@@ -124,6 +124,37 @@ class CbioPortalClient:
             
         return all_mutations
 
+    def get_clinical_data_raw(self, study_id: str, attribute_id: str, data_type: str = "SAMPLE") -> list[dict]:
+        """Fetch clinical data for a specific attribute (e.g., ONCOTREE_CODE) across the entire study."""
+        all_data = []
+        page_number = 0
+        page_size = 20000
+        
+        while True:
+            r = self.http.get(
+                f"{self.base_url}/api/studies/{study_id}/clinical-data",
+                params={
+                    "clinicalDataType": data_type,
+                    "attributeId": attribute_id,
+                    "pageNumber": page_number,
+                    "pageSize": page_size,
+                }
+            )
+            r.raise_for_status()
+            data = r.json()
+            
+            if not data:
+                break
+                
+            all_data.extend(data)
+            
+            if len(data) < page_size:
+                break
+                
+            page_number += 1
+            
+        return all_data
+
     def get_cna_segments(self, study_id: str) -> list[CnaSegment]:
         """Fetch CNA segments for a study."""
         raise NotImplementedError
