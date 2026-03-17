@@ -8,19 +8,40 @@ this offshoot. Feedback is totally welcome.
 
 A cbioportal CLI with a minimal Python stack that includes a rich, full-screen Terminal UI (TUI) for interacting with APIs, querying studies, and exporting customized genomic datasets.
 
-![Interface Screenshot](docs/img/tui_screenshot.png)
+![Interface Demonstration](docs/img/tui_demo.gif)
 
-## Prerequisites
+## Installation
 
-- [uv](https://github.com/astral-sh/uv) for package management
-- [Docker](https://www.docker.com/) (Optional, required for validating MAF exports)
+### Use it (pip / uv)
 
-## Setup
+No clone required. Install directly from GitHub:
 
-1. Install dependencies:
-   ```bash
-   uv sync
-   ```
+```bash
+# with pip
+pip install git+https://github.com/jim-bo/cbio-cli.git
+
+# with uv
+uv pip install git+https://github.com/jim-bo/cbio-cli.git
+```
+
+This installs the `cbio` CLI entry point. Then run:
+
+```bash
+cbio
+```
+
+### Development Setup
+
+Clone the repo and install with dev dependencies:
+
+```bash
+git clone https://github.com/jim-bo/cbio-cli.git
+cd cbio-cli
+uv sync
+uv run cbio
+```
+
+**Optional:** [Docker](https://www.docker.com/) is required only for validating MAF exports (`--run-docker`).
 
 ## TUI Reference
 
@@ -31,7 +52,7 @@ The primary interface is the interactive Terminal UI.
 Launch the full-screen interactive REPL:
 
 ```bash
-uv run cbio
+cbio
 ```
 
 **Features & Commands within the TUI:**
