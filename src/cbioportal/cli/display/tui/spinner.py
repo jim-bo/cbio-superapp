@@ -30,6 +30,9 @@ class SpinnerControl(UIControl):
         self._active = True
         self._task = app.create_background_task(self._animate(app))
 
+    def set_label(self, label: str) -> None:
+        self._label = label
+
     def stop(self) -> None:
         self._active = False
         if self._task is not None:

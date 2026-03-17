@@ -6,9 +6,12 @@ from datetime import datetime, timezone
 from typing import Callable
 
 
-async def sync_all(progress_cb: Callable[[str], None]) -> dict:
+async def sync_all(
+    progress_cb: Callable[[str], None],
+    study_ids: list[str] | None = None,
+) -> dict:
     """Fetch all studies + clinical data → cache DB. Returns summary stats."""
-    return await asyncio.to_thread(_sync_all_sync, progress_cb)
+    return await asyncio.to_thread(_sync_all_sync, progress_cb, study_ids)
 
 
 def _is_clinical_fresh(conn, study_id: str, ttl_days: int) -> bool:
@@ -24,7 +27,10 @@ def _is_clinical_fresh(conn, study_id: str, ttl_days: int) -> bool:
     return (now - fetched_at).days <= ttl_days
 
 
-def _sync_all_sync(progress_cb: Callable[[str], None]) -> dict:
+def _sync_all_sync(
+    progress_cb: Callable[[str], None],
+    study_ids: list[str] | None = None,
+) -> dict:
     from cbioportal.core.api.client import CbioPortalClient
     from cbioportal.core.cache import (
         get_cache_connection,
@@ -34,25 +40,35 @@ def _sync_all_sync(progress_cb: Callable[[str], None]) -> dict:
     )
     from cbioportal.core.cbio_config import get_config
 
-    progress_cb("Fetching study list from cBioPortal...")
+    progress_cb("Fetching study list…")
     with CbioPortalClient() as client:
-        studies = client.fetch_all_studies()
-    progress_cb(f"Fetched {len(studies)} studies.")
+        all_studies = client.fetch_all_studies()
+
+    if study_ids:
+        wanted = set(study_ids)
+        studies = [s for s in all_studies if s.studyId in wanted]
+        missing = wanted - {s.studyId for s in studies}
+        if missing:
+            progress_cb(f"Unknown study IDs: {', '.join(sorted(missing))}")
+    else:
+        studies = all_studies
 
     ttl_days = int(get_config().get("cache", {}).get("ttl_days", 180))
     conn = get_cache_connection(read_only=False)
     try:
-        upsert_studies(conn, [s.model_dump() for s in studies])
+        upsert_studies(conn, [s.model_dump() for s in all_studies])
 
         clinical_rows_total = 0
         skipped = 0
+        total = len(studies)
 
         for i, study in enumerate(studies):
             if _is_clinical_fresh(conn, study.studyId, ttl_days):
                 skipped += 1
+                progress_cb(f"{i + 1}/{total} · {study.studyId} (cached)")
                 continue
 
-            progress_cb(f"[{i + 1}/{len(studies)}] {study.studyId} — syncing clinical data…")
+            progress_cb(f"{i + 1}/{total} · {study.studyId}")
 
             with CbioPortalClient() as client:
                 attrs = client.get_clinical_attributes(study.studyId)
@@ -72,10 +88,7 @@ def _sync_all_sync(progress_cb: Callable[[str], None]) -> dict:
 
             clinical_rows_total += len(rows)
 
-        if skipped:
-            progress_cb(f"Skipped {skipped} studies (cache fresh).")
-
     finally:
         conn.close()
 
-    return {"studies": len(studies), "clinical_rows": clinical_rows_total}
+    return {"studies": total, "synced": total - skipped, "skipped": skipped, "clinical_rows": clinical_rows_total}

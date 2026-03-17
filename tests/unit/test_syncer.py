@@ -219,6 +219,7 @@ def test_sync_all_populates_cache(tmp_path, monkeypatch):
         stats = _run(syncer.sync_all(messages.append))
 
     assert stats["studies"] == 1
+    assert stats["synced"] == 1
     assert stats["clinical_rows"] == 2
 
     conn = duckdb.connect(str(cache_db), read_only=True)
@@ -235,6 +236,40 @@ def test_sync_all_populates_cache(tmp_path, monkeypatch):
     assert data_count == 2
     assert manifest is not None
     assert manifest[0] == "test_study"
+
+
+def test_sync_all_study_id_filter(tmp_path, monkeypatch):
+    """Passing study_ids should sync only those studies."""
+    from cbioportal.core import syncer, cache
+
+    cache_db = tmp_path / "cache.duckdb"
+    monkeypatch.setattr(cache, "CACHE_DB_PATH", cache_db)
+    monkeypatch.setattr(cache, "CACHE_DIR", tmp_path)
+
+    other_study = MagicMock()
+    other_study.studyId = "other_study"
+    other_study.model_dump.return_value = {
+        "studyId": "other_study", "name": "Other", "allSampleCount": 10,
+    }
+
+    mock_client = MagicMock()
+    mock_client.__enter__ = lambda s: mock_client
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.fetch_all_studies.return_value = [FAKE_STUDY, other_study]
+    mock_client.get_clinical_attributes.return_value = FAKE_ATTRS
+    mock_client.get_clinical_data.return_value = FAKE_CLINICAL_ROWS
+
+    with patch("cbioportal.core.api.client.CbioPortalClient", return_value=mock_client):
+        stats = _run(syncer.sync_all(lambda _: None, study_ids=["test_study"]))
+
+    assert stats["studies"] == 1  # only test_study was targeted
+    assert stats["synced"] == 1
+    # other_study should NOT have clinical data fetched
+    assert mock_client.get_clinical_data.call_count == 1
+    conn = duckdb.connect(str(cache_db), read_only=True)
+    other_data = conn.execute("SELECT count(*) FROM clinical_data WHERE study_id='other_study'").fetchone()[0]
+    conn.close()
+    assert other_data == 0
 
 
 def test_sync_all_skips_fresh_cache(tmp_path, monkeypatch):
@@ -259,5 +294,7 @@ def test_sync_all_skips_fresh_cache(tmp_path, monkeypatch):
         stats = _run(syncer.sync_all(lambda _: None))
 
     assert stats["studies"] == 1
+    assert stats["synced"] == 0
+    assert stats["skipped"] == 1
     assert stats["clinical_rows"] == 0  # nothing fetched on second run
     assert mock_client.get_clinical_data.call_count == 1  # called only once

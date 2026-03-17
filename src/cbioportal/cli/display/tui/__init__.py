@@ -164,7 +164,7 @@ async def _submit(text: str, state: AppState, app: Application) -> None:
             return
 
         if slash_cmd == "/sync":
-            app.create_background_task(handle_sync(state, app))
+            app.create_background_task(handle_sync(state, app, args=slash_args or None))
             app.invalidate()
             return
 
