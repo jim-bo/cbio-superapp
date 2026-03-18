@@ -40,7 +40,7 @@ def _build_context(conn, study_names, cancer_type="All", data_types=None):
             "samples": s["sample_count"],
             "description": s["description"],
             "pubmed_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else None,
-            "cbio_url": f"https://www.cbioportal.org/study/summary?id={s['id']}",
+            "cbio_url": f"/study/summary?id={s['id']}",
         })
 
     # cancer_types should be the sorted list of Organ Systems
