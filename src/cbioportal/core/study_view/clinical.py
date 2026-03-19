@@ -1,8 +1,118 @@
 """Clinical attribute queries: counts, data table, and attribute listing."""
 from __future__ import annotations
 
+import math
+
 from .filters import _build_filter_subquery, get_clinical_attributes
 from .colors import RESERVED_COLORS, CBIOPORTAL_D3_COLORS
+
+
+_CLEAN_INTERVALS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000]
+
+
+def _auto_bin_size(val_range: float) -> float:
+    """Choose a clean bin size to yield roughly 10–20 bins."""
+    if val_range <= 0:
+        return 1.0
+    raw = val_range / 15  # target ~15 bins
+    magnitude = 10 ** math.floor(math.log10(raw))
+    for m in _CLEAN_INTERVALS:
+        candidate = m * magnitude
+        if candidate >= raw:
+            return float(candidate)
+    return float(magnitude * 1000)
+
+
+def get_numeric_histogram(
+    conn,
+    study_id: str,
+    attribute_id: str,
+    filter_json: str | None = None,
+    bin_size: float | None = None,
+) -> list[dict]:
+    """Return equal-width histogram bins for a numeric clinical attribute.
+
+    Auto-computes bin_size when not provided to yield roughly 10–20 bins.
+    Returns [{"x": "0-10", "y": count}, ..., {"x": "NA", "y": na_count}].
+    The "NA" entry is only included when na_count > 0.
+    """
+    attrs = get_clinical_attributes(conn, study_id)
+    source = attrs.get(attribute_id, "sample")
+    table = f'"{study_id}_{source}"'
+    sample_table = f'"{study_id}_sample"'
+    filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+
+    if source == "patient":
+        id_filter = (
+            f't.PATIENT_ID IN '
+            f'(SELECT PATIENT_ID FROM {sample_table} WHERE SAMPLE_ID IN ({filter_sql}))'
+        )
+    else:
+        id_filter = f't.SAMPLE_ID IN ({filter_sql})'
+
+    # Compute min/max for auto bin size
+    try:
+        row = conn.execute(
+            f'SELECT MIN(TRY_CAST(t."{attribute_id}" AS DOUBLE)), '
+            f'MAX(TRY_CAST(t."{attribute_id}" AS DOUBLE)) '
+            f'FROM {table} t WHERE {id_filter}',
+            list(params),
+        ).fetchone()
+    except Exception:
+        return []
+
+    if row is None or row[0] is None or row[1] is None:
+        return []
+
+    val_min, val_max = row
+    val_range = val_max - val_min
+
+    if bin_size is None:
+        bin_size = _auto_bin_size(val_range)
+
+    if bin_size <= 0:
+        bin_size = 1.0
+
+    try:
+        sql = (
+            f'SELECT FLOOR(TRY_CAST(t."{attribute_id}" AS DOUBLE) / ?) * ? AS bin_start, '
+            f'COUNT(*) AS cnt '
+            f'FROM {table} t '
+            f'WHERE {id_filter} '
+            f'AND TRY_CAST(t."{attribute_id}" AS DOUBLE) IS NOT NULL '
+            f'GROUP BY bin_start '
+            f'ORDER BY bin_start'
+        )
+        rows = conn.execute(sql, list(params) + [bin_size, bin_size]).fetchall()
+    except Exception:
+        return []
+
+    result = []
+    for r in rows:
+        if r[0] is None:
+            continue
+        start = r[0]
+        end = start + bin_size
+        if bin_size == int(bin_size) and start == int(start) and end == int(end):
+            label = f"{int(start)}-{int(end)}"
+        else:
+            label = f"{start:.1f}-{end:.1f}"
+        result.append({"x": label, "y": r[1]})
+
+    # NA count
+    try:
+        na_sql = (
+            f'SELECT COUNT(*) FROM {table} t '
+            f'WHERE {id_filter} '
+            f'AND TRY_CAST(t."{attribute_id}" AS DOUBLE) IS NULL'
+        )
+        na_count = conn.execute(na_sql, list(params)).fetchone()[0]
+        if na_count > 0:
+            result.append({"x": "NA", "y": na_count})
+    except Exception:
+        pass
+
+    return result
 
 
 def get_clinical_counts(

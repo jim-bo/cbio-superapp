@@ -51,36 +51,45 @@ def normalize_hugo_symbols(conn, study_id: str):
 
     # Pass 3 (CNA only): derive alias map from this study's mutations table *before*
     # mutations are normalized, so stale symbols (e.g. MLL2) are still present.
+    # Only runs when mutations table has both Hugo_Symbol and Entrez_Gene_Id columns.
     if cna_table in existing_tables and mutations_table in existing_tables:
-        conn.execute(f"""
-            UPDATE "{cna_table}"
-            SET hugo_symbol = alias_map.canonical
-            FROM (
-                SELECT DISTINCT
-                    "{mutations_table}".Hugo_Symbol AS old_symbol,
-                    gr.hugo_gene_symbol            AS canonical
-                FROM "{mutations_table}"
-                JOIN gene_reference gr
-                  ON TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) = gr.entrez_gene_id
-                WHERE TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) > 0
-                  AND "{mutations_table}".Hugo_Symbol IS DISTINCT FROM gr.hugo_gene_symbol
-            ) alias_map
-            WHERE "{cna_table}".hugo_symbol = alias_map.old_symbol
-        """)
+        _pre_cols = {r[0].lower() for r in conn.execute(f'DESCRIBE "{mutations_table}"').fetchall()}
+        if "entrez_gene_id" in _pre_cols and "hugo_symbol" in _pre_cols:
+            conn.execute(f"""
+                UPDATE "{cna_table}"
+                SET hugo_symbol = alias_map.canonical
+                FROM (
+                    SELECT DISTINCT
+                        "{mutations_table}".Hugo_Symbol AS old_symbol,
+                        gr.hugo_gene_symbol            AS canonical
+                    FROM "{mutations_table}"
+                    JOIN gene_reference gr
+                      ON TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) = gr.entrez_gene_id
+                    WHERE TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) > 0
+                      AND "{mutations_table}".Hugo_Symbol IS DISTINCT FROM gr.hugo_gene_symbol
+                ) alias_map
+                WHERE "{cna_table}".hugo_symbol = alias_map.old_symbol
+            """)
 
     if mutations_table in existing_tables:
+        # Detect available columns — some studies use non-standard names (e.g. "Gene" instead of "Entrez_Gene_Id")
+        _mut_cols = {r[0].lower() for r in conn.execute(f'DESCRIBE "{mutations_table}"').fetchall()}
+        _has_entrez = "entrez_gene_id" in _mut_cols
+        _has_hugo = "hugo_symbol" in _mut_cols
+
         # Pass 1: normalize by Entrez Gene ID.
         # Qualify columns with table name to avoid case-insensitive ambiguity with gene_reference.entrez_gene_id
-        conn.execute(f"""
-            UPDATE "{mutations_table}"
-            SET Hugo_Symbol = gr.hugo_gene_symbol
-            FROM gene_reference gr
-            WHERE TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) = gr.entrez_gene_id
-              AND TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) > 0
-              AND "{mutations_table}".Hugo_Symbol IS DISTINCT FROM gr.hugo_gene_symbol
-        """)
+        if _has_entrez and _has_hugo:
+            conn.execute(f"""
+                UPDATE "{mutations_table}"
+                SET Hugo_Symbol = gr.hugo_gene_symbol
+                FROM gene_reference gr
+                WHERE TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) = gr.entrez_gene_id
+                  AND TRY_CAST("{mutations_table}".Entrez_Gene_Id AS INTEGER) > 0
+                  AND "{mutations_table}".Hugo_Symbol IS DISTINCT FROM gr.hugo_gene_symbol
+            """)
         # Pass 2: normalize by symbol map (covers renamed genes in gene-update.md)
-        if has_updates:
+        if has_updates and _has_hugo:
             conn.execute(f"""
                 UPDATE "{mutations_table}"
                 SET Hugo_Symbol = su.new_symbol
@@ -88,7 +97,7 @@ def normalize_hugo_symbols(conn, study_id: str):
                 WHERE "{mutations_table}".Hugo_Symbol = su.old_symbol
             """)
         # Pass 3: normalize by gene_alias table (covers historical aliases like MLL2→KMT2D)
-        if has_aliases:
+        if has_aliases and _has_hugo:
             conn.execute(f"""
                 UPDATE "{mutations_table}"
                 SET Hugo_Symbol = gr.hugo_gene_symbol

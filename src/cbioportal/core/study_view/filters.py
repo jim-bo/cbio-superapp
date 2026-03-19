@@ -100,8 +100,10 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
 
     clinical_filters = f.get("clinicalDataFilters", [])
     mutation_filter_genes = f.get("mutationFilter", {}).get("genes", [])
+    sv_filter_genes = f.get("svFilter", {}).get("genes", [])
+    cna_filter_genes = f.get("cnaFilter", {}).get("genes", [])
 
-    if not clinical_filters and not mutation_filter_genes:
+    if not clinical_filters and not mutation_filter_genes and not sv_filter_genes and not cna_filter_genes:
         return f'SELECT SAMPLE_ID FROM "{study_id}_sample"', []
 
     subqueries: list[str] = []
@@ -159,6 +161,33 @@ def _build_filter_subquery(conn, study_id: str, filter_json: str | None) -> tupl
         for gene in mutation_filter_genes:
             subqueries.append(
                 f'SELECT DISTINCT {mut_sample_col} FROM "{study_id}_mutations" WHERE Hugo_Symbol = ?'
+            )
+            params.append(gene)
+
+    # SV gene filter
+    if sv_filter_genes:
+        try:
+            sv_cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_sv"').fetchall()]
+            if "Site1_Hugo_Symbol" in sv_cols:
+                gene_col = "Site1_Hugo_Symbol"
+            elif "Gene1" in sv_cols:
+                gene_col = "Gene1"
+            else:
+                gene_col = None
+            if gene_col:
+                for gene in sv_filter_genes:
+                    subqueries.append(
+                        f'SELECT DISTINCT "Sample_Id" FROM "{study_id}_sv" WHERE "{gene_col}" = ?'
+                    )
+                    params.append(gene)
+        except Exception:
+            pass
+
+    # CNA gene filter
+    if cna_filter_genes:
+        for gene in cna_filter_genes:
+            subqueries.append(
+                f'SELECT DISTINCT sample_id FROM "{study_id}_cna" WHERE hugo_symbol = ?'
             )
             params.append(gene)
 

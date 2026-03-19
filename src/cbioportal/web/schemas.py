@@ -40,6 +40,11 @@ class SvFilter(BaseModel):
     genes: list[str] = []
 
 
+class CnaFilter(BaseModel):
+    """Gene-level copy number alteration filter."""
+    genes: list[str] = []
+
+
 class DashboardFilters(BaseModel):
     """Complete filter state serialized by the study view dashboard.
 
@@ -49,6 +54,7 @@ class DashboardFilters(BaseModel):
     clinicalDataFilters: list[ClinicalDataFilter] = []
     mutationFilter: MutationFilter = MutationFilter()
     svFilter: SvFilter = SvFilter()
+    cnaFilter: CnaFilter = CnaFilter()
 
 
 # ---------------------------------------------------------------------------

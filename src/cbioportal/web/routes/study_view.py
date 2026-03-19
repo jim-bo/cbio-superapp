@@ -13,6 +13,7 @@ from cbioportal.core.study_view_repository import (
     get_sv_genes,
     get_cna_genes,
     get_age_histogram,
+    get_numeric_histogram,
     get_km_data,
     get_tmb_fga_scatter,
     get_clinical_attributes,
@@ -279,6 +280,24 @@ async def chart_km(
     _parse_filters(filter_json)
     conn = request.app.state.db_conn
     return get_km_data(conn, study_id, filter_json)
+
+
+@router.post("/study/summary/chart/numeric", response_model=AgeResponse)
+async def chart_numeric(
+    request: Request,
+    study_id: Annotated[str, Form()],
+    attribute_id: Annotated[str, Form()],
+    bin_size: Annotated[float | None, Form()] = None,
+    filter_json: Annotated[str, Form()] = "{}",
+    format: str | None = None,
+):
+    """Return equal-width histogram bins for any numeric clinical attribute."""
+    _parse_filters(filter_json)
+    conn = request.app.state.db_conn
+    all_bins = get_numeric_histogram(conn, study_id, attribute_id, filter_json, bin_size)
+    na_count = next((r["y"] for r in all_bins if r["x"] == "NA"), 0)
+    bins = [r for r in all_bins if r["x"] != "NA"]
+    return {"data": bins, "na_count": na_count}
 
 
 @router.post("/study/summary/chart/data-types", response_model=list[DataTypeRow])

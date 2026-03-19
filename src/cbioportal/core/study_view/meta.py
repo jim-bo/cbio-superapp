@@ -14,13 +14,33 @@ _MAX_CLINICAL_CHARTS = 20     # matches cBioPortal studyview_clinical_attribute_
 
 # Canonical priority overrides for well-known attrs (used in fallback path)
 _PRIORITY_OVERRIDES: dict[str, int] = {
-    "CANCER_TYPE":          3000,
-    "CANCER_TYPE_DETAILED": 2000,
-    "GENDER":               9,
-    "SEX":                  9,
-    "AGE":                  9,
-    "CURRENT_AGE_DEID":     9,
-    "DIAGNOSIS_AGE":        9,
+    "CANCER_TYPE":             3000,
+    "CANCER_TYPE_DETAILED":    2000,
+    "OS_STATUS":               1000,
+    "OS_MONTHS":                990,
+    "SAMPLE_TYPE":              950,
+    "RACE":                     900,
+    "AGE":                      800,
+    "CURRENT_AGE_DEID":         800,
+    "DIAGNOSIS_AGE":            800,
+    "GENDER":                   700,
+    "SEX":                      700,
+    "STAGE":                    600,
+    "TUMOR_STAGE":              600,
+    "PATHOLOGICAL_STAGE":       600,
+    "CLINICAL_STAGE":           600,
+    "ETHNICITY":                550,
+    "SMOKING_HISTORY":          500,
+    "SMOKING":                  500,
+    "DFS_STATUS":               500,
+    "MSI_TYPE":                 450,
+    "MSI_SCORE":                445,
+    "DFS_MONTHS":               490,
+    "PFS_STATUS":               480,
+    "PFS_MONTHS":               470,
+    "MUTATION_COUNT":           400,
+    "FRACTION_GENOME_ALTERED":  390,
+    "TMB_NONSYNONYMOUS":        380,
 }
 
 _DATA_TYPE_DISPLAY = {
@@ -171,12 +191,20 @@ def get_charts_meta(conn, study_id: str) -> list[dict]:
         for attr_id, display_name, datatype, patient_attribute, priority, description in rows:
             chart_type = _resolve_chart_type(attr_id, datatype or "STRING")
             dims = _CHART_DIMS[chart_type]
+            # Mirror legacy getPriorityByClinicalAttribute(): when the file-defined
+            # priority is 1 (the cBioPortal default, meaning no explicit #Priority
+            # header was set), apply _PRIORITY_OVERRIDES so well-known attributes
+            # like OS_STATUS and SAMPLE_TYPE sort correctly.  When the file
+            # explicitly set a non-default priority, honour it as-is.
+            effective_priority = (
+                _PRIORITY_OVERRIDES.get(attr_id, priority) if priority == 1 else priority
+            )
             charts.append({
                 "attr_id":           attr_id,
                 "display_name":      display_name or attr_id,
                 "chart_type":        chart_type,
                 "patient_attribute": bool(patient_attribute),
-                "priority":          priority,
+                "priority":          effective_priority,
                 "description":       description,
                 **dims,
             })

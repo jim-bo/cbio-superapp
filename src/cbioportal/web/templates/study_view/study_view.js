@@ -99,10 +99,13 @@ function renderGenomicTableTbody(data) {
 function renderCNATableTbody(data) {
     const tbody = document.getElementById('table-body-_cna_genes');
     if (!tbody) return;
+    const selectedGenes = DashboardState.filters.cnaFilter.genes;
     tbody.innerHTML = '';
     data.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: center;"><span class="badge ${item.cna_type === 'AMP' ? 'bg-red-500' : 'bg-blue-500'}" style="color: white; padding: 0 4px; border-radius: 2px; font-size: 9px;">${item.cna_type}</span></td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox"><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
+        const isSelected = selectedGenes.includes(item.gene);
+        const tr = document.createElement('tr'); if (isSelected) tr.className = 'selected';
+        tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: center;"><span class="badge ${item.cna_type === 'AMP' ? 'bg-red-500' : 'bg-blue-500'}" style="color: white; padding: 0 4px; border-radius: 2px; font-size: 9px;">${item.cna_type}</span></td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
+        tr.onclick = (e) => { e.stopPropagation(); toggleCNAFilter(item.gene); };
         tbody.appendChild(tr);
     });
 }
@@ -174,13 +177,11 @@ function getFiltersForWidget(excludeAttrId) {
     let f = JSON.parse(JSON.stringify(DashboardState.filters));
     if (excludeAttrId === '_mutated_genes') f.mutationFilter.genes = [];
     else if (excludeAttrId === '_sv_genes') f.svFilter.genes = [];
-    else if (excludeAttrId === '_cna_genes') {} // TBD
+    else if (excludeAttrId === '_cna_genes') f.cnaFilter.genes = [];
     else f.clinicalDataFilters = f.clinicalDataFilters.filter(x => x.attributeId !== excludeAttrId);
     return f;
 }
 
-// Age-like column names that should use the dedicated /age (binned histogram) endpoint
-const AGE_COLS = new Set(['AGE', 'CURRENT_AGE_DEID', 'DIAGNOSIS_AGE', 'AGE_AT_DIAGNOSIS']);
 
 async function updateTableWidget(attrId) {
     const widget = document.getElementById(`widget-${attrId}`);
@@ -230,6 +231,7 @@ async function updatePieWidget(attrId) {
         widgetData[attrId] = data;
         const currentFilter = DashboardState.filters.clinicalDataFilters.find(f => f.attributeId === attrId);
         const selectedValues = currentFilter ? currentFilter.values.map(v => v.value) : [];
+        const total = data.reduce((s, d) => s + d.count, 0);
         chart.setOption({
             tooltip: { show: false },
             series: [{
@@ -238,7 +240,20 @@ async function updatePieWidget(attrId) {
                     value: item.count, name: item.value,
                     itemStyle: { color: item.color, opacity: (selectedValues.length === 0 || selectedValues.includes(item.value)) ? 1 : 0.4, borderWidth: selectedValues.includes(item.value) ? 2 : 0, borderColor: '#333' }
                 })),
-                label: { show: false }
+                // Show count label inside slices >= 25% of total (matches legacy threshold)
+                label: {
+                    show: true,
+                    position: 'inside',
+                    formatter: (params) => {
+                        if (params.percent < 25) return '';
+                        const n = params.value;
+                        return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
+                    },
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 'bold'
+                },
+                labelLine: { show: false }
             }]
         });
         chart.off('click'); chart.on('click', (p) => toggleFilter(attrId, p.name));
@@ -257,20 +272,12 @@ async function updateBarWidget(attrId) {
         const formData = new FormData();
         formData.append('study_id', DashboardState.studyId);
         formData.append('filter_json', JSON.stringify(DashboardState.filters));
+        formData.append('attribute_id', attrId);
         let bins, naCount = 0;
-        if (AGE_COLS.has(attrId)) {
-            // Use dedicated age endpoint for proper 5-year bucketing
-            const response = await fetch('/study/summary/chart/age?format=json', { method: 'POST', body: formData });
-            const json = await response.json();
-            bins = json.data || [];
-            naCount = json.na_count || 0;
-        } else {
-            // Use clinical endpoint for generic numeric attrs
-            formData.append('attribute_id', attrId);
-            const response = await fetch('/study/summary/chart/clinical?format=json', { method: 'POST', body: formData });
-            const json = await response.json();
-            bins = (json.data || []).map(d => ({ x: d.value, y: d.count }));
-        }
+        const response = await fetch('/study/summary/chart/numeric', { method: 'POST', body: formData });
+        const json = await response.json();
+        bins = json.data || [];
+        naCount = json.na_count || 0;
         widgetData[attrId] = bins;
         if (naEl) {
             naEl.textContent = naCount > 0 ? `NA: ${naCount}` : '';
@@ -512,6 +519,13 @@ function toggleSVFilter(gene) {
     const idx = DashboardState.filters.svFilter.genes.indexOf(gene);
     if (idx > -1) DashboardState.filters.svFilter.genes.splice(idx, 1);
     else DashboardState.filters.svFilter.genes.push(gene);
+    broadcastUpdate();
+}
+
+function toggleCNAFilter(gene) {
+    const idx = DashboardState.filters.cnaFilter.genes.indexOf(gene);
+    if (idx > -1) DashboardState.filters.cnaFilter.genes.splice(idx, 1);
+    else DashboardState.filters.cnaFilter.genes.push(gene);
     broadcastUpdate();
 }
 

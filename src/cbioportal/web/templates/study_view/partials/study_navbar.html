@@ -5,6 +5,10 @@
             <div class="study-description">
                 {{ meta.description | safe }}
             </div>
+            {% if meta.pmid %}
+            <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ meta.pmid }}"
+               target="_blank" rel="noopener" class="study-pmid-link">PubMed</a>
+            {% endif %}
         </div>
         <div class="study-query-area">
             <div class="query-input-group">
@@ -31,6 +35,11 @@
                     <button class="btn btn-default btn-sm" title="View selected cases"><i class="fa-regular fa-user-circle"></i></button>
                     <button class="btn btn-default btn-sm" title="Share Virtual Study"><i class="fa-regular fa-bookmark"></i></button>
                     <button class="btn btn-default btn-sm" title="Download clinical data"><i class="fa fa-download"></i></button>
+                    <a href="https://docs.cbioportal.org/user-guide/study-view/"
+                       target="_blank" rel="noopener"
+                       class="btn btn-default btn-sm" title="Study Page Help">
+                       <i class="fa fa-question-circle"></i>
+                    </a>
                 </div>
                 <button class="btn btn-primary btn-sm">Custom Selection ▾</button>
                 <button class="btn btn-primary btn-sm">Charts ▾</button>

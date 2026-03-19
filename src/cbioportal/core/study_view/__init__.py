@@ -16,7 +16,7 @@ Internal modules:
 """
 from .filters import _build_filter_subquery, get_clinical_attributes
 from .colors import get_value_color, CBIOPORTAL_D3_COLORS, RESERVED_COLORS
-from .clinical import get_clinical_counts, get_all_clinical_counts, get_clinical_data_table
+from .clinical import get_clinical_counts, get_all_clinical_counts, get_clinical_data_table, get_numeric_histogram
 from .genomic import (
     get_mutated_genes,
     get_cna_genes,
@@ -37,7 +37,7 @@ from .meta import (
 __all__ = [
     "_build_filter_subquery", "get_clinical_attributes",
     "get_value_color", "CBIOPORTAL_D3_COLORS", "RESERVED_COLORS",
-    "get_clinical_counts", "get_all_clinical_counts", "get_clinical_data_table",
+    "get_clinical_counts", "get_all_clinical_counts", "get_clinical_data_table", "get_numeric_histogram",
     "get_mutated_genes", "get_cna_genes", "get_sv_genes", "get_data_types",
     "get_age_histogram", "_get_panel_availability",
     "get_km_data", "compute_km_curve", "get_tmb_fga_scatter",

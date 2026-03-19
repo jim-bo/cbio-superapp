@@ -17,14 +17,17 @@ def load_category_mapping():
     if _CATEGORY_MAPPING is not None:
         return _CATEGORY_MAPPING
 
-    mapping_path = Path(__file__).resolve().parent.parent.parent.parent.parent / "study_categories.yaml"
+    mapping_path = Path(__file__).resolve().parent / "study_categories.yaml"
     if mapping_path.exists():
         with open(mapping_path, 'r') as f:
             raw_mapping = yaml.safe_load(f)
             _CATEGORY_MAPPING = {}
             for category, study_ids in raw_mapping.items():
                 for sid in study_ids:
-                    _CATEGORY_MAPPING[sid.lower()] = category
+                    # First-wins: if a study appears in multiple categories,
+                    # the first category in the YAML file takes precedence.
+                    if sid.lower() not in _CATEGORY_MAPPING:
+                        _CATEGORY_MAPPING[sid.lower()] = category
     else:
         _CATEGORY_MAPPING = {}
     return _CATEGORY_MAPPING

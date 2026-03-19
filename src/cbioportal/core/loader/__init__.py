@@ -136,25 +136,105 @@ def load_study(
         if load_cna and cna_file.exists():
             table_name = f'"{raw_study_id}_cna"'
             conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            # Unpivot the wide CNA matrix into long format, keeping only non-zero values
-            # Handle 'NA' strings by specifying nullstr='NA'
-            unpivot_sql = f"""
-                CREATE TABLE {table_name} AS
-                SELECT
-                    '{raw_study_id}' as study_id,
-                    Hugo_Symbol as hugo_symbol,
-                    sample_id,
-                    CAST(cna_value AS SIGNED) as cna_value
-                FROM (
-                    UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\t', header=True, ignore_errors=True, nullstr='NA'))
-                    ON COLUMNS(* EXCLUDE Hugo_Symbol)
-                    INTO
-                        NAME sample_id
-                        VALUE cna_value
-                )
-                WHERE cna_value IS NOT NULL AND cna_value != 0
-            """
-            conn.execute(unpivot_sql)
+            # Hybrid CNA strategy: UNPIVOT (fast, DuckDB-native) for files with
+            # ≤ 5,000 sample columns; Python row-by-row (O(1) memory) for wider files.
+            # UNPIVOT materialises the entire matrix in C-level memory — at 25k samples
+            # it uses ~619 MB, at 54k samples it OOMs (38 GB). Python is ~20x slower
+            # per-file but avoids the O(n_samples) memory spike. See BETA.md.
+            _NON_SAMPLE_COLS = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband"}
+            with open(cna_file) as _f:
+                for _line in _f:
+                    if not _line.startswith("#"):
+                        _header_cols = _line.strip().split("\t")
+                        break
+            _hugo_col = _header_cols.index("Hugo_Symbol") if "Hugo_Symbol" in _header_cols else None
+            _entrez_col = _header_cols.index("Entrez_Gene_Id") if "Entrez_Gene_Id" in _header_cols else None
+            _sample_cols = [c for c in _header_cols if c not in _NON_SAMPLE_COLS]
+            _n_samples = len(_sample_cols)
+
+            if _n_samples <= 5_000:
+                # Fast path: DuckDB UNPIVOT — handles all header variants dynamically.
+                _exclude = [c for c in _header_cols if c in _NON_SAMPLE_COLS]
+                if len(_exclude) > 1:
+                    _exclude_clause = f"({', '.join(_exclude)})"
+                elif _exclude:
+                    _exclude_clause = _exclude[0]
+                else:
+                    _exclude_clause = None
+                if _hugo_col is not None:
+                    _hugo_select = "Hugo_Symbol as hugo_symbol,"
+                    _join_clause = ""
+                else:
+                    _hugo_select = "gr.hugo_gene_symbol as hugo_symbol,"
+                    _join_clause = f"JOIN gene_reference gr ON TRY_CAST(unpivoted.Entrez_Gene_Id AS INTEGER) = gr.entrez_gene_id"
+                _on_clause = f"ON COLUMNS(* EXCLUDE {_exclude_clause})" if _exclude_clause else "ON COLUMNS(*)"
+                conn.execute(f"""
+                    CREATE TABLE {table_name} AS
+                    SELECT * FROM (
+                        SELECT
+                            '{raw_study_id}' as study_id,
+                            {_hugo_select}
+                            sample_id,
+                            TRY_CAST(cna_value AS DOUBLE) as cna_value
+                        FROM (
+                            UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
+                            {_on_clause}
+                            INTO NAME sample_id VALUE cna_value
+                        ) unpivoted
+                        {_join_clause}
+                    ) WHERE cna_value IS NOT NULL AND cna_value != 0
+                """)
+            else:
+                # Slow path: Python row-by-row — O(1) memory for 50k+ sample columns.
+                conn.execute(f"""
+                    CREATE TABLE {table_name} (
+                        study_id    VARCHAR NOT NULL,
+                        hugo_symbol VARCHAR,
+                        sample_id   VARCHAR NOT NULL,
+                        cna_value   DOUBLE NOT NULL
+                    )
+                """)
+                _sample_indices = [(i, c) for i, c in enumerate(_header_cols) if c not in _NON_SAMPLE_COLS]
+                _entrez_to_hugo: dict[int, str] = {}
+                if _hugo_col is None and _entrez_col is not None:
+                    _entrez_to_hugo = {
+                        r[0]: r[1]
+                        for r in conn.execute("SELECT entrez_gene_id, hugo_gene_symbol FROM gene_reference").fetchall()
+                        if r[1]
+                    }
+                _batch: list[tuple] = []
+                with open(cna_file) as _f:
+                    for _line in _f:
+                        if _line.startswith("#"):
+                            continue
+                        _parts = _line.rstrip("\n").split("\t")
+                        if _parts[0] == (_header_cols[0]):
+                            continue  # skip header row
+                        if _hugo_col is not None:
+                            _hugo = _parts[_hugo_col]
+                        elif _entrez_col is not None:
+                            try:
+                                _hugo = _entrez_to_hugo.get(int(_parts[_entrez_col]), "")
+                            except (ValueError, IndexError):
+                                _hugo = ""
+                        else:
+                            _hugo = ""
+                        for _idx, _sample_id in _sample_indices:
+                            try:
+                                _raw = _parts[_idx].strip()
+                                if _raw in ("", "NA", "null", "NULL"):
+                                    continue
+                                _val = float(_raw)
+                            except (ValueError, IndexError):
+                                continue
+                            if _val == 0:
+                                continue
+                            _batch.append((raw_study_id, _hugo, _sample_id, _val))
+                        if len(_batch) >= 10_000:
+                            conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
+                            _batch.clear()
+                if _batch:
+                    conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
             normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
         if load_timeline and timeline_files:
@@ -198,7 +278,7 @@ def load_study(
         return loaded_any
     except Exception as e:
         typer.echo(f"Error loading {raw_study_id}: {e}")
-        return False
+        raise
     finally:
         data_types = []
         if (study_path / "data_mutations.txt").exists() or list(study_path.glob("data_mutations_*.txt")):
@@ -238,6 +318,14 @@ def load_all_studies(
     """Iterate through studies and load them incrementally."""
     monitor = Monitor()
 
+    # Cap working memory and enable disk spill for large UNPIVOT operations
+    # (e.g. msk_impact_50k_2026 CNA matrix exhausts RAM without this).
+    # Scoped here so normal web-serving queries are unaffected.
+    import tempfile
+    _spill_dir = tempfile.mkdtemp(prefix="duckdb_spill_")
+    conn.execute(f"SET memory_limit='8GB'")
+    conn.execute(f"SET temp_directory='{_spill_dir}'")
+
     ensure_gene_reference(conn)
 
     all_studies = discover_studies(datahub_path)
@@ -250,6 +338,7 @@ def load_all_studies(
             load_study_metadata(conn, study_path)
             if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline):
                 total_loaded += 1
+            conn.execute("CHECKPOINT")
     create_global_views(conn)
     metrics = monitor.get_metrics()
     return total_loaded, metrics

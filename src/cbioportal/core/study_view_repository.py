@@ -13,6 +13,7 @@ from cbioportal.core.study_view import (  # noqa: F401
     get_clinical_counts,
     get_all_clinical_counts,
     get_clinical_data_table,
+    get_numeric_histogram,
     get_mutated_genes,
     get_cna_genes,
     get_sv_genes,

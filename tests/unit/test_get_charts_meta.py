@@ -297,3 +297,47 @@ def test_cancer_type_always_table_regardless_of_cardinality():
     conn.close()
     ct = next(c for c in charts if c["attr_id"] == "CANCER_TYPE")
     assert ct["chart_type"] == "table", f"CANCER_TYPE should always be 'table', got '{ct['chart_type']}'"
+
+
+# ---------------------------------------------------------------------------
+# Fallback path priority ordering tests (Issue 2)
+# ---------------------------------------------------------------------------
+
+def test_fallback_priority_ordering():
+    """Fallback path must order attrs by _PRIORITY_OVERRIDES (OS_STATUS first, unknown last)."""
+    conn = duckdb.connect(":memory:")
+    conn.execute(
+        f'CREATE TABLE "{STUDY}_sample" '
+        f'(SAMPLE_ID VARCHAR, PATIENT_ID VARCHAR, OS_STATUS VARCHAR, RACE VARCHAR, ETHNICITY VARCHAR, FOOBAR_UNKNOWN VARCHAR)'
+    )
+    conn.execute(f'CREATE TABLE "{STUDY}_patient" (PATIENT_ID VARCHAR)')
+    conn.execute("CREATE TABLE study_data_types (study_id VARCHAR, data_type VARCHAR, PRIMARY KEY (study_id, data_type))")
+    # No clinical_attribute_meta table — triggers fallback path
+    charts = get_charts_meta(conn, STUDY)
+    conn.close()
+    clinical = [c for c in charts if not c["attr_id"].startswith("_")]
+    attr_ids = [c["attr_id"] for c in clinical]
+    # OS_STATUS (priority=1000) should appear before RACE (900) before ETHNICITY (550)
+    # FOOBAR_UNKNOWN (priority=1) should be last
+    assert "OS_STATUS" in attr_ids
+    assert "RACE" in attr_ids
+    assert "ETHNICITY" in attr_ids
+    assert "FOOBAR_UNKNOWN" in attr_ids
+    priorities = [c["priority"] for c in clinical]
+    assert priorities == sorted(priorities, reverse=True), f"Charts not in priority order: {list(zip(attr_ids, priorities))}"
+    # FOOBAR_UNKNOWN must be last (lowest priority)
+    assert clinical[-1]["attr_id"] == "FOOBAR_UNKNOWN", f"Expected FOOBAR_UNKNOWN last, got {clinical[-1]['attr_id']}"
+
+
+def test_fallback_unknown_attr_gets_priority_1():
+    """Unknown attrs in fallback path should have priority=1."""
+    conn = duckdb.connect(":memory:")
+    conn.execute(f'CREATE TABLE "{STUDY}_sample" (SAMPLE_ID VARCHAR, PATIENT_ID VARCHAR, TOTALLY_UNKNOWN VARCHAR)')
+    conn.execute(f'CREATE TABLE "{STUDY}_patient" (PATIENT_ID VARCHAR)')
+    conn.execute("CREATE TABLE study_data_types (study_id VARCHAR, data_type VARCHAR, PRIMARY KEY (study_id, data_type))")
+    charts = get_charts_meta(conn, STUDY)
+    conn.close()
+    clinical = [c for c in charts if not c["attr_id"].startswith("_")]
+    unknown = next((c for c in clinical if c["attr_id"] == "TOTALLY_UNKNOWN"), None)
+    assert unknown is not None, "TOTALLY_UNKNOWN should appear in fallback charts"
+    assert unknown["priority"] == 1, f"Unknown attr should have priority=1, got {unknown['priority']}"

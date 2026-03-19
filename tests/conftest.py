@@ -47,23 +47,31 @@ def pytest_addoption(parser):
     parser.addoption(
         "--run-docker", action="store_true", default=False, help="run tests that require Docker"
     )
+    parser.addoption(
+        "--run-perf", action="store_true", default=False, help="run performance benchmarks"
+    )
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "live_api: mark test as hitting live APIs")
     config.addinivalue_line("markers", "docker: mark test as requiring Docker")
+    config.addinivalue_line("markers", "perf: mark test as a performance benchmark (requires --run-perf)")
 
 def pytest_collection_modifyitems(config, items):
     run_live = config.getoption("--run-live-api")
     run_docker = config.getoption("--run-docker")
-    
+    run_perf = config.getoption("--run-perf")
+
     skip_live = pytest.mark.skip(reason="need --run-live-api option to run")
     skip_docker = pytest.mark.skip(reason="need --run-docker option to run")
-    
+    skip_perf = pytest.mark.skip(reason="need --run-perf option to run")
+
     for item in items:
         if "live_api" in item.keywords and not run_live:
             item.add_marker(skip_live)
         if "docker" in item.keywords and not run_docker:
             item.add_marker(skip_docker)
+        if "perf" in item.keywords and not run_perf:
+            item.add_marker(skip_perf)
 
 
 # ---------------------------------------------------------------------------
