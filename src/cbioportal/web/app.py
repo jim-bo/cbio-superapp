@@ -9,6 +9,7 @@ from cbioportal.core.database import get_connection, DEFAULT_DB_PATH
 from cbioportal.core.study_repository import load_study_names
 from cbioportal.web.routes import home as home_router
 from cbioportal.web.routes import study_view as study_view_router
+from cbioportal.web.routes import results_view as results_view_router
 
 
 @asynccontextmanager
@@ -50,5 +51,6 @@ def create_app():
     # Routes
     app.include_router(home_router.router)
     app.include_router(study_view_router.router)
+    app.include_router(results_view_router.router)
 
     return app
