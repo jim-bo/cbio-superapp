@@ -1812,10 +1812,18 @@ function renderCtsChart() {
     });
 
     // Calculate bottom space for profiling grid + x-labels
-    var longestLabel = Math.max(...catNames.map(n => n.length));
-    var xLabelHeight = Math.min(longestLabel * 5, 120) + 20;
+    // Use legacy adjustedLongestLabelLength formula: caps*2 + lowercase*1 + spaces*2
+    function adjustedLabelLength(label) {
+        var caps = (label.match(/[A-Z]/g) || []).length;
+        var lower = (label.match(/[a-z]/g) || []).length;
+        var spaces = (label.match(/\s/g) || []).length;
+        return caps * 2 + lower * 1 + spaces * 2;
+    }
+    var longestAdjusted = Math.max(...catNames.map(adjustedLabelLength));
+    var xLabelHeight = Math.min(longestAdjusted * 5 + 40, 150);
     var profGridHeight = 60;  // space for 3 rows of ✚ marks
-    var legendHeight = 30;
+    var profGridGap = 12;     // gap between bar chart and profiling grid
+    var legendHeight = 40;
 
     ctsChart.setOption({
         tooltip: [{
@@ -1849,8 +1857,8 @@ function renderCtsChart() {
         },
         grid: [
             // Bar chart grid (top)
-            { left: 150, right: 40, top: 20, bottom: profGridHeight + xLabelHeight + legendHeight },
-            // Profiling scatter grid (bottom, aligned with bars)
+            { left: 150, right: 40, top: 20, bottom: profGridHeight + profGridGap + xLabelHeight + legendHeight },
+            // Profiling scatter grid (bottom, with gap from bar chart)
             { left: 150, right: 40, top: 'auto', height: profGridHeight,
               bottom: xLabelHeight + legendHeight },
         ],
@@ -2169,8 +2177,8 @@ function renderPlotsBar() {
 
     var option = {
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-        legend: { bottom: 0, icon: 'rect', itemWidth: 12, itemHeight: 12 },
-        grid: { left: 70, right: 40, top: 20, bottom: 100 },
+        legend: { orient: 'vertical', right: 10, top: 'middle', icon: 'rect', itemWidth: 12, itemHeight: 12 },
+        grid: { left: 90, right: 160, top: 20, bottom: 100 },
         xAxis: horizontal ? valAxis : catAxis,
         yAxis: horizontal ? catAxis : valAxis,
         series: series,
@@ -2200,9 +2208,9 @@ function renderPlotsScatter() {
                     d.v_label + ': ' + pt.y;
             },
         },
-        grid: { left: 70, right: 40, top: 20, bottom: 60 },
+        grid: { left: 90, right: 40, top: 20, bottom: 60 },
         xAxis: { type: 'value', name: d.h_label, nameLocation: 'middle', nameGap: 35 },
-        yAxis: { type: 'value', name: d.v_label, nameLocation: 'middle', nameGap: 50 },
+        yAxis: { type: 'value', name: d.v_label, nameLocation: 'middle', nameGap: 60 },
         series: [{
             type: 'scatter', data: points,
             symbolSize: 4, itemStyle: { color: '#2986E2', opacity: 0.6 },
@@ -2219,7 +2227,7 @@ function renderPlotsBox() {
 
     plotsChart.setOption({
         tooltip: { trigger: 'item' },
-        grid: { left: 70, right: 40, top: 20, bottom: 80 },
+        grid: { left: 90, right: 40, top: 20, bottom: 80 },
         xAxis: {
             type: 'category', data: d.categories,
             axisLabel: { rotate: 45, fontSize: 11, interval: 0 },
