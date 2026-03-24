@@ -693,7 +693,67 @@ table#mut-table tr:hover td { background: #f9f9f9; }
 
     <!-- ── Plots Tab ────────────────────────────────────────────────────── -->
     <div id="plots-tab">
-        <div style="padding: 16px; color: #999;">Loading Plots…</div>
+      <div id="plots-examples" style="padding: 8px 16px 0;">
+        <strong>Examples:</strong>
+        <a onclick="plotsExample('mut_dx')">Mut# vs Dx</a>
+        <a onclick="plotsExample('fga_dx')">FGA vs Dx</a>
+        <a onclick="plotsExample('mut_fga')">Mut# vs FGA</a>
+      </div>
+      <div id="plots-wrap">
+        <div id="plots-sidebar">
+          <!-- Horizontal Axis -->
+          <div class="axis-section">
+            <span class="axis-label">Horizontal Axis</span>
+            <div class="axis-heading">Data Type</div>
+            <select id="plots-h-datatype" onchange="onPlotsAxisChange('h')">
+              <option value="structural_variant">Structural Variant</option>
+              <option value="mutation">Mutation</option>
+              <option value="copy_number">Copy Number</option>
+              <option value="clinical_attribute">Clinical Attribute</option>
+            </select>
+            <div id="plots-h-sub"></div>
+          </div>
+
+          <button class="swap-btn" onclick="swapPlotsAxes()">&#8593; Swap Axes &#8595;</button>
+
+          <!-- Vertical Axis -->
+          <div class="axis-section">
+            <span class="axis-label">Vertical Axis</span>
+            <div class="axis-heading">Data Type</div>
+            <select id="plots-v-datatype" onchange="onPlotsAxisChange('v')">
+              <option value="clinical_attribute" selected>Clinical Attribute</option>
+              <option value="structural_variant">Structural Variant</option>
+              <option value="mutation">Mutation</option>
+              <option value="copy_number">Copy Number</option>
+            </select>
+            <div id="plots-v-sub"></div>
+          </div>
+
+          <!-- Plot-type controls (shown for discrete×discrete) -->
+          <div id="plots-controls">
+            <div class="cts-heading">Plot Type</div>
+            <select id="plots-type" onchange="renderPlotsChart()">
+              <option value="stacked">Stacked bar chart</option>
+              <option value="grouped">Bar chart</option>
+              <option value="pct">Percentage stacked bar chart</option>
+            </select>
+            <div class="cts-heading">Sort By</div>
+            <select id="plots-sort" onchange="renderPlotsChart()">
+              <option value="alpha">Alphabetically</option>
+              <option value="count">Number of samples</option>
+            </select>
+            <label style="margin-top:6px;display:block;">
+              <input type="checkbox" id="plots-horizontal" onchange="renderPlotsChart()">
+              Horizontal Bars
+            </label>
+          </div>
+        </div>
+
+        <div id="plots-chart-area">
+          <div id="plots-info"></div>
+          <div id="plots-chart-container"></div>
+        </div>
+      </div>
     </div>
 
 </div><!-- /results-page -->
@@ -1807,11 +1867,315 @@ document.querySelectorAll('input[name="cts-group"], input[name="cts-count"]').fo
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// Plots Tab — placeholder (Phase 4)
+// Plots Tab
 // ════════════════════════════════════════════════════════════════════════════
-function initPlotsTab() {
-    document.getElementById("plots-tab").innerHTML =
-        '<div style="padding:16px;color:#999;">Plots tab — initializing…</div>';
+let plotsChart = null;
+let plotsCliOpts = [];  // cached clinical attribute options
+let plotsData = null;   // last server response
+
+const PlotsState = {
+    hAxis: { dataType: 'structural_variant', gene: GENE_0, plotBy: 'variant_vs_no_variant' },
+    vAxis: { dataType: 'clinical_attribute', attributeId: 'CANCER_TYPE' },
+};
+
+// Unique color palette for bar chart series
+const PLOTS_PALETTE = [
+    '#2986E2','#DC3912','#FF9900','#109618','#990099',
+    '#0099C6','#DD4477','#66AA00','#B82E2E','#316395',
+    '#994499','#22AA99','#AAAA11','#6633CC','#E67300',
+    '#8B0707','#651067','#329262','#5574A6','#3B3EAC',
+];
+
+async function initPlotsTab() {
+    // Fetch clinical attribute options
+    try {
+        plotsCliOpts = await postForm("/results/oncoprint/plots-clinical-options", { study_id: STUDY_ID });
+    } catch(e) { console.error(e); }
+
+    // Build sub-controls for default axes
+    buildAxisSubControls('h');
+    buildAxisSubControls('v');
+
+    // Load initial data
+    await loadPlotsData();
+}
+
+function buildAxisSubControls(axis) {
+    var prefix = 'plots-' + axis;
+    var dt = document.getElementById(prefix + '-datatype').value;
+    var container = document.getElementById(prefix + '-sub');
+    var state = axis === 'h' ? PlotsState.hAxis : PlotsState.vAxis;
+
+    var html = '';
+
+    if (dt === 'mutation') {
+        state.dataType = 'mutation';
+        html += '<div class="cts-heading">Plot Mutations by</div>';
+        html += '<select id="' + prefix + '-plotby" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        html += '<option value="mutated_vs_wildtype">Mutated vs Wild-type</option>';
+        html += '<option value="type">Type</option>';
+        html += '</select>';
+        html += '<div class="cts-heading">Gene</div>';
+        html += '<select id="' + prefix + '-gene" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        GENES.forEach(g => { html += '<option value="' + g + '"' + (g === state.gene ? ' selected' : '') + '>' + g + '</option>'; });
+        html += '</select>';
+        state.plotBy = state.plotBy || 'mutated_vs_wildtype';
+    } else if (dt === 'structural_variant') {
+        state.dataType = 'structural_variant';
+        html += '<div class="cts-heading">Plot Structural variants by</div>';
+        html += '<select id="' + prefix + '-plotby" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        html += '<option value="variant_vs_no_variant">Variant vs No Variant</option>';
+        html += '</select>';
+        html += '<div class="cts-heading">Gene</div>';
+        html += '<select id="' + prefix + '-gene" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        GENES.forEach(g => { html += '<option value="' + g + '"' + (g === state.gene ? ' selected' : '') + '>' + g + '</option>'; });
+        html += '</select>';
+        state.plotBy = 'variant_vs_no_variant';
+    } else if (dt === 'copy_number') {
+        state.dataType = 'copy_number';
+        html += '<div class="cts-heading">Gene</div>';
+        html += '<select id="' + prefix + '-gene" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        GENES.forEach(g => { html += '<option value="' + g + '"' + (g === state.gene ? ' selected' : '') + '>' + g + '</option>'; });
+        html += '</select>';
+        delete state.plotBy;
+    } else if (dt === 'clinical_attribute') {
+        state.dataType = 'clinical_attribute';
+        html += '<div class="cts-heading">Clinical Attribute</div>';
+        html += '<select id="' + prefix + '-attr" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        plotsCliOpts.forEach(opt => {
+            var sel = opt.attr_id === (state.attributeId || 'CANCER_TYPE') ? ' selected' : '';
+            html += '<option value="' + opt.attr_id + '"' + sel + '>' + opt.display_name + '</option>';
+        });
+        html += '</select>';
+        delete state.gene;
+        delete state.plotBy;
+    }
+
+    container.innerHTML = html;
+}
+
+function onPlotsAxisChange(axis) {
+    buildAxisSubControls(axis);
+    onPlotsSubChange(axis);
+}
+
+function onPlotsSubChange(axis) {
+    var prefix = 'plots-' + axis;
+    var state = axis === 'h' ? PlotsState.hAxis : PlotsState.vAxis;
+    var dt = document.getElementById(prefix + '-datatype').value;
+
+    state.dataType = dt;
+
+    if (dt === 'clinical_attribute') {
+        var attrEl = document.getElementById(prefix + '-attr');
+        state.attributeId = attrEl ? attrEl.value : 'CANCER_TYPE';
+        delete state.gene; delete state.plotBy;
+    } else {
+        var geneEl = document.getElementById(prefix + '-gene');
+        state.gene = geneEl ? geneEl.value : GENE_0;
+        delete state.attributeId;
+        if (dt === 'mutation' || dt === 'structural_variant') {
+            var plotByEl = document.getElementById(prefix + '-plotby');
+            state.plotBy = plotByEl ? plotByEl.value : 'mutated_vs_wildtype';
+        } else {
+            delete state.plotBy;
+        }
+    }
+
+    loadPlotsData();
+}
+
+function swapPlotsAxes() {
+    var tmp = JSON.parse(JSON.stringify(PlotsState.hAxis));
+    PlotsState.hAxis = JSON.parse(JSON.stringify(PlotsState.vAxis));
+    PlotsState.vAxis = tmp;
+
+    // Swap dropdown selections
+    var hSel = document.getElementById('plots-h-datatype');
+    var vSel = document.getElementById('plots-v-datatype');
+    var tmpVal = hSel.value;
+    hSel.value = PlotsState.hAxis.dataType;
+    vSel.value = PlotsState.vAxis.dataType;
+
+    buildAxisSubControls('h');
+    buildAxisSubControls('v');
+    loadPlotsData();
+}
+
+async function loadPlotsData() {
+    try {
+        plotsData = await postForm("/results/oncoprint/plots-data", {
+            study_id: STUDY_ID,
+            h_config: JSON.stringify(PlotsState.hAxis),
+            v_config: JSON.stringify(PlotsState.vAxis),
+        });
+        // Show/hide bar-specific controls
+        var barControls = document.getElementById("plots-controls");
+        barControls.style.display = plotsData.plot_type === "bar" ? "block" : "none";
+
+        document.getElementById("plots-info").textContent =
+            "Showing " + plotsData.total_samples + " samples with data in both profiles (axes)";
+
+        renderPlotsChart();
+    } catch(e) {
+        console.error("Plots load error:", e);
+    }
+}
+
+function renderPlotsChart() {
+    if (!plotsData) return;
+
+    if (!plotsChart) {
+        plotsChart = echarts.init(document.getElementById("plots-chart-container"));
+        window.addEventListener("resize", () => plotsChart && plotsChart.resize());
+    }
+
+    if (plotsData.plot_type === "bar") {
+        renderPlotsBar();
+    } else if (plotsData.plot_type === "scatter") {
+        renderPlotsScatter();
+    } else if (plotsData.plot_type === "box") {
+        renderPlotsBox();
+    }
+}
+
+function renderPlotsBar() {
+    var d = plotsData;
+    var plotType = document.getElementById("plots-type").value;
+    var sortBy = document.getElementById("plots-sort").value;
+    var horizontal = document.getElementById("plots-horizontal").checked;
+
+    // Sort categories
+    var catIndices = d.categories.map((c,i) => i);
+    if (sortBy === "alpha") {
+        catIndices.sort((a,b) => d.categories[a].localeCompare(d.categories[b]));
+    } else {
+        catIndices.sort((a,b) => {
+            var sumA = d.series.reduce((s,sr) => s + (sr.data[a]||0), 0);
+            var sumB = d.series.reduce((s,sr) => s + (sr.data[b]||0), 0);
+            return sumB - sumA;
+        });
+    }
+
+    var cats = catIndices.map(i => d.categories[i]);
+
+    var series = d.series.map((sr, si) => {
+        var data = catIndices.map(i => sr.data[i] || 0);
+
+        if (plotType === "pct") {
+            data = data.map((val, ci) => {
+                var total = d.series.reduce((s, sr2) => s + (sr2.data[catIndices[ci]]||0), 0);
+                return total ? +(val / total * 100).toFixed(1) : 0;
+            });
+        }
+
+        return {
+            name: sr.name,
+            type: 'bar',
+            stack: plotType === 'grouped' ? undefined : 'total',
+            data: data,
+            itemStyle: { color: PLOTS_PALETTE[si % PLOTS_PALETTE.length] },
+        };
+    });
+
+    var catAxis = {
+        type: 'category', data: cats,
+        axisLabel: { rotate: horizontal ? 0 : 45, fontSize: 11, interval: 0 },
+    };
+    var valAxis = {
+        type: 'value',
+        name: d.v_label + (plotType === 'pct' ? ' (%)' : '\n# samples'),
+        nameLocation: 'middle', nameGap: 50,
+        axisLabel: { formatter: plotType === 'pct' ? '{value}%' : '{value}' },
+    };
+
+    var option = {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: { bottom: 10, icon: 'rect', itemWidth: 12, itemHeight: 12 },
+        grid: { left: 70, right: 40, top: 20, bottom: 80 },
+        xAxis: horizontal ? valAxis : catAxis,
+        yAxis: horizontal ? catAxis : valAxis,
+        series: series,
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    };
+
+    // Build chart title
+    var titleText = (d.h_label || '') + ' vs ' + (d.v_label || '');
+
+    plotsChart.setOption(option, true);
+}
+
+function renderPlotsScatter() {
+    var d = plotsData;
+    var points = d.points.map(p => [p.x, p.y]);
+
+    plotsChart.setOption({
+        tooltip: {
+            trigger: 'item',
+            formatter: function(p) {
+                var pt = d.points[p.dataIndex];
+                return '<b>' + (pt.sample_id || '') + '</b><br>' +
+                    d.h_label + ': ' + pt.x + '<br>' +
+                    d.v_label + ': ' + pt.y;
+            },
+        },
+        grid: { left: 70, right: 40, top: 20, bottom: 60 },
+        xAxis: { type: 'value', name: d.h_label, nameLocation: 'middle', nameGap: 35 },
+        yAxis: { type: 'value', name: d.v_label, nameLocation: 'middle', nameGap: 50 },
+        series: [{
+            type: 'scatter', data: points,
+            symbolSize: 4, itemStyle: { color: '#2986E2', opacity: 0.6 },
+        }],
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    }, true);
+}
+
+function renderPlotsBox() {
+    var d = plotsData;
+
+    plotsChart.setOption({
+        tooltip: { trigger: 'item' },
+        grid: { left: 70, right: 40, top: 20, bottom: 80 },
+        xAxis: {
+            type: 'category', data: d.categories,
+            axisLabel: { rotate: 45, fontSize: 11, interval: 0 },
+        },
+        yAxis: { type: 'value', name: d.v_label, nameLocation: 'middle', nameGap: 50 },
+        series: [{
+            type: 'boxplot',
+            data: d.box_data,
+            itemStyle: { color: '#fff', borderColor: '#2986E2' },
+        }],
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    }, true);
+}
+
+function plotsExample(type) {
+    if (type === 'mut_dx') {
+        PlotsState.hAxis = { dataType: 'mutation', gene: GENE_0, plotBy: 'mutated_vs_wildtype' };
+        PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'CANCER_TYPE' };
+    } else if (type === 'fga_dx') {
+        PlotsState.hAxis = { dataType: 'clinical_attribute', attributeId: 'FRACTION_GENOME_ALTERED' };
+        PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'CANCER_TYPE' };
+    } else if (type === 'mut_fga') {
+        PlotsState.hAxis = { dataType: 'mutation', gene: GENE_0, plotBy: 'mutated_vs_wildtype' };
+        PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'FRACTION_GENOME_ALTERED' };
+    }
+
+    document.getElementById('plots-h-datatype').value = PlotsState.hAxis.dataType;
+    document.getElementById('plots-v-datatype').value = PlotsState.vAxis.dataType;
+    buildAxisSubControls('h');
+    buildAxisSubControls('v');
+    loadPlotsData();
 }
 </script>
 {% endblock %}

@@ -216,6 +216,10 @@ def get_plots_data(
 
     Each config: {"data_type": str, "attribute_id": str, "gene": str, "plot_by": str}
     """
+    # Normalize camelCase keys from JS
+    h_config = _normalize_config(h_config)
+    v_config = _normalize_config(v_config)
+
     # Get per-sample values for each axis
     h_values = _get_axis_values(conn, study_id, h_config)
     v_values = _get_axis_values(conn, study_id, v_config)
@@ -236,8 +240,23 @@ def get_plots_data(
         return _build_box_data(h_values, v_values, common_ids)
 
 
+def _normalize_config(config: dict) -> dict:
+    """Normalize camelCase keys from JS to snake_case."""
+    out = dict(config)
+    if "dataType" in out:
+        out["data_type"] = out.pop("dataType")
+    if "attributeId" in out:
+        out["attribute_id"] = out.pop("attributeId")
+    if "plotBy" in out:
+        out["plot_by"] = out.pop("plotBy")
+    if "patientAttribute" in out:
+        out["patient_attribute"] = out.pop("patientAttribute")
+    return out
+
+
 def _get_axis_values(conn, study_id: str, config: dict) -> dict:
     """Return {values: {sample_id: value}, is_numeric: bool, label: str}."""
+    config = _normalize_config(config)
     data_type = config.get("data_type", "")
 
     if data_type == "clinical_attribute":
