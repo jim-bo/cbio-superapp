@@ -45,31 +45,7 @@ function exploreSelectedStudies() {
 
 function openQueryForm() {
     if (window.selectedStudies.size === 0) return;
-    // Collect study IDs
-    var studyIds = Array.from(window.selectedStudies.keys());
-    // Fetch query form via HTMX-style fetch
-    var formData = new FormData();
-    formData.append('study_ids', studyIds.join(','));
-    fetch('/query-form', { method: 'POST', body: formData })
-        .then(function(res) { return res.text(); })
-        .then(function(html) {
-            // Replace the study selector content with the query form
-            var mainCol = document.getElementById('mainColumn');
-            // Save current content for "Modify" button
-            window._studySelectorHTML = mainCol.innerHTML;
-            mainCol.innerHTML = html;
-        });
-}
-
-function restoreStudySelector() {
-    if (window._studySelectorHTML) {
-        var mainCol = document.getElementById('mainColumn');
-        mainCol.innerHTML = window._studySelectorHTML;
-        // Re-check previously selected studies
-        window.selectedStudies.forEach(function(info, studyId) {
-            var chk = document.querySelector('.study-checkbox[data-study-id="' + studyId + '"]');
-            if (chk) chk.checked = true;
-        });
-    }
+    var studyIds = Array.from(window.selectedStudies.keys()).join(',');
+    window.location.href = '/query?study_ids=' + encodeURIComponent(studyIds);
 }
 </script>

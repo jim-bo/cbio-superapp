@@ -97,19 +97,19 @@ async def filter_studies(
     )
 
 
-@router.post("/query-form", response_class=HTMLResponse)
-async def query_form(
+@router.get("/query", response_class=HTMLResponse)
+async def query_page(
     request: Request,
-    study_ids: Annotated[str, Form()] = "",
+    study_ids: str = "",
 ):
-    """Return the query-by-gene form populated for the selected studies."""
+    """Render the query-by-gene form as a standalone page."""
     conn = request.app.state.db_conn
     ids = [s.strip() for s in study_ids.split(",") if s.strip()]
     if not ids:
-        return HTMLResponse("<p>No studies selected.</p>", status_code=400)
+        return HTMLResponse("No studies selected. <a href='/'>Go back</a>", status_code=400)
     ctx = get_query_form_context(conn, ids)
     return request.app.state.templates.TemplateResponse(
-        "home/partials/query_form.html", {"request": request, **ctx}
+        "query/page.html", {"request": request, **ctx}
     )
 
 

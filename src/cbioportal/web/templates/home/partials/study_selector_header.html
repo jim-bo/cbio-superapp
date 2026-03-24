@@ -5,7 +5,7 @@
     <form id="filter-form"
           hx-post="/studies"
           hx-target="#study-list-wrapper"
-          hx-trigger="change"
+          hx-trigger="change from:[name='data_types'], change from:[name='cancer_type']"
           hx-swap="innerHTML"
           style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
 
