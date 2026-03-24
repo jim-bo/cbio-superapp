@@ -721,18 +721,25 @@ async function loadOncoprint() {
         var g = GENES[j];
         oncoprint.setTrackData(geneticTrackIds[g], dataMap[g] || [], 'uid');
 
-        // Set tooltip
+        // Set tooltip (data may be array when zoomed out)
         (function(gene) {
             oncoprint.setTrackTooltipFn(geneticTrackIds[gene], function(data) {
-                var lines = ['<b>' + (data.uid || '') + '</b>'];
-                if (data.disp_cna) lines.push('CNA: ' + data.disp_cna.replace(/_rec$/, '').toUpperCase());
-                if (data.disp_mut) lines.push('Mutation: ' + data.disp_mut.replace(/_rec$/, ''));
-                if (data.disp_structuralVariant) lines.push('Structural variant');
-                if (data.disp_germ) lines.push('Germline');
-                if (!data.disp_cna && !data.disp_mut && !data.disp_structuralVariant) {
-                    lines.push(data.na ? 'Not profiled' : 'No alteration');
+                var items = Array.isArray(data) ? data : [data];
+                if (items.length === 1) {
+                    var d = items[0];
+                    var lines = ['<b>' + (d.uid || '') + '</b>'];
+                    if (d.disp_cna) lines.push('CNA: ' + d.disp_cna.replace(/_rec$/, '').toUpperCase());
+                    if (d.disp_mut) lines.push('Mutation: ' + d.disp_mut.replace(/_rec$/, ''));
+                    if (d.disp_structuralVariant) lines.push('Structural variant');
+                    if (d.disp_germ) lines.push('Germline');
+                    if (!d.disp_cna && !d.disp_mut && !d.disp_structuralVariant) {
+                        lines.push(d.na ? 'Not profiled' : 'No alteration');
+                    }
+                    return lines.join('<br/>');
                 }
-                return lines.join('<br/>');
+                // Multiple samples — show summary
+                var altered = items.filter(function(d) { return d.disp_mut || d.disp_cna || d.disp_structuralVariant; });
+                return gene + ': ' + altered.length + '/' + items.length + ' samples altered';
             });
         })(g);
     }
@@ -829,6 +836,30 @@ async function addClinicalTrack(opt) {
     }])[0];
 
     oncoprint.setTrackData(trackId, trackData, 'uid');
+
+    // Tooltip for clinical tracks (data may be array when zoomed out)
+    (function(displayName) {
+        oncoprint.setTrackTooltipFn(trackId, function(data) {
+            var items = Array.isArray(data) ? data : [data];
+            if (items.length === 1) {
+                var d = items[0];
+                var val = d.attr_val;
+                return '<b>' + (d.uid || '') + '</b><br/>' + displayName + ': ' + (val != null ? val : 'N/A');
+            }
+            // Multiple samples at this position — show summary
+            var vals = {};
+            items.forEach(function(d) {
+                var v = d.attr_val || 'N/A';
+                vals[v] = (vals[v] || 0) + 1;
+            });
+            var lines = [displayName + ' (' + items.length + ' samples):'];
+            Object.keys(vals).sort().forEach(function(v) {
+                lines.push('&nbsp;&nbsp;' + v + ': ' + vals[v]);
+            });
+            return lines.join('<br/>');
+        });
+    })(opt.display_name);
+
     activeTrackKeys[opt.attr_id] = trackId;
 }
 
