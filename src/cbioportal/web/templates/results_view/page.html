@@ -222,7 +222,7 @@
     background: #f5f5f5; color: #333;
 }
 #cts-gene-tabs .cts-gene-btn.active { background: #2374c8; color: #fff; border-color: #2374c8; }
-#cts-chart-container { width: 100%; height: 500px; }
+#cts-chart-container { width: 100%; height: 600px; }
 
 /* profiling status grid */
 #cts-profiling { margin-top: 4px; font-size: 11px; }
@@ -1782,12 +1782,37 @@ function renderCtsChart() {
         window.addEventListener("resize", () => ctsChart && ctsChart.resize());
     }
 
+    // Build profiling scatter data (✚ marks below bars)
+    var profDataTypes = [
+        {key: "sv", label: "Structural variant data"},
+        {key: "mutation", label: "Mutation data"},
+        {key: "cna", label: "CNA data"},
+    ];
+    var profLabels = profDataTypes.map(d => d.label);
+
+    var profScatterData = [];
+    profDataTypes.forEach((dt, yi) => {
+        cats.forEach((c, xi) => {
+            var profiled = c.profiled && c.profiled[dt.key] > 0;
+            profScatterData.push([xi, yi, profiled ? 1 : 0]);
+        });
+    });
+
+    // Calculate bottom space for profiling grid + x-labels
+    var longestLabel = Math.max(...catNames.map(n => n.length));
+    var xLabelHeight = Math.min(longestLabel * 5, 120) + 20;
+    var profGridHeight = 60;  // space for 3 rows of ✚ marks
+    var legendHeight = 30;
+
     ctsChart.setOption({
-        tooltip: {
+        tooltip: [{
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
             formatter: function(params) {
-                var cat = params[0].name;
+                // Filter to only bar series (xAxisIndex 0)
+                var barParams = params.filter(p => p.seriesType === 'bar');
+                if (!barParams.length) return '';
+                var cat = barParams[0].name;
                 var catData = cats.find(c => c.name === cat);
                 var lines = ['<b>' + cat + '</b>'];
                 if (catData) {
@@ -1795,67 +1820,106 @@ function renderCtsChart() {
                     var pct = catData.total ? (altered / catData.total * 100).toFixed(1) : 0;
                     lines.push('Altered: ' + altered + '/' + catData.total + ' (' + pct + '%)');
                 }
-                params.forEach(p => {
+                barParams.forEach(p => {
                     if (p.value > 0) {
                         lines.push('<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';margin-right:4px;"></span>' + p.seriesName + ': ' + p.value + (yAxis === 'alt-freq' ? '%' : ''));
                     }
                 });
                 return lines.join('<br>');
             },
-        },
+        }],
         legend: {
-            bottom: 10,
+            bottom: 0,
             data: typesToShow.map(t => ALTERATION_LABELS[t]),
             icon: 'circle',
             itemWidth: 10, itemHeight: 10,
         },
-        grid: { left: 60, right: 40, top: 20, bottom: 80 },
-        xAxis: {
-            type: 'category',
-            data: catNames,
-            axisLabel: { rotate: 45, fontSize: 11, interval: 0 },
-        },
-        yAxis: {
-            type: 'value',
-            name: yAxis === 'alt-freq' ? 'Alteration Frequency' : 'Absolute Counts',
-            nameLocation: 'middle',
-            nameGap: 45,
-            axisLabel: {
-                formatter: yAxis === 'alt-freq' ? '{value}%' : '{value}',
+        grid: [
+            // Bar chart grid (top)
+            { left: 150, right: 40, top: 20, bottom: profGridHeight + xLabelHeight + legendHeight },
+            // Profiling scatter grid (bottom, aligned with bars)
+            { left: 150, right: 40, top: 'auto', height: profGridHeight,
+              bottom: xLabelHeight + legendHeight },
+        ],
+        xAxis: [
+            // Bar chart x-axis (hidden labels — labels come from scatter axis)
+            {
+                type: 'category', data: catNames, gridIndex: 0,
+                axisLabel: { show: false }, axisTick: { show: false },
+                axisLine: { show: false },
             },
-        },
-        series: series,
+            // Profiling scatter x-axis (with rotated labels)
+            {
+                type: 'category', data: catNames, gridIndex: 1,
+                position: 'bottom',
+                axisLabel: { rotate: 50, fontSize: 11, interval: 0 },
+                axisTick: { show: false }, axisLine: { show: false },
+            },
+        ],
+        yAxis: [
+            // Bar chart y-axis
+            {
+                type: 'value', gridIndex: 0,
+                name: yAxis === 'alt-freq' ? 'Alteration Frequency' : 'Absolute Counts',
+                nameLocation: 'middle', nameGap: 40,
+                axisLabel: { formatter: yAxis === 'alt-freq' ? '{value}%' : '{value}' },
+            },
+            // Profiling scatter y-axis (data type labels)
+            {
+                type: 'category', data: profLabels, gridIndex: 1,
+                axisLabel: { fontSize: 11 },
+                axisTick: { show: false }, axisLine: { show: false },
+                splitLine: { show: false },
+            },
+        ],
+        series: [
+            // Alteration bar series
+            ...series.map(s => Object.assign(s, { xAxisIndex: 0, yAxisIndex: 0 })),
+            // Profiling status ✚ marks (custom series)
+            {
+                type: 'custom',
+                xAxisIndex: 1, yAxisIndex: 1,
+                data: profScatterData,
+                renderItem: function(params, api) {
+                    var xVal = api.value(0);
+                    var yVal = api.value(1);
+                    var profiled = api.value(2);
+                    var coord = api.coord([xVal, yVal]);
+                    return {
+                        type: 'text',
+                        x: coord[0], y: coord[1],
+                        style: {
+                            text: '✚',
+                            fill: profiled ? '#333' : '#ddd',
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            textVerticalAlign: 'middle',
+                        },
+                    };
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(p) {
+                        var catIdx = p.value[0], dtIdx = p.value[1];
+                        var cat = catNames[catIdx];
+                        var dt = profDataTypes[dtIdx];
+                        var c = cats[catIdx];
+                        var count = c.profiled && c.profiled[dt.key] || 0;
+                        return '<b>' + cat + '</b><br>' + dt.label + ': ' +
+                            (count > 0 ? count + ' profiled' : 'Not profiled');
+                    },
+                },
+            },
+        ],
         toolbox: {
             right: 10, top: 0,
             feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
         },
     }, true);
 
-    // Render profiling status
-    renderCtsProfilingGrid(cats);
-}
-
-function renderCtsProfilingGrid(cats) {
-    var prof = document.getElementById("cts-profiling");
-    if (!cats.length) { prof.innerHTML = ""; return; }
-
-    var dataTypes = [
-        {key: "sv", label: "Structural variant data"},
-        {key: "mutation", label: "Mutation data"},
-        {key: "cna", label: "CNA data"},
-    ];
-
-    var html = '<table><tbody>';
-    dataTypes.forEach(dt => {
-        html += '<tr><td class="prof-label">' + dt.label + '</td>';
-        cats.forEach(c => {
-            var profiled = c.profiled && c.profiled[dt.key] > 0;
-            html += '<td class="' + (profiled ? 'prof-yes' : 'prof-no') + '">&#10010;</td>';
-        });
-        html += '</tr>';
-    });
-    html += '</tbody></table>';
-    prof.innerHTML = html;
+    // Clear old HTML profiling grid
+    document.getElementById("cts-profiling").innerHTML = "";
 }
 
 // Re-fetch when group_by or count_by changes
