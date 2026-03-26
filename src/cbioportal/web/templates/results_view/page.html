@@ -267,7 +267,10 @@
 #plots-controls label { font-size: 12px; font-weight: normal; }
 
 #plots-chart-area { flex: 1; padding: 12px 16px; position: relative; overflow: auto; }
-#plots-info { font-size: 13px; color: #333; margin-bottom: 8px; padding: 6px 10px; background: #f9f9f9; border: 1px solid #eee; border-radius: 3px; display: inline-block; }
+#plots-info { font-size: 13px; color: #333; margin-bottom: 8px; padding: 6px 10px; background: #eee; border-radius: 3px; display: inline-block; }
+#plots-download-bar { font-size: 12px; }
+#plots-download-bar a { color: #2374c8; text-decoration: none; }
+#plots-download-bar a:hover { text-decoration: underline; }
 #plots-chart-container { /* width/height set dynamically by renderPlotsBar/Scatter/Box */ width: 100%; height: 500px; }
 #plots-examples { margin-bottom: 8px; font-size: 13px; }
 #plots-examples a { margin-left: 8px; cursor: pointer; color: #2374c8; text-decoration: none; }
@@ -797,6 +800,11 @@ table#mut-table tr:hover td { background: #f9f9f9; }
             </span>
           </div>
           <div id="plots-info"></div>
+          <div id="plots-download-bar" style="display:none;margin-bottom:6px;">
+            <a href="#" onclick="downloadPlotsSVG(); return false;" style="font-size:12px;margin-right:12px;">SVG</a>
+            <a href="#" onclick="downloadPlotsPNG(); return false;" style="font-size:12px;margin-right:12px;">PNG</a>
+            <a href="#" onclick="downloadPlotsTSV(); return false;" style="font-size:12px;">Data</a>
+          </div>
           <div id="plots-chart-container"></div>
         </div>
       </div>
@@ -2238,6 +2246,7 @@ async function loadPlotsData() {
         if (plotsData.v_total != null) bannerParts.push("Vertical: " + plotsData.v_total.toLocaleString());
         bannerParts.push("Plotted: " + plotsData.total_samples.toLocaleString());
         document.getElementById("plots-info").textContent = bannerParts.join(" / ") + " samples";
+        document.getElementById("plots-download-bar").style.display = "block";
 
         renderPlotsChart();
     } catch(e) {
@@ -2489,10 +2498,6 @@ function renderPlotsBar() {
         xAxis: horizontal ? valAxis : catAxis,
         yAxis: horizontal ? catAxis : valAxis,
         series: series,
-        toolbox: {
-            right: 10, top: 0,
-            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
-        },
     };
 
     plotsChart.setOption(option, true);
@@ -2647,10 +2652,6 @@ function renderPlotsScatter() {
         xAxis: { type: 'value', name: hLabel, nameLocation: 'middle', nameGap: 35 },
         yAxis: { type: 'value', name: vLabel, nameLocation: 'middle', nameGap: 60 },
         series: seriesList,
-        toolbox: {
-            right: 10, top: 0,
-            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
-        },
     }, true);
 }
 
@@ -2771,10 +2772,6 @@ function renderPlotsBox() {
         },
         yAxis: { type: 'value', name: vLabel, nameLocation: 'middle', nameGap: 50 },
         series: seriesList,
-        toolbox: {
-            right: 10, top: 0,
-            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
-        },
     }, true);
 }
 
@@ -2837,6 +2834,61 @@ function plotsExample(type) {
     buildAxisSubControls('h');
     buildAxisSubControls('v');
     loadPlotsData();
+}
+
+// ── Download handlers for Plots tab ─────────────────────────────────────────
+function downloadPlotsSVG() {
+    if (!plotsChart) return;
+    var url = plotsChart.getConnectedDataURL({ type: 'svg', backgroundColor: '#fff' });
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'plots.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function downloadPlotsPNG() {
+    if (!plotsChart) return;
+    var url = plotsChart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#fff' });
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'plots.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function downloadPlotsTSV() {
+    if (!plotsData) return;
+    var lines = [];
+    if (plotsData.plot_type === 'bar') {
+        // Header: category + each series name
+        var header = [plotsData.h_label || 'Category'];
+        plotsData.series.forEach(function(s) { header.push(s.name); });
+        lines.push(header.join('\t'));
+        plotsData.categories.forEach(function(cat, ci) {
+            var row = [cat];
+            plotsData.series.forEach(function(s) { row.push(s.data[ci] || 0); });
+            lines.push(row.join('\t'));
+        });
+    } else if (plotsData.plot_type === 'scatter') {
+        lines.push(['Sample ID', plotsData.h_label, plotsData.v_label].join('\t'));
+        plotsData.points.forEach(function(p) {
+            lines.push([p.sample_id, p.x, p.y].join('\t'));
+        });
+    } else if (plotsData.plot_type === 'box') {
+        lines.push(['Sample ID', plotsData.h_label, plotsData.v_label].join('\t'));
+        plotsData.categories.forEach(function(cat) {
+            var rawPts = plotsData.box_raw_data[cat] || [];
+            rawPts.forEach(function(rp) {
+                lines.push([rp.sample_id, cat, rp.value].join('\t'));
+            });
+        });
+    }
+    if (lines.length === 0) return;
+    var blob = new Blob([lines.join('\n')], { type: 'text/tab-separated-values' });
+    _downloadBlob(blob, 'plot_data.tsv');
 }
 </script>
 {% endblock %}
