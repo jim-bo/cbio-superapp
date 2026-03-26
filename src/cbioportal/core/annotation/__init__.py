@@ -119,7 +119,9 @@ def _compute_cbp_driver(conn, study_id: str) -> None:
           * hotspot_type IS NOT NULL (mutation is a known hotspot)
           * intogen_role IN ('Act', 'LoF') AND variant_classification indicates
             functional impact (Missense, Nonsense, Frameshift, Splice, Inframe)
-          * moalmanac_oncogenic ILIKE '%oncogenic%'
+          * moalmanac_score_bin IN ('FDA-Approved', 'Guideline', 'Clinical evidence')
+            — mutation has clinical actionability evidence
+          * civic_evidence_level IN ('A', 'B') — strong clinical evidence
       - Putative_Passenger otherwise
 
     NOTE: This is a heuristic approximation. The legacy cBioPortal uses OncoKB's
@@ -168,8 +170,9 @@ def _compute_cbp_driver(conn, study_id: str) -> None:
             WHEN a.intogen_role IN ('Act', 'LoF')
                 AND a.variant_classification IN ({vc_list})
                 THEN 'Putative_Driver'
-            WHEN a.moalmanac_oncogenic IS NOT NULL
-                AND LOWER(a.moalmanac_oncogenic) LIKE '%oncogenic%'
+            WHEN a.moalmanac_score_bin IN ('FDA-Approved', 'Guideline', 'Clinical evidence')
+                THEN 'Putative_Driver'
+            WHEN a.civic_evidence_level IN ('A', 'B')
                 THEN 'Putative_Driver'
             ELSE 'Putative_Passenger'
         END

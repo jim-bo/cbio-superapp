@@ -49,22 +49,23 @@ def conn():
         CREATE TABLE "test_study_variant_annotations" (
             study_id VARCHAR, alteration_type VARCHAR, sample_id VARCHAR,
             hugo_symbol VARCHAR, hgvsp_short VARCHAR, variant_classification VARCHAR,
-            hotspot_type VARCHAR, intogen_role VARCHAR, moalmanac_oncogenic VARCHAR,
+            hotspot_type VARCHAR, intogen_role VARCHAR,
+            moalmanac_score_bin VARCHAR, civic_evidence_level VARCHAR,
             vep_impact VARCHAR
         )
     """)
     c.execute("""
         INSERT INTO "test_study_variant_annotations" VALUES
         -- S1/KRAS: hotspot → Driver
-        ('test_study', 'MUTATION', 'S1', 'KRAS', 'p.G12D', 'Missense_Mutation', 'single_residue', 'Act', NULL, 'HIGH'),
-        -- S2/BRAF: hotspot + moalmanac → Driver
-        ('test_study', 'MUTATION', 'S2', 'BRAF', 'p.V600E', 'Missense_Mutation', 'single_residue', NULL, 'Oncogenic', 'HIGH'),
+        ('test_study', 'MUTATION', 'S1', 'KRAS', 'p.G12D', 'Missense_Mutation', 'single_residue', 'Act', 'FDA-Approved', 'A', 'HIGH'),
+        -- S2/BRAF: moalmanac FDA-Approved → Driver
+        ('test_study', 'MUTATION', 'S2', 'BRAF', 'p.V600E', 'Missense_Mutation', NULL, NULL, 'FDA-Approved', 'A', 'HIGH'),
         -- S3/TP53: intogen LoF + functional VC → Driver
-        ('test_study', 'MUTATION', 'S3', 'TP53', 'p.R175H', 'Nonsense_Mutation', NULL, 'LoF', NULL, 'HIGH'),
-        -- S4/KRAS: intogen Act but will test
-        ('test_study', 'MUTATION', 'S4', 'KRAS', 'p.G13D', 'Missense_Mutation', NULL, 'Act', NULL, 'MODERATE'),
+        ('test_study', 'MUTATION', 'S3', 'TP53', 'p.R175H', 'Nonsense_Mutation', NULL, 'LoF', NULL, 'B', 'HIGH'),
+        -- S4/KRAS: intogen Act + functional VC → Driver
+        ('test_study', 'MUTATION', 'S4', 'KRAS', 'p.G13D', 'Missense_Mutation', NULL, 'Act', NULL, NULL, 'MODERATE'),
         -- S5/APC: no signals → Passenger
-        ('test_study', 'MUTATION', 'S5', 'APC', 'p.R1450Q', 'Missense_Mutation', NULL, NULL, NULL, 'MODERATE')
+        ('test_study', 'MUTATION', 'S5', 'APC', 'p.R1450Q', 'Missense_Mutation', NULL, NULL, NULL, 'D', 'MODERATE')
     """)
 
     # -- clinical_attribute_meta (needed by get_plots_data)
@@ -120,14 +121,34 @@ class TestComputeCbpDriver:
         ).fetchone()
         assert row[0] == "Putative_Driver"
 
-    def test_moalmanac_oncogenic_is_driver(self, conn):
-        """MOAlmanac oncogenic annotation → Driver."""
+    def test_moalmanac_actionable_is_driver(self, conn):
+        """MOAlmanac FDA-Approved/Guideline/Clinical evidence → Driver."""
         _compute_cbp_driver(conn, "test_study")
         row = conn.execute(
             'SELECT cbp_driver FROM "test_study_mutations" '
             "WHERE Tumor_Sample_Barcode = 'S2'"
         ).fetchone()
         assert row[0] == "Putative_Driver"
+
+    def test_civic_high_evidence_is_driver(self, conn):
+        """CIViC evidence level A/B → Driver (S3 has LoF too, but B alone should work)."""
+        _compute_cbp_driver(conn, "test_study")
+        # S3 has civic_evidence_level = B and intogen_role = LoF
+        row = conn.execute(
+            'SELECT cbp_driver FROM "test_study_mutations" '
+            "WHERE Tumor_Sample_Barcode = 'S3'"
+        ).fetchone()
+        assert row[0] == "Putative_Driver"
+
+    def test_civic_low_evidence_not_driver(self, conn):
+        """CIViC evidence level D alone should not trigger Driver."""
+        _compute_cbp_driver(conn, "test_study")
+        # S5 has civic_evidence_level = D and no other signals → Passenger
+        row = conn.execute(
+            'SELECT cbp_driver FROM "test_study_mutations" '
+            "WHERE Tumor_Sample_Barcode = 'S5'"
+        ).fetchone()
+        assert row[0] == "Putative_Passenger"
 
     def test_no_signals_is_passenger(self, conn):
         """Mutations with no driver signals → Passenger."""
