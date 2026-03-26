@@ -703,6 +703,9 @@ table#mut-table tr:hover td { background: #f9f9f9; }
         <a onclick="plotsExample('mut_dx')">Mut# vs Dx</a>
         <a onclick="plotsExample('fga_dx')">FGA vs Dx</a>
         <a onclick="plotsExample('mut_fga')">Mut# vs FGA</a>
+        <a onclick="plotsExample('cna_exp')" class="plots-opt-mrna" style="display:none;">CNA vs Exp</a>
+        <a onclick="plotsExample('mut_exp')" class="plots-opt-mrna" style="display:none;">Mut vs Exp</a>
+        <a onclick="plotsExample('meth_exp')" class="plots-opt-methylation" style="display:none;">Methylation vs Exp</a>
       </div>
       <div id="plots-wrap">
         <div id="plots-sidebar">
@@ -2891,6 +2894,15 @@ function plotsExample(type) {
     } else if (type === 'mut_fga') {
         PlotsState.hAxis = { dataType: 'mutation', gene: GENE_0, plotBy: 'mutated_vs_wildtype' };
         PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'FRACTION_GENOME_ALTERED' };
+    } else if (type === 'cna_exp') {
+        PlotsState.hAxis = { dataType: 'copy_number', gene: GENE_0 };
+        PlotsState.vAxis = { dataType: 'mrna_expression', gene: GENE_0 };
+    } else if (type === 'mut_exp') {
+        PlotsState.hAxis = { dataType: 'mutation', gene: GENE_0, plotBy: 'mutated_vs_wildtype' };
+        PlotsState.vAxis = { dataType: 'mrna_expression', gene: GENE_0 };
+    } else if (type === 'meth_exp') {
+        PlotsState.hAxis = { dataType: 'methylation', gene: GENE_0 };
+        PlotsState.vAxis = { dataType: 'mrna_expression', gene: GENE_0 };
     }
 
     document.getElementById('plots-h-datatype').value = PlotsState.hAxis.dataType;
