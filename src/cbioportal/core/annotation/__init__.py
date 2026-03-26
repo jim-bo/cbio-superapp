@@ -90,6 +90,9 @@ def annotate_study(
     # ── 4. Write ──────────────────────────────────────────────────────────────
     total = write_variant_annotations(conn, study_id, all_rows)
 
+    # ── 5. Compute cbp_driver on the mutations table ─────────────────────────
+    _compute_cbp_driver(conn, study_id)
+
     summary = {
         "mutations": len(mut_rows),
         "cna": len(cna_rows),
@@ -106,6 +109,84 @@ def annotate_study(
         total,
     )
     return summary
+
+
+def _compute_cbp_driver(conn, study_id: str) -> None:
+    """Add cbp_driver column to the mutations table from variant_annotations.
+
+    Heuristic classification (will be replaced by OncoKB integration):
+      - Putative_Driver if ANY of:
+          * hotspot_type IS NOT NULL (mutation is a known hotspot)
+          * intogen_role IN ('Act', 'LoF') AND variant_classification indicates
+            functional impact (Missense, Nonsense, Frameshift, Splice, Inframe)
+          * moalmanac_oncogenic ILIKE '%oncogenic%'
+      - Putative_Passenger otherwise
+
+    NOTE: This is a heuristic approximation. The legacy cBioPortal uses OncoKB's
+    oncogenic field as the primary driver signal. When OncoKB integration is added
+    (oncokb_oncogenic column), this logic should be updated to:
+        Driver = oncokb_oncogenic IN ('Oncogenic', 'Likely Oncogenic', 'Resistance')
+                 OR hotspot OR cbp_driver_binary
+    """
+    mut_table = f'"{study_id}_mutations"'
+    ann_table = f'"{study_id}_variant_annotations"'
+
+    # Check both tables exist
+    for tbl in [f"{study_id}_mutations", f"{study_id}_variant_annotations"]:
+        exists = conn.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name = ?",
+            (tbl,),
+        ).fetchone()[0]
+        if not exists:
+            logger.warning("Cannot compute cbp_driver: table %s missing", tbl)
+            return
+
+    # Add cbp_driver column if it doesn't exist
+    has_col = conn.execute(
+        "SELECT count(*) FROM information_schema.columns "
+        f"WHERE table_name = '{study_id}_mutations' AND column_name = 'cbp_driver'"
+    ).fetchone()[0]
+    if not has_col:
+        conn.execute(f"ALTER TABLE {mut_table} ADD COLUMN cbp_driver VARCHAR")
+
+    # Functional variant classifications that support driver calls
+    # (non-functional VCs like Silent, IGR are already excluded at load time)
+    _FUNCTIONAL_VCS = (
+        "Missense_Mutation", "Nonsense_Mutation",
+        "Frame_Shift_Del", "Frame_Shift_Ins",
+        "Splice_Site", "Splice_Region",
+        "In_Frame_Del", "In_Frame_Ins",
+        "Translation_Start_Site", "Nonstop_Mutation",
+    )
+    vc_list = ", ".join(f"'{vc}'" for vc in _FUNCTIONAL_VCS)
+
+    conn.execute(f"""
+        UPDATE {mut_table} AS m
+        SET cbp_driver = CASE
+            WHEN a.hotspot_type IS NOT NULL
+                THEN 'Putative_Driver'
+            WHEN a.intogen_role IN ('Act', 'LoF')
+                AND a.variant_classification IN ({vc_list})
+                THEN 'Putative_Driver'
+            WHEN a.moalmanac_oncogenic IS NOT NULL
+                AND LOWER(a.moalmanac_oncogenic) LIKE '%oncogenic%'
+                THEN 'Putative_Driver'
+            ELSE 'Putative_Passenger'
+        END
+        FROM {ann_table} AS a
+        WHERE a.alteration_type = 'MUTATION'
+            AND a.sample_id = m.Tumor_Sample_Barcode
+            AND a.hugo_symbol = m.Hugo_Symbol
+            AND COALESCE(a.hgvsp_short, '') = COALESCE(m.HGVSp_Short, '')
+    """)
+
+    # Count results
+    counts = conn.execute(
+        f"SELECT cbp_driver, count(*) FROM {mut_table} "
+        f"WHERE cbp_driver IS NOT NULL GROUP BY cbp_driver"
+    ).fetchall()
+    for label, cnt in counts:
+        logger.info("cbp_driver %s: %d mutations (%s)", label, cnt, study_id)
 
 
 def refresh_reference_data() -> None:
