@@ -275,7 +275,11 @@ async function updateBarWidget(attrId) {
         formData.append('study_id', DashboardState.studyId);
         formData.append('filter_json', JSON.stringify(DashboardState.filters));
         formData.append('attribute_id', attrId);
-        if (AGE_ATTRS.has(attrId)) formData.append('bin_size', '5');
+        if (AGE_ATTRS.has(attrId)) {
+            formData.append('bin_size', '5');
+            formData.append('clip_min', '35');
+            formData.append('clip_max', '85');
+        }
         let bins, naCount = 0;
         const response = await fetch('/study/summary/chart/numeric', { method: 'POST', body: formData });
         const json = await response.json();
