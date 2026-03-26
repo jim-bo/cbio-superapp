@@ -152,16 +152,17 @@ def load_gene_reference(conn, genes_json_path: Path = None):
         CREATE TABLE gene_reference (
             entrez_gene_id INTEGER PRIMARY KEY,
             hugo_gene_symbol VARCHAR,
-            gene_type VARCHAR
+            gene_type VARCHAR,
+            cytoband VARCHAR DEFAULT ''
         )
     """)
 
     rows = [
-        (g["entrezGeneId"], g["hugoGeneSymbol"], g.get("type"))
+        (g["entrezGeneId"], g["hugoGeneSymbol"], g.get("type"), "")
         for g in genes
         if g.get("entrezGeneId") is not None
     ]
-    conn.executemany("INSERT OR REPLACE INTO gene_reference VALUES (?, ?, ?)", rows)
+    conn.executemany("INSERT OR REPLACE INTO gene_reference VALUES (?, ?, ?, ?)", rows)
     typer.echo(f"Successfully loaded {len(rows)} gene reference entries.")
 
 
@@ -292,6 +293,7 @@ def _load_gene_aliases_from_hgnc(conn):
     typer.echo("Parsing HGNC gene aliases...")
 
     alias_rows: list[tuple[int, str]] = []
+    cytoband_rows: list[tuple[str, int]] = []  # (location, entrez_id)
 
     with open(hgnc_path, "r", encoding="utf-8") as f:
         header = f.readline().rstrip("\n").split("\t")
@@ -301,6 +303,8 @@ def _load_gene_aliases_from_hgnc(conn):
             prev_col = header.index("prev_symbol")
         except ValueError as e:
             raise RuntimeError(f"HGNC TSV missing expected column: {e}") from e
+
+        location_col = header.index("location") if "location" in header else None
 
         for line in f:
             fields = line.rstrip("\n").split("\t")
@@ -326,9 +330,26 @@ def _load_gene_aliases_from_hgnc(conn):
                 if symbol:
                     alias_rows.append((entrez_id, symbol))
 
+            # location: cytogenetic band, e.g. "17p13.1"
+            if location_col is not None and len(fields) > location_col:
+                loc = fields[location_col].strip()
+                if loc and loc != "not applicable":
+                    cytoband_rows.append((loc, entrez_id))
+
     if alias_rows:
         conn.executemany("INSERT OR REPLACE INTO gene_alias VALUES (?, ?)", alias_rows)
     typer.echo(f"Loaded {len(alias_rows)} gene alias entries from HGNC.")
+
+    if cytoband_rows:
+        conn.execute("CREATE TEMP TABLE _tmp_cytoband (cytoband VARCHAR, entrez_gene_id INTEGER)")
+        conn.executemany("INSERT INTO _tmp_cytoband VALUES (?, ?)", cytoband_rows)
+        conn.execute("""
+            UPDATE gene_reference SET cytoband = t.cytoband
+            FROM _tmp_cytoband t
+            WHERE gene_reference.entrez_gene_id = t.entrez_gene_id
+        """)
+        conn.execute("DROP TABLE _tmp_cytoband")
+        typer.echo(f"Updated {len(cytoband_rows)} gene cytoband entries from HGNC.")
 
 
 # ---------------------------------------------------------------------------
@@ -383,6 +404,59 @@ def load_gene_panel_definitions(conn, json_path: Path = None):
 
 
 # ---------------------------------------------------------------------------
+# Cytoband population from HGNC
+# ---------------------------------------------------------------------------
+
+def populate_cytoband_from_hgnc(conn):
+    """Populate cytoband column in gene_reference from HGNC location data.
+
+    This runs independently of alias loading — even when aliases come from
+    the seed SQL, cytoband data still comes from HGNC's `location` column.
+    """
+    hgnc_path = _fetch_datahub_file(_HGNC_TSV_URL, "hgnc_complete_set.txt")
+    typer.echo("Populating cytoband from HGNC location data...")
+
+    cytoband_rows: list[tuple[str, int]] = []
+
+    with open(hgnc_path, "r", encoding="utf-8") as f:
+        header = f.readline().rstrip("\n").split("\t")
+        try:
+            entrez_col = header.index("entrez_id")
+            location_col = header.index("location")
+        except ValueError:
+            typer.echo("Warning: HGNC TSV missing entrez_id or location column, skipping cytoband.")
+            return
+
+        for line in f:
+            fields = line.rstrip("\n").split("\t")
+            if len(fields) <= max(entrez_col, location_col):
+                continue
+            entrez_raw = fields[entrez_col].strip()
+            if not entrez_raw:
+                continue
+            try:
+                entrez_id = int(entrez_raw)
+            except ValueError:
+                continue
+
+            loc = fields[location_col].strip()
+            if loc and loc != "not applicable":
+                cytoband_rows.append((loc, entrez_id))
+
+    if cytoband_rows:
+        # Batch update via temp table to avoid executemany overhead on large UPDATE
+        conn.execute("CREATE TEMP TABLE _tmp_cytoband (cytoband VARCHAR, entrez_gene_id INTEGER)")
+        conn.executemany("INSERT INTO _tmp_cytoband VALUES (?, ?)", cytoband_rows)
+        conn.execute("""
+            UPDATE gene_reference SET cytoband = t.cytoband
+            FROM _tmp_cytoband t
+            WHERE gene_reference.entrez_gene_id = t.entrez_gene_id
+        """)
+        conn.execute("DROP TABLE _tmp_cytoband")
+    typer.echo(f"Updated {len(cytoband_rows)} gene cytoband entries from HGNC.")
+
+
+# ---------------------------------------------------------------------------
 # Auto-load on study import
 # ---------------------------------------------------------------------------
 
@@ -406,6 +480,15 @@ def ensure_gene_reference(conn):
             load_gene_symbol_updates(conn)
         if "gene_alias" not in existing:
             load_gene_aliases(conn)
+        # Populate cytoband if gene_reference exists but cytoband is empty
+        try:
+            has_cytoband = conn.execute(
+                "SELECT COUNT(*) FROM gene_reference WHERE cytoband IS NOT NULL AND cytoband != ''"
+            ).fetchone()[0]
+            if has_cytoband == 0:
+                populate_cytoband_from_hgnc(conn)
+        except Exception:
+            pass
     except SystemExit:
         typer.echo("Warning: Could not load gene reference tables. Hugo symbol normalization will be skipped.")
     except Exception as e:

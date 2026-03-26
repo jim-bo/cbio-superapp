@@ -1,6 +1,7 @@
 """Unit tests for get_cna_genes() using in-memory DuckDB.
 
-AMP = cna_value 2, HOMDEL = cna_value -2.
+AMP = cna_value >= 2, HOMDEL = cna_value <= -1.5.
+The legacy portal treats -1.5 (deep deletion) as HOMDEL.
 Neutral values (±1) are excluded.
 CDKN2A isoforms (CDKN2Ap14ARF, CDKN2Ap16INK4A) are filtered out.
 Freq = n_samples / n_profiled * 100, rounded to 1 decimal.
@@ -21,7 +22,7 @@ def db():
         CREATE TABLE "{STUDY}_cna" (
             sample_id VARCHAR,
             hugo_symbol VARCHAR,
-            cna_value INTEGER
+            cna_value DOUBLE
         )
     """)
     conn.execute("""
@@ -118,6 +119,26 @@ def test_amp_and_homdel_separate_rows(db):
 def test_empty_table_returns_empty_list(db):
     result = get_cna_genes(db, STUDY)
     assert result == []
+
+
+def test_deep_deletion_counted_as_homdel(db):
+    """cna_value = -1.5 (deep deletion) is counted as HOMDEL, matching legacy portal."""
+    _add_sample(db, "S1")
+    _add_sample(db, "S2")
+    _add_cna(db, "S1", "PTEN", -2)
+    _add_cna(db, "S2", "PTEN", -1.5)
+    result = get_cna_genes(db, STUDY)
+    row = _by_gene_type(result, "PTEN", "HOMDEL")
+    assert row is not None
+    assert row["n_samples"] == 2
+
+
+def test_hetloss_excluded(db):
+    """cna_value = -1 (heterozygous loss) is NOT counted as HOMDEL."""
+    _add_sample(db, "S1")
+    _add_cna(db, "S1", "PTEN", -1)
+    result = get_cna_genes(db, STUDY)
+    assert _by_gene_type(result, "PTEN", "HOMDEL") is None
 
 
 def test_missing_table_returns_empty_list():

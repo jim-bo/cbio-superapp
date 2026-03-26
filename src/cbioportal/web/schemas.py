@@ -88,6 +88,7 @@ class MutatedGeneRow(BaseModel):
 class CnaGeneRow(BaseModel):
     """One row in the CNA Genes table."""
     gene: str
+    cytoband: str = ""
     cna_type: str
     n_samples: int
     freq: float

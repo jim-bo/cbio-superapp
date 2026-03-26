@@ -288,13 +288,17 @@ async def chart_numeric(
     study_id: Annotated[str, Form()],
     attribute_id: Annotated[str, Form()],
     bin_size: Annotated[float | None, Form()] = None,
+    clip_min: Annotated[float | None, Form()] = None,
+    clip_max: Annotated[float | None, Form()] = None,
     filter_json: Annotated[str, Form()] = "{}",
     format: str | None = None,
 ):
     """Return equal-width histogram bins for any numeric clinical attribute."""
     _parse_filters(filter_json)
     conn = request.app.state.db_conn
-    all_bins = get_numeric_histogram(conn, study_id, attribute_id, filter_json, bin_size)
+    all_bins = get_numeric_histogram(
+        conn, study_id, attribute_id, filter_json, bin_size, clip_min, clip_max
+    )
     na_count = next((r["y"] for r in all_bins if r["x"] == "NA"), 0)
     bins = [r for r in all_bins if r["x"] != "NA"]
     return {"data": bins, "na_count": na_count}

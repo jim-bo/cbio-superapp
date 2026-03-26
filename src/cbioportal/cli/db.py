@@ -188,6 +188,7 @@ def sync_gene_reference(
     """Load gene reference (entrezGeneId → hugoGeneSymbol) into the database."""
     conn = database.get_connection()
     loader.load_gene_reference(conn, genes_json_path)
+    loader.populate_cytoband_from_hgnc(conn)
     conn.close()
 
 @app.command(name="sync-gene-symbol-updates")
