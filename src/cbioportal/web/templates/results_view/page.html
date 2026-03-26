@@ -271,6 +271,8 @@
 #plots-chart-container { /* width/height set dynamically by renderPlotsBar/Scatter/Box */ width: 100%; height: 500px; }
 #plots-examples { margin-bottom: 8px; font-size: 13px; }
 #plots-examples a { margin-left: 8px; cursor: pointer; color: #2374c8; text-decoration: none; }
+#plots-color-menu label { font-weight: normal; cursor: pointer; }
+#plots-color-menu input[type=checkbox] { margin: 0 4px 1px 0; vertical-align: middle; }
 #plots-examples a:hover { text-decoration: underline; }
 
 /* gene selector tabs */
@@ -775,6 +777,21 @@ table#mut-table tr:hover td { background: #f9f9f9; }
         </div>
 
         <div id="plots-chart-area">
+          <!-- Legacy ref: PlotsTab.tsx:5961-5962 — "Color samples by:" -->
+          <div id="plots-color-menu" style="display:none;margin-bottom:8px;font-size:12px;">
+            <strong>Color samples by:</strong>
+            <select id="plots-color-by" onchange="onPlotsColorChange()" style="font-size:12px;margin-left:6px;width:220px;">
+              <option value="">None</option>
+              <optgroup label="Genes" id="plots-color-genes"></optgroup>
+              <optgroup label="Clinical Attributes" id="plots-color-clinical"></optgroup>
+            </select>
+            <!-- Overlay type: shown when a gene is selected -->
+            <span id="plots-color-overlay-wrap" style="display:none;margin-left:10px;">
+              <label style="margin-right:8px;"><input type="checkbox" id="plots-color-mut" checked onchange="onPlotsColorChange()"> Mutation Type</label>
+              <label style="margin-right:8px;"><input type="checkbox" id="plots-color-cna" onchange="onPlotsColorChange()"> Copy Number</label>
+              <label><input type="checkbox" id="plots-color-sv" onchange="onPlotsColorChange()"> Structural Variant</label>
+            </span>
+          </div>
           <div id="plots-info"></div>
           <div id="plots-chart-container"></div>
         </div>
@@ -1990,6 +2007,7 @@ document.querySelectorAll('input[name="cts-group"], input[name="cts-count"]').fo
 let plotsChart = null;
 let plotsCliOpts = [];  // cached clinical attribute options
 let plotsData = null;   // last server response
+let plotsColorData = null;  // per-sample color overlay from server
 var molecularProfiles = {{ molecular_profiles | tojson }};
 
 const PlotsState = {
@@ -2027,6 +2045,16 @@ async function initPlotsTab() {
     try {
         plotsCliOpts = await postForm("/results/oncoprint/plots-clinical-options", { study_id: STUDY_ID });
     } catch(e) { console.error(e); }
+
+    // Populate color menu dropdowns
+    var genesGroup = document.getElementById("plots-color-genes");
+    GENES.forEach(function(g) {
+        genesGroup.innerHTML += '<option value="gene:' + g + '">' + g + '</option>';
+    });
+    var clinGroup = document.getElementById("plots-color-clinical");
+    plotsCliOpts.forEach(function(opt) {
+        clinGroup.innerHTML += '<option value="clinical:' + opt.attr_id + '">' + opt.display_name + '</option>';
+    });
 
     // Build sub-controls for default axes
     buildAxisSubControls('h');
@@ -2178,12 +2206,17 @@ async function loadPlotsData() {
             v_config: JSON.stringify(PlotsState.vAxis),
         });
         // Show/hide plot-type-specific controls
+        var isScatterOrBox = plotsData.plot_type === "scatter" || plotsData.plot_type === "box";
         var barControls = document.getElementById("plots-controls");
         var boxControls = document.getElementById("plots-box-controls");
         var scatterControls = document.getElementById("plots-scatter-controls");
         barControls.style.display = plotsData.plot_type === "bar" ? "block" : "none";
         boxControls.style.display = plotsData.plot_type === "box" ? "block" : "none";
-        scatterControls.style.display = (plotsData.plot_type === "scatter" || plotsData.plot_type === "box") ? "block" : "none";
+        scatterControls.style.display = isScatterOrBox ? "block" : "none";
+        // Legacy ref: PlotsTab.tsx:5961 — color menu not shown for DiscreteVsDiscrete
+        document.getElementById("plots-color-menu").style.display = isScatterOrBox ? "block" : "none";
+        // Reset color data when plot type changes
+        plotsColorData = null;
         // Log scale checkboxes: only for numeric axes (scatter has both, box has one)
         document.getElementById("plots-log-h").parentElement.style.display =
             plotsData.plot_type === "scatter" ? "block" : "none";
@@ -2455,6 +2488,59 @@ function renderPlotsBar() {
     plotsChart.setOption(option, true);
 }
 
+// ── Coloring Menu ────────────────────────────────────────────────────────────
+
+async function onPlotsColorChange() {
+    var sel = document.getElementById("plots-color-by").value;
+    var overlayWrap = document.getElementById("plots-color-overlay-wrap");
+
+    if (!sel) {
+        plotsColorData = null;
+        overlayWrap.style.display = "none";
+        renderPlotsChart();
+        return;
+    }
+
+    var parts = sel.split(":");
+    var kind = parts[0];   // "gene" or "clinical"
+    var value = parts[1];  // gene symbol or attr_id
+
+    if (kind === "gene") {
+        overlayWrap.style.display = "inline";
+        // Fetch whichever overlays are checked
+        var configs = [];
+        if (document.getElementById("plots-color-mut").checked) {
+            configs.push({ type: "mutation", gene: value });
+        }
+        if (document.getElementById("plots-color-cna").checked) {
+            configs.push({ type: "cna", gene: value });
+        }
+        if (document.getElementById("plots-color-sv").checked) {
+            configs.push({ type: "sv", gene: value });
+        }
+        // Use the first checked overlay (combine later if needed)
+        if (configs.length === 0) {
+            plotsColorData = null;
+        } else {
+            try {
+                plotsColorData = await postForm("/results/oncoprint/plots-color-data", {
+                    study_id: STUDY_ID,
+                    color_config: JSON.stringify(configs[0]),
+                });
+            } catch(e) { console.error(e); plotsColorData = null; }
+        }
+    } else {
+        overlayWrap.style.display = "none";
+        try {
+            plotsColorData = await postForm("/results/oncoprint/plots-color-data", {
+                study_id: STUDY_ID,
+                color_config: JSON.stringify({ type: "clinical", attribute_id: value }),
+            });
+        } catch(e) { console.error(e); plotsColorData = null; }
+    }
+    renderPlotsChart();
+}
+
 // Legacy ref: PlotsTab.tsx:65 — maybeSetLogScale; transform is log2(value + 1)
 function _applyLog(val) { return Math.log2(val + 1); }
 
@@ -2463,12 +2549,7 @@ function renderPlotsScatter() {
     var logH = document.getElementById("plots-log-h").checked;
     var logV = document.getElementById("plots-log-v").checked;
     var showRegression = document.getElementById("plots-regression").checked;
-
-    var points = d.points.map(function(p) {
-        var x = logH ? _applyLog(p.x) : p.x;
-        var y = logV ? _applyLog(p.y) : p.y;
-        return [x, y];
-    });
+    var cd = plotsColorData;
 
     var hLabel = d.h_label + (logH ? ' (log2(value + 1))' : '');
     var vLabel = d.v_label + (logV ? ' (log2(value + 1))' : '');
@@ -2476,32 +2557,66 @@ function renderPlotsScatter() {
     // Reset container to default size for scatter
     var container = document.getElementById("plots-chart-container");
     container.style.width = "100%";
-    container.style.height = "500px";
+    container.style.height = "550px";
     plotsChart.resize();
 
-    var seriesList = [{
-        type: 'scatter', data: points,
-        symbolSize: 4, itemStyle: { color: '#2986E2', opacity: 0.6 },
-    }];
+    var seriesList = [];
 
-    // Regression line (least-squares)
-    if (showRegression && points.length >= 2) {
-        var n = points.length;
-        var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-        points.forEach(function(pt) {
-            sumX += pt[0]; sumY += pt[1]; sumXY += pt[0]*pt[1]; sumX2 += pt[0]*pt[0];
+    if (cd && cd.order && cd.order.length > 0) {
+        // Group points by color category
+        var groups = {};
+        cd.order.forEach(function(cat) { groups[cat] = []; });
+        d.points.forEach(function(p) {
+            var cat = cd.samples[p.sample_id] || cd.order[cd.order.length - 1];
+            if (!groups[cat]) groups[cat] = [];
+            var x = logH ? _applyLog(p.x) : p.x;
+            var y = logV ? _applyLog(p.y) : p.y;
+            groups[cat].push([x, y]);
         });
-        var denom = n * sumX2 - sumX * sumX;
-        if (Math.abs(denom) > 1e-10) {
-            var slope = (n * sumXY - sumX * sumY) / denom;
-            var intercept = (sumY - slope * sumX) / n;
-            var xMin = Math.min.apply(null, points.map(function(p){return p[0];}));
-            var xMax = Math.max.apply(null, points.map(function(p){return p[0];}));
+
+        cd.order.forEach(function(cat) {
+            if (!groups[cat] || groups[cat].length === 0) return;
             seriesList.push({
-                type: 'line', data: [[xMin, slope*xMin+intercept], [xMax, slope*xMax+intercept]],
-                symbol: 'none', lineStyle: { color: '#dc3912', width: 2 },
-                tooltip: { show: false },
+                name: cat,
+                type: 'scatter',
+                data: groups[cat],
+                symbolSize: 4,
+                itemStyle: { color: cd.colors[cat] || '#999', opacity: 0.7 },
             });
+        });
+    } else {
+        // No coloring — single blue series
+        var points = d.points.map(function(p) {
+            return [logH ? _applyLog(p.x) : p.x, logV ? _applyLog(p.y) : p.y];
+        });
+        seriesList.push({
+            type: 'scatter', data: points,
+            symbolSize: 4, itemStyle: { color: '#2986E2', opacity: 0.6 },
+        });
+    }
+
+    // Regression line (least-squares) — computed on all visible points
+    if (showRegression) {
+        var allPts = [];
+        seriesList.forEach(function(s) { if (s.type === 'scatter') allPts = allPts.concat(s.data); });
+        if (allPts.length >= 2) {
+            var n = allPts.length;
+            var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            allPts.forEach(function(pt) {
+                sumX += pt[0]; sumY += pt[1]; sumXY += pt[0]*pt[1]; sumX2 += pt[0]*pt[0];
+            });
+            var denom = n * sumX2 - sumX * sumX;
+            if (Math.abs(denom) > 1e-10) {
+                var slope = (n * sumXY - sumX * sumY) / denom;
+                var intercept = (sumY - slope * sumX) / n;
+                var xMin = Math.min.apply(null, allPts.map(function(p){return p[0];}));
+                var xMax = Math.max.apply(null, allPts.map(function(p){return p[0];}));
+                seriesList.push({
+                    type: 'line', data: [[xMin, slope*xMin+intercept], [xMax, slope*xMax+intercept]],
+                    symbol: 'none', lineStyle: { color: '#dc3912', width: 2 },
+                    tooltip: { show: false },
+                });
+            }
         }
     }
 
@@ -2510,13 +2625,15 @@ function renderPlotsScatter() {
             trigger: 'item',
             formatter: function(p) {
                 if (p.seriesType !== 'scatter') return '';
-                var pt = d.points[p.dataIndex];
-                return '<b>' + (pt.sample_id || '') + '</b><br>' +
-                    d.h_label + ': ' + pt.x + '<br>' +
-                    d.v_label + ': ' + pt.y;
+                return '<b>' + (p.seriesName || '') + '</b><br>' +
+                    d.h_label + ': ' + p.value[0].toFixed(2) + '<br>' +
+                    d.v_label + ': ' + p.value[1].toFixed(2);
             },
         },
-        grid: { left: 90, right: 40, top: 20, bottom: 60 },
+        legend: cd && cd.order && cd.order.length > 0
+            ? { bottom: 0, orient: 'horizontal', icon: 'circle', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } }
+            : undefined,
+        grid: { left: 90, right: 40, top: 20, bottom: cd && cd.order ? 80 : 60 },
         xAxis: { type: 'value', name: hLabel, nameLocation: 'middle', nameGap: 35 },
         yAxis: { type: 'value', name: vLabel, nameLocation: 'middle', nameGap: 60 },
         series: seriesList,
@@ -2531,6 +2648,7 @@ function renderPlotsBox() {
     var d = plotsData;
     var logV = document.getElementById("plots-log-v").checked;
     var sortBy = document.getElementById("plots-box-sort").value;
+    var cd = plotsColorData;
 
     // Sort categories
     var indices = d.categories.map(function(_, i) { return i; });
@@ -2550,25 +2668,60 @@ function renderPlotsBox() {
     // Legacy MultipleCategoryBarPlot.tsx:672-686: bottomPadding = biggestCategoryLabelSize
     var maxLabelPx = Math.max(...cats.map(function(label) { return label.length * 6.5; }));
     var boxBottomPad = maxLabelPx * Math.abs(Math.sin(50 * Math.PI / 180)) + 20;
+    var hasLegend = cd && cd.order && cd.order.length > 0;
 
     var container = document.getElementById("plots-chart-container");
     container.style.width = "100%";
-    container.style.height = (650 + boxBottomPad + 20) + "px";
+    container.style.height = (650 + boxBottomPad + (hasLegend ? 60 : 20)) + "px";
     plotsChart.resize();
+
+    var seriesList = [{
+        type: 'boxplot',
+        data: boxData,
+        itemStyle: { color: '#fff', borderColor: '#2986E2' },
+    }];
+
+    // Color overlay: scatter points on top of boxes
+    if (hasLegend && d.box_raw_data) {
+        // box_raw_data: {category: [{sample_id, value}]}
+        var catIndex = {};
+        cats.forEach(function(c, i) { catIndex[c] = i; });
+
+        cd.order.forEach(function(colorCat) {
+            var pts = [];
+            cats.forEach(function(cat, ci) {
+                var rawPts = d.box_raw_data[cat] || [];
+                rawPts.forEach(function(rp) {
+                    if ((cd.samples[rp.sample_id] || '') === colorCat) {
+                        var val = logV ? _applyLog(rp.value) : rp.value;
+                        pts.push([ci, val]);
+                    }
+                });
+            });
+            if (pts.length > 0) {
+                seriesList.push({
+                    name: colorCat,
+                    type: 'scatter',
+                    data: pts,
+                    symbolSize: 4,
+                    itemStyle: { color: cd.colors[colorCat] || '#999', opacity: 0.7 },
+                });
+            }
+        });
+    }
 
     plotsChart.setOption({
         tooltip: { trigger: 'item' },
-        grid: { left: 90, right: 40, top: 20, bottom: boxBottomPad },
+        legend: hasLegend
+            ? { bottom: 0, orient: 'horizontal', icon: 'circle', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } }
+            : undefined,
+        grid: { left: 90, right: 40, top: 20, bottom: boxBottomPad + (hasLegend ? 50 : 0) },
         xAxis: {
             type: 'category', data: cats,
             axisLabel: { rotate: 50, fontSize: 11, interval: 0 },
         },
         yAxis: { type: 'value', name: vLabel, nameLocation: 'middle', nameGap: 50 },
-        series: [{
-            type: 'boxplot',
-            data: boxData,
-            itemStyle: { color: '#fff', borderColor: '#2986E2' },
-        }],
+        series: seriesList,
         toolbox: {
             right: 10, top: 0,
             feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },

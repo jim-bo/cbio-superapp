@@ -150,11 +150,12 @@ Conditional example links (`PlotsTab.tsx:6378-6380`):
 > - Regression line toggle for scatter plots
 > - Sort by median for box plots
 >
-> **Remaining gaps (blocked on new data columns or major new features):**
+> - Coloring menu with gene (mutation/CNA/SV) and clinical attribute overlays
+>
+> **Remaining gaps (blocked on new data columns or minor features):**
 > - DriverVsVUS count-by mode — needs `putative_driver` field in MAF loader
 > - VAF count-by mode — needs `t_alt_count`/`t_ref_count` in MAF loader
 > - SV VariantType count-by mode — needs `variantClass` in SV loader
-> - Coloring menu ("Color samples by:") — overlay colors on scatter/box points
 > - Connect samples toggle — lines between same-patient samples in box plots
 > - Data availability banner — detailed per-axis sample counts
 
@@ -775,10 +776,10 @@ Shows sample counts for each axis and their intersection. Styled with background
 | Box plot | Yes | Yes | Missing coloring overlay |
 | Waterfall plot | Yes | No | Only used with generic assay |
 | **Coloring Overlays** | | | |
-| Color by mutation type | Yes | No | |
-| Color by CNA | Yes | No | |
-| Color by SV | Yes | No | |
-| Color by clinical attribute | Yes | No | |
+| Color by mutation type | Yes | Yes | Gene selector + mutation type overlay |
+| Color by CNA | Yes | Yes | Gene selector + CNA overlay |
+| Color by SV | Yes | Yes | Gene selector + SV overlay |
+| Color by clinical attribute | Yes | Yes | Clinical attribute dropdown with reserved colors |
 | **UI Features** | | | |
 | Swap axes | Yes | Yes | |
 | Quick plots pills | Yes | Yes | Different presets (Mut# vs Dx, FGA vs Dx, Mut# vs FGA) — adapted for available data |

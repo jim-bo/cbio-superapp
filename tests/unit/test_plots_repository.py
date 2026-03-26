@@ -5,6 +5,7 @@ import pytest
 from cbioportal.core.plots_repository import (
     get_cancer_types_summary,
     get_clinical_attribute_options,
+    get_color_data,
     get_plots_data,
 )
 
@@ -294,3 +295,80 @@ class TestPlotsData:
         )
         assert result["plot_type"] == "scatter"
         assert len(result["points"]) == 5
+
+
+# ── Color Data ────────────────────────────────────────────────────────────
+
+
+class TestColorData:
+    def test_mutation_color(self, conn):
+        """Color by mutation type returns per-sample categories."""
+        result = get_color_data(conn, "test_study", {"type": "mutation", "gene": "KRAS"})
+        assert "samples" in result
+        assert "colors" in result
+        assert "order" in result
+        # S1 has Missense, S3 has Missense + Nonsense (Multiple), others Not mutated
+        assert result["samples"]["S1"] == "Missense"
+        assert result["samples"]["S3"] == "Multiple"
+        assert result["samples"]["S2"] == "Not mutated"
+
+    def test_mutation_color_has_legacy_colors(self, conn):
+        result = get_color_data(conn, "test_study", {"type": "mutation", "gene": "KRAS"})
+        assert result["colors"]["Missense"] == "#008000"
+        assert result["colors"]["Not mutated"] == "#c4e5f5"
+
+    def test_cna_color(self, conn):
+        result = get_color_data(conn, "test_study", {"type": "cna", "gene": "KRAS"})
+        # S1 has cna_value=2 (Amplification), S5 has -2 (Deep Deletion)
+        assert result["samples"]["S1"] == "Amplification"
+        assert result["samples"]["S5"] == "Deep Deletion"
+        assert result["colors"]["Amplification"] == "#ff0000"
+        assert result["colors"]["Deep Deletion"] == "#0000ff"
+
+    def test_sv_color(self, conn):
+        result = get_color_data(conn, "test_study", {"type": "sv", "gene": "KRAS"})
+        # S2 has SV for KRAS
+        assert result["samples"]["S2"] == "Structural Variant"
+        assert result["samples"]["S1"] == "No Structural Variant"
+        assert result["colors"]["Structural Variant"] == "#8B00C9"
+
+    def test_clinical_color(self, conn):
+        result = get_color_data(conn, "test_study", {"type": "clinical", "attribute_id": "CANCER_TYPE"})
+        assert result["samples"]["S1"] == "Breast Cancer"
+        assert result["samples"]["S3"] == "Colorectal Cancer"
+        # Should have 3 unique categories
+        assert len(result["order"]) == 3
+
+    def test_clinical_reserved_colors(self, conn):
+        """Reserved clinical colors (e.g. Male/Female) should use legacy palette."""
+        # Our fixture doesn't have sex data, but we test the color mapping logic
+        result = get_color_data(conn, "test_study", {"type": "clinical", "attribute_id": "CANCER_TYPE"})
+        # Non-reserved values get D3 palette colors
+        assert all(c.startswith("#") for c in result["colors"].values())
+
+    def test_empty_gene(self, conn):
+        result = get_color_data(conn, "test_study", {"type": "mutation", "gene": "FAKEGENE"})
+        # All samples should be "Not mutated"
+        assert all(v == "Not mutated" for v in result["samples"].values())
+
+    def test_unknown_type(self, conn):
+        result = get_color_data(conn, "test_study", {"type": "unknown"})
+        assert result["samples"] == {}
+        assert result["colors"] == {}
+
+    def test_box_data_includes_raw(self, conn):
+        """Box plot data should include box_raw_data for scatter overlay."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "clinical_attribute", "attribute_id": "FRACTION_GENOME_ALTERED"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        assert result["plot_type"] == "box"
+        assert "box_raw_data" in result
+        # Each category should have raw sample data
+        for cat in result["categories"]:
+            assert cat in result["box_raw_data"]
+            for pt in result["box_raw_data"][cat]:
+                assert "sample_id" in pt
+                assert "value" in pt

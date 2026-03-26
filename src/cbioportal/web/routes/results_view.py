@@ -18,6 +18,8 @@ from cbioportal.core.oncoprint_repository import (
 from cbioportal.core.plots_repository import (
     get_cancer_types_summary,
     get_clinical_attribute_options,
+    get_color_data,
+    get_molecular_profiles,
     get_plots_data,
 )
 
@@ -73,6 +75,7 @@ async def oncoprint_page(
 
     conn = request.app.state.db_conn
     meta = _get_study_meta(conn, study_id) if study_id else {}
+    profiles = get_molecular_profiles(conn, study_id) if study_id else []
 
     return request.app.state.templates.TemplateResponse(
         "results_view/page.html",
@@ -83,6 +86,7 @@ async def oncoprint_page(
             "gene": genes[0] if genes else "",   # first gene (for Mutations tab default)
             "meta": meta,
             "active_tab": tab,
+            "molecular_profiles": profiles,
         },
     )
 
@@ -206,4 +210,17 @@ async def plots_clinical_options(
     """Return available clinical attributes for axis dropdowns."""
     conn = request.app.state.db_conn
     data = get_clinical_attribute_options(conn, study_id)
+    return JSONResponse(data)
+
+
+@router.post("/results/oncoprint/plots-color-data")
+async def plots_color_data(
+    request: Request,
+    study_id: Annotated[str, Form()],
+    color_config: Annotated[str, Form()] = "{}",
+):
+    """Return per-sample color overlay data for scatter/box coloring."""
+    conn = request.app.state.db_conn
+    config = json.loads(color_config)
+    data = get_color_data(conn, study_id, config)
     return JSONResponse(data)

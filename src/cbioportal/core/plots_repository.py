@@ -6,6 +6,62 @@ from cbioportal.core.oncoprint_repository import _classify_mutation
 # CNA value → alteration type label
 _CNA_MAP = {2: "amplification", -2: "deep_deletion", 1: "gain", -1: "shallow_deletion"}
 
+# Legacy ref: PlotsTabUtils.tsx:2070-2072 — cnaCategoryOrder
+# Order: ['-2','-1','0','1','2'] mapped through cnaToAppearance legendLabels
+_CNA_CATEGORY_ORDER = [
+    "Deep Deletion", "Shallow Deletion", "Diploid", "Gain", "Amplification",
+]
+
+# Fallback profile names used when the molecular_profiles table is missing or
+# the study hasn't been reloaded yet.  Matches the most common profile_name
+# values found in meta_*.txt across the datahub.
+_FALLBACK_PROFILE_NAMES = {
+    "mutation": "Mutations",
+    "cna": "Putative copy-number alterations from GISTIC",
+    "sv": "Structural variants",
+}
+# Maps our internal data_type keys to the stable_id used in meta_*.txt files.
+_TYPE_TO_STABLE_ID = {"mutation": "mutations", "cna": "cna", "sv": "structural_variants"}
+
+
+def get_molecular_profile_name(conn, study_id: str, data_type: str) -> str:
+    """Return the display name for a molecular data type from the DB.
+
+    Legacy ref: PlotsTab.tsx:2748-2800 — dataTypeToDataSourceOptions loads
+    molecular profiles from the API and uses profile.name as dropdown labels.
+    We replicate that by querying the molecular_profiles table populated at
+    study load time from meta_*.txt files.
+
+    Falls back to hardcoded names if the table doesn't exist or no row found.
+    """
+    stable_id = _TYPE_TO_STABLE_ID.get(data_type, data_type)
+    try:
+        row = conn.execute(
+            "SELECT profile_name FROM molecular_profiles "
+            "WHERE study_id = ? AND stable_id = ?",
+            [study_id, stable_id],
+        ).fetchone()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        pass  # table may not exist in older DBs
+    return _FALLBACK_PROFILE_NAMES.get(data_type, data_type)
+
+
+def get_molecular_profiles(conn, study_id: str, alteration_type: str = None) -> list[dict]:
+    """Return molecular profiles for a study, optionally filtered by alteration type."""
+    query = "SELECT * FROM molecular_profiles WHERE study_id = ?"
+    params: list = [study_id]
+    if alteration_type:
+        query += " AND genetic_alteration_type = ?"
+        params.append(alteration_type)
+    try:
+        rows = conn.execute(query, params).fetchall()
+        cols = [d[0] for d in conn.description]
+        return [dict(zip(cols, row)) for row in rows]
+    except Exception:
+        return []
+
 
 def get_cancer_types_summary(
     conn,
@@ -233,7 +289,11 @@ def get_plots_data(
     v_numeric = v_values["is_numeric"]
 
     if not h_numeric and not v_numeric:
-        return _build_bar_data(h_values, v_values, common_ids)
+        return _build_bar_data(
+            h_values, v_values, common_ids,
+            h_data_type=h_config.get("data_type", ""),
+            v_data_type=v_config.get("data_type", ""),
+        )
     elif h_numeric and v_numeric:
         return _build_scatter_data(h_values, v_values, common_ids)
     else:
@@ -356,7 +416,8 @@ def _get_mutation_axis(conn, study_id: str, config: dict) -> dict:
                 values[sid] = sample_types[sid].replace("_", " ").title()
             else:
                 values[sid] = "Wild Type"
-        return {"values": values, "is_numeric": False, "label": f"{gene}: Mutation Type"}
+        profile_name = get_molecular_profile_name(conn, study_id, "mutation")
+        return {"values": values, "is_numeric": False, "label": f"{gene}: {profile_name}"}
 
     else:  # mutated_vs_wildtype
         mutated = {sid for sid, _ in mut_rows if sid in all_ids}
@@ -396,10 +457,14 @@ def _get_cna_axis(conn, study_id: str, config: dict) -> dict:
     """Get copy number alteration data per sample."""
     gene = config.get("gene", "")
 
-    all_samples = conn.execute(
-        f'SELECT SAMPLE_ID FROM "{study_id}_sample"'
+    # Legacy ref: DiscreteCNACache.ts — only samples that were profiled for CNA
+    # (i.e., appear in the CNA matrix for ANY gene) are eligible.  Un-profiled
+    # samples are excluded, not counted as Diploid.  Our loader strips value=0
+    # rows to save space, so we recover the full profiled set from all CNA rows.
+    profiled = conn.execute(
+        f'SELECT DISTINCT sample_id FROM "{study_id}_cna"'
     ).fetchall()
-    all_ids = {r[0] for r in all_samples}
+    profiled_ids = {r[0] for r in profiled}
 
     cna_rows = conn.execute(
         f'SELECT sample_id, cna_value FROM "{study_id}_cna" WHERE hugo_symbol = ?',
@@ -411,19 +476,34 @@ def _get_cna_axis(conn, study_id: str, config: dict) -> dict:
         1: "Gain", -1: "Shallow Deletion", 0: "Diploid",
     }
 
+    # Legacy ref: DiscreteCNACache.ts — the API only returns rows with exact
+    # integer CNA values {-2, -1, 0, 1, 2}.  Non-integer values (e.g. -1.5)
+    # are GISTIC continuous scores that leaked into the discrete file and must
+    # be excluded to match legacy behavior.
+    _VALID_CNA = frozenset(_CNA_LABELS.keys())
+
     values = {}
     for sid, val in cna_rows:
-        if sid in all_ids:
-            values[sid] = _CNA_LABELS.get(int(val), "Diploid")
-    # Fill missing as Diploid
-    for sid in all_ids:
+        if sid in profiled_ids:
+            int_val = int(val) if float(val) == int(val) else None
+            if int_val in _VALID_CNA:
+                values[sid] = _CNA_LABELS[int_val]
+    # Fill profiled samples missing a value for this gene as Diploid
+    for sid in profiled_ids:
         if sid not in values:
             values[sid] = "Diploid"
 
-    return {"values": values, "is_numeric": False, "label": f"{gene}: Copy Number"}
+    profile_name = get_molecular_profile_name(conn, study_id, "cna")
+    return {"values": values, "is_numeric": False, "label": f"{gene}: {profile_name}"}
 
 
-def _build_bar_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
+def _build_bar_data(
+    h_values: dict,
+    v_values: dict,
+    common_ids: set,
+    h_data_type: str = "",
+    v_data_type: str = "",
+) -> dict:
     """Build stacked bar chart data for discrete × discrete."""
     from collections import defaultdict
 
@@ -433,12 +513,23 @@ def _build_bar_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
         v_val = str(v_values["values"][sid])
         cross[h_val][v_val] += 1
 
-    categories = sorted(cross.keys())
-    # Collect all v-axis values
+    # Legacy ref: MultipleCategoryBarPlotUtils.ts:88-105 — sortDataByCategory()
+    # When axis is CNA, use fixed cnaCategoryOrder; otherwise alphabetical.
+    # Only include categories that actually appear in the data
+    # (legacy: usedMajorCategories/usedMinorCategories in makePlotData lines 31-61).
+    if h_data_type == "copy_number":
+        categories = [c for c in _CNA_CATEGORY_ORDER if c in cross]
+    else:
+        categories = sorted(cross.keys())
+
     all_v_values: set[str] = set()
     for counts in cross.values():
         all_v_values.update(counts.keys())
-    series_names = sorted(all_v_values)
+
+    if v_data_type == "copy_number":
+        series_names = [c for c in _CNA_CATEGORY_ORDER if c in all_v_values]
+    else:
+        series_names = sorted(all_v_values)
 
     series = []
     for name in series_names:
@@ -449,6 +540,8 @@ def _build_bar_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
         "plot_type": "bar",
         "h_label": h_values["label"],
         "v_label": v_values["label"],
+        "h_data_type": h_data_type,
+        "v_data_type": v_data_type,
         "categories": categories,
         "series": series,
         "total_samples": len(common_ids),
@@ -499,10 +592,12 @@ def _build_box_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
 
     categories = sorted(groups.keys())
     box_data = []
+    box_raw_data: dict[str, list[dict]] = {}
     for cat in categories:
         vals = sorted(groups[cat])
         if not vals:
             box_data.append([0, 0, 0, 0, 0])
+            box_raw_data[cat] = []
             continue
         n = len(vals)
         q1_idx = n // 4
@@ -514,6 +609,12 @@ def _build_box_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
             vals[q3_idx],      # Q3
             vals[-1],          # max
         ])
+        # Raw sample values for scatter overlay coloring
+        box_raw_data[cat] = [
+            {"sample_id": sid, "value": float(num_vals["values"][sid])}
+            for sid in common_ids
+            if str(cat_vals["values"][sid]) == cat
+        ]
 
     return {
         "plot_type": "box",
@@ -521,6 +622,207 @@ def _build_box_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
         "v_label": num_vals["label"],
         "categories": categories,
         "box_data": box_data,
+        "box_raw_data": box_raw_data,
         "total_samples": len(common_ids),
         "swapped": swapped,
     }
+
+
+# ── Coloring overlay ─────────────────────────────────────────────────────────
+
+# Legacy ref: PlotsTabUtils.tsx:1909-1960 — oncoprintMutationTypeToAppearanceDefault
+_MUT_TYPE_COLORS = {
+    "Missense": "#008000",
+    "Inframe": "#993404",
+    "Truncating": "#000000",
+    "Splice": "#e5802b",
+    "Promoter": "#00B7CE",
+    "Other": "#cf58bc",
+    "Multiple": "#666666",
+}
+
+# Legacy ref: PlotsTabUtils.tsx:2020-2046 — cnaToAppearance
+_CNA_OVERLAY_COLORS = {
+    "Deep Deletion": "#0000ff",
+    "Shallow Deletion": "#2aced4",
+    "Diploid": "#BEBEBE",
+    "Gain": "#ff8c9f",
+    "Amplification": "#ff0000",
+}
+
+# Legacy ref: PlotsTabUtils.tsx:2048-2052
+_SV_OVERLAY_COLOR = "#8B00C9"
+
+# Legacy ref: Colors.ts:39-129 — clinical reserved colors
+_CLINICAL_RESERVED_COLORS: dict[str, str] = {}
+for _val in ("true", "yes", "positive", "alive", "living", "disease free",
+             "tumor free", "not progressed"):
+    _CLINICAL_RESERVED_COLORS[_val] = "#1b9e77"
+for _val in ("false", "no", "negative", "deceased", "recurred", "progressed",
+             "recurred/progressed", "with tumor"):
+    _CLINICAL_RESERVED_COLORS[_val] = "#d95f02"
+for _val in ("female", "f"):
+    _CLINICAL_RESERVED_COLORS[_val] = "#E0699E"
+for _val in ("male", "m"):
+    _CLINICAL_RESERVED_COLORS[_val] = "#2986E2"
+for _val in ("unknown", "na"):
+    _CLINICAL_RESERVED_COLORS[_val] = "#D3D3D3"
+
+# Legacy ref: PlotUtils.ts:221-253 — D3 categorical palette
+_D3_PALETTE = [
+    "#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6",
+    "#dd4477", "#66aa00", "#b82e2e", "#316395", "#994499", "#22aa99",
+    "#aaaa11", "#6633cc", "#e67300", "#8b0707", "#651067", "#329262",
+    "#5574a6", "#3b3eac", "#b77322", "#16d620", "#b91383", "#f4359e",
+    "#9c5935", "#a9c413", "#2a778d", "#668d1c", "#bea413", "#0c5922",
+    "#743411",
+]
+
+
+def get_color_data(
+    conn,
+    study_id: str,
+    color_config: dict,
+) -> dict:
+    """Return per-sample color overlay data for scatter/box plots.
+
+    color_config: {"type": "mutation"|"cna"|"sv"|"clinical", "gene": str, "attribute_id": str}
+
+    Returns: {"samples": {sample_id: category}, "colors": {category: hex}, "order": [categories]}
+    """
+    color_type = color_config.get("type", "")
+
+    if color_type == "mutation":
+        return _get_mutation_color(conn, study_id, color_config.get("gene", ""))
+    elif color_type == "cna":
+        return _get_cna_color(conn, study_id, color_config.get("gene", ""))
+    elif color_type == "sv":
+        return _get_sv_color(conn, study_id, color_config.get("gene", ""))
+    elif color_type == "clinical":
+        return _get_clinical_color(conn, study_id, color_config.get("attribute_id", ""))
+    else:
+        return {"samples": {}, "colors": {}, "order": []}
+
+
+def _get_mutation_color(conn, study_id: str, gene: str) -> dict:
+    """Color by mutation type for a gene."""
+    all_samples = conn.execute(
+        f'SELECT SAMPLE_ID FROM "{study_id}_sample"'
+    ).fetchall()
+    all_ids = {r[0] for r in all_samples}
+
+    mut_rows = conn.execute(
+        f'SELECT Tumor_Sample_Barcode, Variant_Classification '
+        f'FROM "{study_id}_mutations" '
+        f"WHERE Hugo_Symbol = ? AND (Mutation_Status IS NULL OR Mutation_Status != 'UNCALLED')",
+        [gene],
+    ).fetchall()
+
+    sample_types: dict[str, list[str]] = {}
+    for sid, vc in mut_rows:
+        if sid not in all_ids:
+            continue
+        disp = _classify_mutation(vc).replace("_", " ").title()
+        sample_types.setdefault(sid, []).append(disp)
+
+    samples: dict[str, str] = {}
+    for sid in all_ids:
+        types = sample_types.get(sid)
+        if not types:
+            samples[sid] = "Not mutated"
+        elif len(set(types)) > 1:
+            samples[sid] = "Multiple"
+        else:
+            samples[sid] = types[0]
+
+    colors = dict(_MUT_TYPE_COLORS)
+    colors["Not mutated"] = "#c4e5f5"
+
+    # Legacy ref: PlotsTabUtils.tsx:2087-2097 — mutTypeCategoryOrder
+    order = ["Missense", "Inframe", "Truncating", "Splice", "Promoter",
+             "Other", "Multiple", "Not mutated"]
+
+    return {"samples": samples, "colors": colors, "order": order}
+
+
+def _get_cna_color(conn, study_id: str, gene: str) -> dict:
+    """Color by CNA status for a gene."""
+    profiled = conn.execute(
+        f'SELECT DISTINCT sample_id FROM "{study_id}_cna"'
+    ).fetchall()
+    profiled_ids = {r[0] for r in profiled}
+
+    cna_rows = conn.execute(
+        f'SELECT sample_id, cna_value FROM "{study_id}_cna" WHERE hugo_symbol = ?',
+        [gene],
+    ).fetchall()
+
+    _labels = {2: "Amplification", -2: "Deep Deletion", 1: "Gain", -1: "Shallow Deletion", 0: "Diploid"}
+    _valid = frozenset(_labels.keys())
+
+    samples: dict[str, str] = {}
+    for sid, val in cna_rows:
+        if sid in profiled_ids:
+            int_val = int(val) if float(val) == int(val) else None
+            if int_val in _valid:
+                samples[sid] = _labels[int_val]
+    for sid in profiled_ids:
+        if sid not in samples:
+            samples[sid] = "Diploid"
+
+    return {
+        "samples": samples,
+        "colors": dict(_CNA_OVERLAY_COLORS),
+        "order": _CNA_CATEGORY_ORDER,
+    }
+
+
+def _get_sv_color(conn, study_id: str, gene: str) -> dict:
+    """Color by SV status for a gene."""
+    all_samples = conn.execute(
+        f'SELECT SAMPLE_ID FROM "{study_id}_sample"'
+    ).fetchall()
+    all_ids = {r[0] for r in all_samples}
+
+    sv_rows = conn.execute(
+        f'SELECT Sample_Id FROM "{study_id}_sv" '
+        f"WHERE Site1_Hugo_Symbol = ? OR Site2_Hugo_Symbol = ?",
+        [gene, gene],
+    ).fetchall()
+    sv_ids = {r[0] for r in sv_rows if r[0] in all_ids}
+
+    samples = {
+        sid: ("Structural Variant" if sid in sv_ids else "No Structural Variant")
+        for sid in all_ids
+    }
+    return {
+        "samples": samples,
+        "colors": {"Structural Variant": _SV_OVERLAY_COLOR, "No Structural Variant": "#c4e5f5"},
+        "order": ["Structural Variant", "No Structural Variant"],
+    }
+
+
+def _get_clinical_color(conn, study_id: str, attr_id: str) -> dict:
+    """Color by clinical attribute value."""
+    try:
+        rows = conn.execute(
+            f'SELECT SAMPLE_ID, "{attr_id}" FROM "{study_id}_sample" WHERE "{attr_id}" IS NOT NULL',
+        ).fetchall()
+    except Exception:
+        return {"samples": {}, "colors": {}, "order": []}
+
+    samples = {r[0]: str(r[1]) for r in rows}
+
+    # Build color map: check reserved colors first, then use D3 palette
+    unique_vals = sorted(set(samples.values()))
+    colors: dict[str, str] = {}
+    palette_idx = 0
+    for val in unique_vals:
+        reserved = _CLINICAL_RESERVED_COLORS.get(val.lower().strip())
+        if reserved:
+            colors[val] = reserved
+        else:
+            colors[val] = _D3_PALETTE[palette_idx % len(_D3_PALETTE)]
+            palette_idx += 1
+
+    return {"samples": samples, "colors": colors, "order": unique_vals}
