@@ -89,13 +89,14 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
                 header_cols = line.strip().split("\t")
                 break
     hugo_col = header_cols.index("Hugo_Symbol") if "Hugo_Symbol" in header_cols else None
+    composite_col = header_cols.index("Composite.Element.REF") if "Composite.Element.REF" in header_cols else None
     sample_cols = [c for c in header_cols if c not in _NON_SAMPLE]
     n_samples = len(sample_cols)
 
     conn.execute(f"DROP TABLE IF EXISTS {table_name}")
 
     if n_samples <= 5_000:
-        exclude = [c for c in header_cols if c in _NON_SAMPLE]
+        exclude = [f'"{c}"' for c in header_cols if c in _NON_SAMPLE]
         if len(exclude) > 1:
             exclude_clause = f"({', '.join(exclude)})"
         elif exclude:
@@ -104,6 +105,9 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
             exclude_clause = None
         if hugo_col is not None:
             hugo_select = "Hugo_Symbol as hugo_symbol,"
+            join_clause = ""
+        elif composite_col is not None:
+            hugo_select = 'split_part("Composite.Element.REF", \'|\', 1) as hugo_symbol,'
             join_clause = ""
         else:
             hugo_select = "gr.hugo_gene_symbol as hugo_symbol,"
@@ -138,7 +142,7 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
         entrez_col = header_cols.index("Entrez_Gene_Id") if "Entrez_Gene_Id" in header_cols else None
         sample_indices = [(i, c) for i, c in enumerate(header_cols) if c not in _NON_SAMPLE]
         entrez_to_hugo: dict[int, str] = {}
-        if hugo_col is None and entrez_col is not None:
+        if hugo_col is None and composite_col is None and entrez_col is not None:
             entrez_to_hugo = {
                 r[0]: r[1]
                 for r in conn.execute("SELECT entrez_gene_id, hugo_gene_symbol FROM gene_reference").fetchall()
@@ -154,6 +158,8 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
                     continue
                 if hugo_col is not None:
                     hugo = parts[hugo_col]
+                elif composite_col is not None:
+                    hugo = parts[composite_col].split("|")[0]
                 elif entrez_col is not None:
                     try:
                         hugo = entrez_to_hugo.get(int(parts[entrez_col]), "")
