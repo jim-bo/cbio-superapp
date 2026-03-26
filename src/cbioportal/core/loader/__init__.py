@@ -30,6 +30,7 @@ from .gene_reference import (
     load_gene_symbol_updates,
     load_gene_aliases,
     load_gene_panel_definitions,
+    populate_cytoband_from_hgnc,
     sync_oncotree,
     retrieve_oncotree_cancer_types,
     get_oncotree_root,

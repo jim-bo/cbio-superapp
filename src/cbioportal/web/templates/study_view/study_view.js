@@ -3,6 +3,49 @@
    Requires: DashboardState, Charts, widgetData, tableSearchState globals set in page.html.
 */
 
+// ---------------------------------------------------------------------------
+// Table sorting state — { tableId: { col: 'freq', dir: 'desc' } }
+// ---------------------------------------------------------------------------
+const tableSortState = {};
+
+function getTableSort(tableId, defaultCol, defaultDir) {
+    if (!tableSortState[tableId]) {
+        tableSortState[tableId] = { col: defaultCol, dir: defaultDir || 'desc' };
+    }
+    return tableSortState[tableId];
+}
+
+function toggleTableSort(tableId, col, renderFn) {
+    const st = getTableSort(tableId);
+    if (st.col === col) {
+        st.dir = st.dir === 'desc' ? 'asc' : 'desc';
+    } else {
+        st.col = col;
+        st.dir = 'desc';
+    }
+    renderFn();
+}
+
+function sortIndicator(tableId, col) {
+    const st = tableSortState[tableId];
+    if (!st || st.col !== col) return '';
+    return st.dir === 'desc' ? ' <i class="fa fa-caret-down"></i>' : ' <i class="fa fa-caret-up"></i>';
+}
+
+function sortData(data, col, dir, accessor) {
+    const sorted = [...data];
+    const get = accessor || (item => item[col]);
+    sorted.sort((a, b) => {
+        const va = get(a), vb = get(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        if (typeof va === 'string') return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        return dir === 'asc' ? va - vb : vb - va;
+    });
+    return sorted;
+}
+
 function broadcastUpdate() {
     window.dispatchEvent(new CustomEvent('cbio-filter-changed'));
     updateNavbarSelectionCounts();
@@ -55,6 +98,25 @@ function renderTableTbody(attrId, data) {
     const tbody = document.getElementById(`table-body-${attrId}`);
     const selectAllBtn = document.getElementById(`btn-select-all-${attrId}`);
     if (!tbody) return;
+
+    // Sort — clinical tables use 'pct' for frequency
+    const st = getTableSort(attrId, 'freq', 'desc');
+    const colMap = { freq: 'pct', count: 'count', value: 'value' };
+    const sorted = sortData(data, colMap[st.col] || st.col, st.dir);
+
+    // Update header sort indicators
+    const thead = tbody.closest('table')?.querySelector('thead');
+    if (thead) {
+        thead.innerHTML = `<tr>
+            <th></th>
+            <th class="cbio-table-count cbio-sortable" data-sort-col="count">#${sortIndicator(attrId, 'count')}</th>
+            <th class="cbio-table-freq cbio-sortable" data-sort-col="freq">Freq${sortIndicator(attrId, 'freq')}</th>
+        </tr>`;
+        thead.querySelectorAll('.cbio-sortable').forEach(th => {
+            th.onclick = (e) => { e.stopPropagation(); toggleTableSort(attrId, th.dataset.sortCol, () => renderTableTbody(attrId, data)); };
+        });
+    }
+
     const currentFilter = DashboardState.filters.clinicalDataFilters.find(f => f.attributeId === attrId);
     const selectedValues = currentFilter ? currentFilter.values.map(v => v.value) : [];
     // Button operates on full widgetData, not the filtered subset
@@ -68,7 +130,7 @@ function renderTableTbody(attrId, data) {
         };
     }
     tbody.innerHTML = '';
-    data.forEach(item => {
+    sorted.forEach(item => {
         const isSelected = selectedValues.includes(item.value);
         const tr = document.createElement('tr');
         if (isSelected) tr.className = 'selected';
@@ -83,11 +145,29 @@ function renderTableTbody(attrId, data) {
 }
 
 function renderGenomicTableTbody(data) {
+    const tableId = '_mutated_genes';
     const tbody = document.getElementById('table-body-_mutated_genes');
     if (!tbody) return;
+
+    const st = getTableSort(tableId, 'freq', 'desc');
+    const sorted = sortData(data, st.col, st.dir);
+
+    const thead = tbody.closest('table')?.querySelector('thead');
+    if (thead) {
+        thead.innerHTML = `<tr>
+            <th class="cbio-sortable" style="text-align:left;padding-left:10px;" data-sort-col="gene"><i class="fa fa-filter" style="color:#ccc;margin-right:4px;"></i>Gene${sortIndicator(tableId, 'gene')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="n_mut"># Mut${sortIndicator(tableId, 'n_mut')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="n_samples">#${sortIndicator(tableId, 'n_samples')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="freq">Freq${sortIndicator(tableId, 'freq')}</th>
+        </tr>`;
+        thead.querySelectorAll('.cbio-sortable').forEach(th => {
+            th.onclick = (e) => { e.stopPropagation(); toggleTableSort(tableId, th.dataset.sortCol, () => renderGenomicTableTbody(data)); };
+        });
+    }
+
     const selectedGenes = DashboardState.filters.mutationFilter.genes;
     tbody.innerHTML = '';
-    data.forEach(item => {
+    sorted.forEach(item => {
         const isSelected = selectedGenes.includes(item.gene);
         const tr = document.createElement('tr'); if (isSelected) tr.className = 'selected';
         tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: right;">${item.n_mut.toLocaleString()}</td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
@@ -97,25 +177,62 @@ function renderGenomicTableTbody(data) {
 }
 
 function renderCNATableTbody(data) {
+    const tableId = '_cna_genes';
     const tbody = document.getElementById('table-body-_cna_genes');
     if (!tbody) return;
+
+    const st = getTableSort(tableId, 'freq', 'desc');
+    const sorted = sortData(data, st.col, st.dir);
+
+    const thead = tbody.closest('table')?.querySelector('thead');
+    if (thead) {
+        thead.innerHTML = `<tr>
+            <th class="cbio-sortable" style="text-align:left;padding-left:10px;" data-sort-col="gene"><i class="fa fa-filter" style="color:#ccc;margin-right:4px;"></i>Gene${sortIndicator(tableId, 'gene')}</th>
+            <th class="cbio-sortable" style="text-align:left;" data-sort-col="cytoband">Cytoband${sortIndicator(tableId, 'cytoband')}</th>
+            <th class="cbio-sortable" style="text-align:center;" data-sort-col="cna_type">CNA${sortIndicator(tableId, 'cna_type')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="n_samples">#${sortIndicator(tableId, 'n_samples')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="freq">Freq${sortIndicator(tableId, 'freq')}</th>
+        </tr>`;
+        thead.querySelectorAll('.cbio-sortable').forEach(th => {
+            th.onclick = (e) => { e.stopPropagation(); toggleTableSort(tableId, th.dataset.sortCol, () => renderCNATableTbody(data)); };
+        });
+    }
+
     const selectedGenes = DashboardState.filters.cnaFilter.genes;
     tbody.innerHTML = '';
-    data.forEach(item => {
+    sorted.forEach(item => {
         const isSelected = selectedGenes.includes(item.gene);
         const tr = document.createElement('tr'); if (isSelected) tr.className = 'selected';
-        tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: center;"><span class="badge ${item.cna_type === 'AMP' ? 'bg-red-500' : 'bg-blue-500'}" style="color: white; padding: 0 4px; border-radius: 2px; font-size: 9px;">${item.cna_type}</span></td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
+        tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="font-size:11px;color:#666;text-align:left;">${item.cytoband || ''}</td><td style="text-align: center;"><span style="font-weight: bold; font-size: 11px; color: ${item.cna_type === 'AMP' ? '#c00' : '#00f'};">${item.cna_type}</span></td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
         tr.onclick = (e) => { e.stopPropagation(); toggleCNAFilter(item.gene); };
         tbody.appendChild(tr);
     });
 }
 
 function renderSVTableTbody(data) {
+    const tableId = '_sv_genes';
     const tbody = document.getElementById('table-body-_sv_genes');
     if (!tbody) return;
+
+    const st = getTableSort(tableId, 'freq', 'desc');
+    const sorted = sortData(data, st.col, st.dir);
+
+    const thead = tbody.closest('table')?.querySelector('thead');
+    if (thead) {
+        thead.innerHTML = `<tr>
+            <th class="cbio-sortable" style="text-align:left;padding-left:10px;" data-sort-col="gene"><i class="fa fa-filter" style="color:#ccc;margin-right:4px;"></i>Gene${sortIndicator(tableId, 'gene')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="n_sv"># SV${sortIndicator(tableId, 'n_sv')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="n_samples">#${sortIndicator(tableId, 'n_samples')}</th>
+            <th class="cbio-sortable" style="text-align:right;" data-sort-col="freq">Freq${sortIndicator(tableId, 'freq')}</th>
+        </tr>`;
+        thead.querySelectorAll('.cbio-sortable').forEach(th => {
+            th.onclick = (e) => { e.stopPropagation(); toggleTableSort(tableId, th.dataset.sortCol, () => renderSVTableTbody(data)); };
+        });
+    }
+
     const selectedGenes = DashboardState.filters.svFilter.genes;
     tbody.innerHTML = '';
-    data.forEach(item => {
+    sorted.forEach(item => {
         const isSelected = selectedGenes.includes(item.gene);
         const tr = document.createElement('tr'); if (isSelected) tr.className = 'selected';
         tr.innerHTML = `<td style="padding-left: 10px;"><span class="cbio-table-label font-bold" title="${item.gene}">${item.gene}</span></td><td style="text-align: right;">${item.n_sv.toLocaleString()}</td><td class="cbio-table-count"><div class="cbio-table-count-container"><input type="checkbox" class="cbio-table-checkbox" ${isSelected ? 'checked' : ''}><span class="cbio-table-count-value">${item.n_samples.toLocaleString()}</span></div></td><td class="cbio-table-freq">${formatFreq(item.freq, item.n_samples)}</td>`;
@@ -666,6 +783,7 @@ function buildWidgetHTML(chart) {
                     <table class="cbio-table">
                         <thead><tr>
                             <th style="text-align: left; padding-left: 10px;"><i class="fa fa-filter" style="color: #ccc; margin-right: 4px;"></i>Gene</th>
+                            <th>Cytoband</th>
                             <th style="text-align: center;">CNA</th>
                             <th style="text-align: right;">#</th>
                             <th style="text-align: right;">Freq <i class="fa fa-caret-down"></i></th>
