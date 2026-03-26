@@ -1,0 +1,2842 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if genes %}{{ genes | join(', ') }} in {{ meta.name }}{% else %}Results{% endif %} — cBioPortal
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Results View shell ──────────────────────────────────────────────────── */
+#results-page { padding: 0; background: #fff; }
+
+/* study info bar */
+#results-study-bar {
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+#results-study-bar .study-name { font-weight: 600; }
+#results-study-bar .study-counts { color: #666; }
+
+/* alteration summary bar */
+#results-alteration-summary {
+    background: #fff8e1;
+    border-bottom: 1px solid #ffe082;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #5d4037;
+    display: none;
+}
+
+/* Tab nav — styled like cBioPortal */
+#results-tab-nav {
+    background: #fff;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 0 16px;
+    display: flex;
+    gap: 0;
+}
+.results-tab {
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    user-select: none;
+    transition: color .15s;
+}
+.results-tab:hover { color: #222; }
+.results-tab.active { color: #2374c8; border-bottom-color: #2374c8; }
+
+/* ── OncoPrint tab ───────────────────────────────────────────────────────── */
+/* toolbar */
+#oncoprint-toolbar {
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+#oncoprint-toolbar .btn {
+    font-size: 12px;
+    padding: 3px 8px;
+    height: 26px;
+    line-height: 20px;
+}
+#oncoprint-toolbar .btn-group { margin-right: 2px; }
+
+/* zoom controls */
+.zoom-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+}
+#zoom-slider {
+    -webkit-appearance: none;
+    width: 110px;
+    height: 4px;
+    border-radius: 2px;
+    background: #ccc;
+    outline: none;
+    cursor: pointer;
+}
+#zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #5cb85c;
+    cursor: pointer;
+}
+#zoom-pct { font-size: 12px; color: #333; min-width: 36px; text-align: right; }
+
+/* tracks dropdown panel */
+#tracks-panel {
+    position: absolute;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    min-width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+#tracks-panel.open { display: block; }
+.tracks-panel-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1.4;
+}
+.tracks-panel-item:hover { background: #f5f5f5; }
+.tracks-panel-item input[type=checkbox] { margin: 0; cursor: pointer; flex-shrink: 0; vertical-align: middle; }
+.tracks-panel-item label { margin: 0; cursor: pointer; flex: 1; font-weight: normal; line-height: 1.4; vertical-align: middle; }
+.tracks-panel-freq { color: #999; margin-left: auto; font-size: 11px; flex-shrink: 0; }
+
+/* oncoprint container */
+#oncoprint-container {
+    width: 100%;
+    min-height: 200px;
+    overflow-x: auto;
+    position: relative;
+    padding: 8px 4px;
+}
+#oncoprint-loading { padding: 40px; text-align: center; color: #888; font-size: 14px; }
+#oncoprint-error { padding: 20px; color: #c62828; font-size: 13px; display: none; }
+
+/* oncoprintjs hover-reveal track options (from cBioPortal oncoprintStyles.scss) */
+#oncoprint-container .oncoprintjs__track_options__toggle_btn_img,
+#oncoprint-container .oncoprintjs__header__toggle_btn_img {
+    opacity: 0;
+    border-width: 0 !important;
+    position: relative;
+}
+#oncoprint-container:hover .oncoprintjs__track_options__toggle_btn_img,
+#oncoprint-container:hover .oncoprintjs__header__toggle_btn_img {
+    opacity: 1;
+}
+#oncoprint-container .oncoprintjs__track_options__dropdown,
+#oncoprint-container .oncoprintjs__header__dropdown {
+    border: 1px solid rgba(0,0,0,.15) !important;
+    margin: 0 !important; padding: 0 !important;
+    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+    border-radius: 3px;
+    z-index: 10000;
+}
+#oncoprint-container .oncoprintjs__track_options__dropdown li,
+#oncoprint-container .oncoprintjs__header__dropdown li {
+    border-width: 0 !important;
+    padding: 2px 5px;
+}
+#oncoprint-container .oncoprintjs__track_options__dropdown li:hover,
+#oncoprint-container .oncoprintjs__header__dropdown li:hover {
+    background: #fff !important;
+    text-decoration: underline;
+}
+.oncoprintjs__tooltip {
+    padding: 5px;
+    max-width: unset !important;
+    min-width: 225px !important;
+}
+
+/* ── Mutations tab ───────────────────────────────────────────────────────── */
+#mutations-tab { display: none; }
+#mutations-tab.active { display: block; }
+#cancer-types-tab { display: none; padding: 0; }
+#plots-tab { display: none; padding: 0; }
+
+/* ── Cancer Types Summary ─────────────────────────────────────────────── */
+#cts-wrap { display: flex; gap: 0; min-height: 500px; }
+#cts-sidebar {
+    width: 260px; min-width: 260px;
+    border-right: 1px solid #e8e8e8;
+    padding: 12px 16px;
+    font-size: 13px;
+    overflow-y: auto;
+}
+#cts-sidebar .cts-section {
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 14px;
+}
+#cts-sidebar .cts-section-label {
+    position: absolute; left: 0; top: 0;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-weight: 600; color: #2374c8; font-size: 12px;
+    letter-spacing: 1px;
+}
+#cts-sidebar label { display: block; font-weight: normal; margin: 2px 0; cursor: pointer; font-size: 12px; }
+#cts-sidebar .cts-heading { font-weight: 600; margin: 10px 0 4px; font-size: 12px; }
+#cts-sidebar select { width: 100%; font-size: 12px; padding: 3px 4px; }
+#cts-sidebar input[type=range] { width: 100%; margin: 4px 0; }
+#cts-sidebar .slider-row { display: flex; align-items: center; gap: 8px; }
+#cts-sidebar .slider-row input[type=number] {
+    width: 60px; font-size: 12px; padding: 2px 4px;
+    border: 1px solid #ccc; border-radius: 3px;
+}
+#cts-sidebar .slider-row .range-labels { display: flex; justify-content: space-between; font-size: 11px; color: #999; }
+
+#cts-chart-area { flex: 1; padding: 12px 16px; position: relative; overflow-x: auto; }
+#cts-gene-tabs { margin-bottom: 8px; }
+#cts-gene-tabs .cts-gene-btn {
+    display: inline-block; padding: 4px 12px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid #ddd; border-radius: 3px;
+    margin-right: 4px; cursor: pointer;
+    background: #f5f5f5; color: #333;
+}
+#cts-gene-tabs .cts-gene-btn.active { background: #2374c8; color: #fff; border-color: #2374c8; }
+#cts-chart-container { /* height set dynamically by renderCtsChart() to match legacy svgHeight */ }
+
+/* profiling status grid */
+#cts-profiling { margin-top: 4px; font-size: 11px; }
+#cts-profiling table { border-collapse: collapse; }
+#cts-profiling td { padding: 2px 4px; text-align: center; }
+#cts-profiling .prof-label { text-align: right; font-weight: 500; padding-right: 8px; }
+#cts-profiling .prof-yes { color: #333; font-weight: bold; }
+#cts-profiling .prof-no { color: #ccc; }
+
+/* ── Plots Tab ────────────────────────────────────────────────────────── */
+#plots-wrap { display: flex; gap: 0; min-height: 500px; }
+#plots-sidebar {
+    width: 280px; min-width: 280px;
+    border-right: 1px solid #e8e8e8;
+    padding: 12px 16px;
+    font-size: 13px;
+}
+#plots-sidebar .axis-section {
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 8px;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    padding: 10px 10px 10px 28px;
+}
+#plots-sidebar .axis-label {
+    position: absolute; left: 2px; top: 10px;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-weight: 600; color: #2374c8; font-size: 11px;
+}
+#plots-sidebar .axis-heading { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+#plots-sidebar select { width: 100%; font-size: 12px; padding: 3px 4px; margin-bottom: 6px; }
+#plots-sidebar .swap-btn {
+    display: block; margin: 6px auto; padding: 4px 12px;
+    font-size: 12px; color: #2374c8; background: none;
+    border: none; cursor: pointer; font-weight: 500;
+}
+#plots-sidebar .swap-btn:hover { text-decoration: underline; }
+#plots-controls { margin-top: 10px; }
+#plots-controls .cts-heading { font-weight: 600; font-size: 12px; margin: 8px 0 4px; }
+#plots-controls select { width: 100%; font-size: 12px; padding: 3px 4px; margin-bottom: 6px; }
+#plots-controls label { font-size: 12px; font-weight: normal; }
+
+#plots-chart-area { flex: 1; padding: 12px 16px; position: relative; overflow: auto; }
+#plots-info { font-size: 13px; color: #333; margin-bottom: 8px; padding: 6px 10px; background: #f9f9f9; border: 1px solid #eee; border-radius: 3px; display: inline-block; }
+#plots-chart-container { /* width/height set dynamically by renderPlotsBar/Scatter/Box */ width: 100%; height: 500px; }
+#plots-examples { margin-bottom: 8px; font-size: 13px; }
+#plots-examples a { margin-left: 8px; cursor: pointer; color: #2374c8; text-decoration: none; }
+#plots-color-menu label { font-weight: normal; cursor: pointer; }
+#plots-color-menu input[type=checkbox] { margin: 0 4px 1px 0; vertical-align: middle; }
+#plots-examples a:hover { text-decoration: underline; }
+
+/* gene selector tabs */
+#mut-gene-tabs {
+    background: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    padding: 0 16px;
+    display: flex;
+    gap: 0;
+}
+.mut-gene-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+.mut-gene-tab:hover { color: #222; }
+.mut-gene-tab.active { color: #2374c8; border-bottom-color: #2374c8; font-weight: 600; }
+
+/* lollipop + summary layout */
+#mutations-content {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    border-bottom: 1px solid #eee;
+}
+#lollipop-panel {
+    flex: 1;
+    padding: 16px 16px 8px 16px;
+    min-width: 0;
+}
+#mut-summary-panel {
+    width: 220px;
+    flex-shrink: 0;
+    padding: 16px;
+    border-left: 1px solid #eee;
+    font-size: 12px;
+    background: #fafafa;
+}
+#mut-summary-panel h5 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.mut-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.mut-summary-row:last-child { border-bottom: none; }
+.mut-summary-label { color: #555; }
+.mut-summary-driver { color: #555; }
+.mut-summary-vus { color: #aaa; font-size: 11px; }
+.mut-driver-pill {
+    display: inline-block;
+    background: #e8f5e9;
+    color: #388e3c;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+.mut-vus-pill {
+    display: inline-block;
+    background: #f5f5f5;
+    color: #999;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 10px;
+}
+
+/* lollipop SVG */
+#lollipop-svg-wrap { overflow-x: auto; }
+svg#lollipop-svg { display: block; margin: 0 auto; }
+#lollipop-loading { text-align: center; color: #aaa; padding: 40px 0; font-size: 13px; }
+
+/* mutation table */
+#mutations-table-section { padding: 0 16px 16px; }
+#mutations-table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 12px;
+    color: #555;
+}
+#mut-search { font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 3px; width: 200px; }
+table#mut-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+table#mut-table th {
+    background: #f5f5f5;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+table#mut-table th:hover { background: #e8e8e8; }
+table#mut-table th .sort-arrow { color: #aaa; margin-left: 4px; }
+table#mut-table th.sort-active .sort-arrow { color: #2374c8; }
+table#mut-table td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+table#mut-table tr:hover td { background: #f9f9f9; }
+.mut-type-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.mut-type-missense { background: #e0f2e0; color: #006000; }
+.mut-type-trunc    { background: #212121; color: #fff; }
+.mut-type-inframe  { background: #f3e5d0; color: #6e2f00; }
+.mut-type-splice   { background: #fde8d8; color: #b05a10; }
+.mut-type-promoter { background: #d0f4f8; color: #008090; }
+.mut-type-other    { background: #f5e0f0; color: #9a3090; }
+.ann-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    font-size: 9px; font-weight: 700; margin-right: 2px;
+    cursor: default;
+}
+.ann-hotspot  { background: #ff6d00; color: #fff; title: "Cancer Hotspot"; }
+.ann-drug     { background: #1565c0; color: #fff; }
+.ann-civic    { background: #7b1fa2; color: #fff; }
+/* pagination */
+#mut-pagination {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 0; font-size: 12px; color: #555;
+}
+.pag-btn {
+    padding: 2px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+}
+.pag-btn:disabled { opacity: .4; cursor: default; }
+.pag-btn:hover:not(:disabled) { background: #f5f5f5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="results-page">
+
+    <!-- Study info bar -->
+    <div id="results-study-bar">
+        <span class="study-name">{{ meta.name }}</span>
+        <span class="study-counts">
+            {{ meta.n_samples | comma_number }} samples &nbsp;/&nbsp;
+            {{ meta.n_patients | comma_number }} patients
+        </span>
+        {% if genes %}
+        <span>&#8250;</span>
+        <span><strong>{{ genes | join(' &nbsp;') }}</strong></span>
+        {% endif %}
+        <a href="/study/summary?id={{ study_id }}" class="btn btn-xs btn-default" style="margin-left:auto;">
+            ← Back to Study View
+        </a>
+    </div>
+
+    <!-- Alteration summary -->
+    <div id="results-alteration-summary"></div>
+
+    <!-- Tab navigation -->
+    <div id="results-tab-nav">
+        <div class="results-tab{% if active_tab == 'oncoprint' %} active{% endif %}"
+             data-tab="oncoprint" onclick="switchTab('oncoprint')">OncoPrint</div>
+        <div class="results-tab{% if active_tab == 'cancer-types' %} active{% endif %}"
+             data-tab="cancer-types" onclick="switchTab('cancer-types')">Cancer Types Summary</div>
+        <div class="results-tab{% if active_tab == 'plots' %} active{% endif %}"
+             data-tab="plots" onclick="switchTab('plots')">Plots</div>
+        <div class="results-tab{% if active_tab == 'mutations' %} active{% endif %}"
+             data-tab="mutations" onclick="switchTab('mutations')">Mutations</div>
+    </div>
+
+    <!-- ── OncoPrint Tab ──────────────────────────────────────────────────── -->
+    <div id="oncoprint-tab" class="{% if active_tab != 'oncoprint' %}hidden{% endif %}">
+
+        <!-- Toolbar -->
+        <div id="oncoprint-toolbar" style="position:relative;">
+            <div class="btn-group" style="position:relative;">
+                <button class="btn btn-default btn-sm" id="tracks-btn">
+                    Tracks <span class="caret"></span>
+                </button>
+                <div id="tracks-panel">
+                    <div style="padding:6px 12px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <input type="text" id="tracks-search" placeholder="Search..."
+                               style="flex:1;min-width:100px;font-size:12px;padding:3px 6px;border:1px solid #ccc;border-radius:3px;"
+                               oninput="filterTracks(this.value)">
+                        <button class="btn btn-default btn-xs" onclick="selectAllTracks(true)">Select all</button>
+                        <button class="btn btn-default btn-xs" onclick="selectAllTracks(false)">Deselect all</button>
+                    </div>
+                    <div id="tracks-list">
+                        <div style="padding:8px 12px;color:#aaa;font-size:12px;">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sort menu -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                    Sort <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" style="padding:8px 12px;min-width:220px;" onclick="event.stopPropagation();">
+                    <li style="white-space:nowrap;"><label><input type="radio" name="sort-mode" id="sort-by-data" checked onchange="updateSort()"> Sort by data</label></li>
+                    <li style="white-space:nowrap;padding-left:20px;"><label><input type="checkbox" id="sort-mutation-type" checked onchange="updateSort()"> Mutation Type</label></li>
+                    <li style="white-space:nowrap;padding-left:20px;"><label><input type="checkbox" id="sort-drivers" checked onchange="updateSort()"> Driver/Passenger</label></li>
+                    <li style="white-space:nowrap;"><label><input type="radio" name="sort-mode" id="sort-alphabetical" onchange="updateSort()"> Sort by case id (alphabetical)</label></li>
+                </ul>
+            </div>
+
+            <!-- Mutations menu (Color By) -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                    Mutations <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" style="padding:8px 12px;min-width:200px;" onclick="event.stopPropagation();">
+                    <li style="color:#2374c8;font-size:11px;font-weight:600;margin-bottom:4px;">Color by</li>
+                    <li style="white-space:nowrap;"><label><input type="checkbox" id="chk-distinguish-type" checked onchange="updateRuleSet()"> Type</label></li>
+                    <li style="white-space:nowrap;"><label><input type="checkbox" id="chk-distinguish-driver" checked onchange="updateRuleSet()"> Driver/Passenger</label></li>
+                </ul>
+            </div>
+
+            <!-- View menu -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                    View <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" style="padding:8px 12px;min-width:250px;" onclick="event.stopPropagation();">
+                    <li style="white-space:nowrap;"><label><input type="checkbox" id="chk-unaltered" checked onchange="toggleUnaltered()"> Show unaltered columns</label></li>
+                    <li style="white-space:nowrap;"><label><input type="checkbox" id="chk-whitespace" onchange="toggleWhitespace()"> Show whitespace between columns</label></li>
+                    <li style="white-space:nowrap;"><label><input type="checkbox" id="chk-legends" checked onchange="toggleLegends()"> Show legends for clinical tracks</label></li>
+                    <li style="white-space:nowrap;"><label><input type="checkbox" id="chk-minimap" onchange="toggleMinimap()"> Show minimap</label></li>
+                </ul>
+            </div>
+
+            <!-- Download menu -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                    Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" style="min-width:160px;">
+                    <li><a href="#" onclick="downloadOncoprint('pdf'); return false;">PDF</a></li>
+                    <li><a href="#" onclick="downloadOncoprint('png'); return false;">PNG</a></li>
+                    <li><a href="#" onclick="downloadOncoprint('svg'); return false;">SVG</a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="#" onclick="downloadOncoprint('order'); return false;">Patient order</a></li>
+                </ul>
+            </div>
+
+            <!-- Zoom controls -->
+            <div class="zoom-group">
+                <button id="btn-zoom-out" class="btn btn-default btn-sm" title="Zoom out">
+                    <i class="fa-solid fa-magnifying-glass-minus"></i>
+                </button>
+                <input id="zoom-slider" type="range" min="1" max="100" value="1" title="Zoom">
+                <span id="zoom-pct">2%</span>
+                <button id="btn-zoom-in" class="btn btn-default btn-sm" title="Zoom in">
+                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </button>
+                <button class="btn btn-default btn-sm" id="btn-minimap" title="Toggle minimap">
+                    <i class="fa-solid fa-map"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- OncoPrint canvas -->
+        <div id="oncoprint-container">
+            <div id="oncoprint-loading"><i class="fa fa-spinner fa-spin"></i> Loading OncoPrint…</div>
+            <div id="oncoprint-error"></div>
+            <div id="oncoprint-canvas" style="width:100%;"></div>
+        </div>
+    </div><!-- /oncoprint-tab -->
+
+    <!-- ── Mutations Tab ─────────────────────────────────────────────────── -->
+    <div id="mutations-tab" class="{% if active_tab == 'mutations' %}active{% endif %}">
+
+        <!-- Gene selector tabs (shown if >1 gene) -->
+        {% if genes | length > 1 %}
+        <div id="mut-gene-tabs">
+            {% for g in genes %}
+            <div class="mut-gene-tab{% if loop.first %} active{% endif %}"
+                 data-gene="{{ g }}" onclick="selectMutGene('{{ g }}', this)">{{ g }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Lollipop + Summary -->
+        <div id="mutations-content">
+            <div id="lollipop-panel">
+                <div id="lollipop-loading">
+                    <i class="fa fa-spinner fa-spin"></i> Loading lollipop…
+                </div>
+                <div id="lollipop-svg-wrap" style="display:none;">
+                    <svg id="lollipop-svg"></svg>
+                </div>
+            </div>
+            <div id="mut-summary-panel">
+                <div id="mut-summary-loading" style="color:#aaa;">Loading summary…</div>
+                <div id="mut-summary-content" style="display:none;">
+                    <h5 id="mut-summary-gene"></h5>
+                    <div style="margin-bottom:8px;">
+                        <div style="color:#888;font-size:11px;">Somatic Mutation Frequency</div>
+                        <div id="mut-summary-freq" style="font-size:20px;font-weight:700;color:#333;"></div>
+                    </div>
+                    <div id="mut-summary-table"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mutation table -->
+        <div id="mutations-table-section">
+            <div id="mutations-table-toolbar">
+                <span id="mut-table-count" style="color:#888;"></span>
+                <input type="text" id="mut-search" placeholder="Search…" oninput="onMutSearch(this.value)">
+            </div>
+            <div id="mutations-table-wrap">
+                <table id="mut-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortMutTable('Tumor_Sample_Barcode')">
+                                Sample ID <span class="sort-arrow">↕</span></th>
+                            <th>Cancer Type</th>
+                            <th onclick="sortMutTable('HGVSp_Short')">
+                                Protein Change <span class="sort-arrow">↕</span></th>
+                            <th>Annotation</th>
+                            <th onclick="sortMutTable('Variant_Classification')">
+                                Mutation Type <span class="sort-arrow">↕</span></th>
+                            <th onclick="sortMutTable('t_alt_count')">
+                                Allele Freq <span class="sort-arrow">↕</span></th>
+                            <th># Mut in Sample</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mut-tbody">
+                        <tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">
+                            <i class="fa fa-spinner fa-spin"></i> Loading…
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="mut-pagination">
+                <button class="pag-btn" id="pag-prev" onclick="changeMutPage(-1)">‹ Prev</button>
+                <span id="pag-info"></span>
+                <button class="pag-btn" id="pag-next" onclick="changeMutPage(1)">Next ›</button>
+            </div>
+        </div>
+    </div><!-- /mutations-tab -->
+
+    <!-- ── Cancer Types Summary Tab ─────────────────────────────────────── -->
+    <div id="cancer-types-tab">
+      <div id="cts-gene-tabs" style="padding: 8px 16px 0;">
+        {% for g in genes %}
+        <span class="cts-gene-btn{% if loop.first %} active{% endif %}" onclick="switchCtsGene('{{ g }}', this)">{{ g }}</span>
+        {% endfor %}
+      </div>
+      <div id="cts-wrap">
+        <div id="cts-sidebar">
+          <!-- Category Type -->
+          <div class="cts-section">
+            <span class="cts-section-label">Category</span>
+            <div class="cts-heading">Category Type</div>
+            <label><input type="radio" name="cts-group" value="study_id"> Cancer Study</label>
+            <label><input type="radio" name="cts-group" value="CANCER_TYPE" checked> Cancer Type</label>
+            <label><input type="radio" name="cts-group" value="CANCER_TYPE_DETAILED"> Cancer Type Detailed</label>
+
+            <div class="cts-heading">Filter Categories</div>
+            <div style="font-size:11px;margin-bottom:2px;">Min. # Total Patients</div>
+            <div class="slider-row">
+              <input type="range" id="cts-min-total" min="0" max="100" value="10"
+                     oninput="document.getElementById('cts-min-total-val').value=this.value; renderCtsChart();">
+              <input type="number" id="cts-min-total-val" value="10" min="0"
+                     onchange="document.getElementById('cts-min-total').value=this.value; renderCtsChart();">
+            </div>
+            <div class="range-labels"><span>0</span><span id="cts-max-total">100</span></div>
+
+            <div style="font-size:11px;margin-bottom:2px;margin-top:6px;">Min. % Altered Patients</div>
+            <div class="slider-row">
+              <input type="range" id="cts-min-pct" min="0" max="100" value="0"
+                     oninput="document.getElementById('cts-min-pct-val').value=this.value+'%'; renderCtsChart();">
+              <input type="number" id="cts-min-pct-val" value="0" min="0" max="100"
+                     onchange="document.getElementById('cts-min-pct').value=parseInt(this.value)||0; renderCtsChart();">
+            </div>
+            <div class="range-labels"><span>0%</span><span id="cts-max-pct">100%</span></div>
+
+            <div class="cts-heading">Sort X-Axis By</div>
+            <select id="cts-sort" onchange="renderCtsChart();">
+              <option value="y-axis">Y-Axis Values</option>
+              <option value="alpha">Alphabetically</option>
+            </select>
+          </div>
+
+          <!-- Occurrence -->
+          <div class="cts-section">
+            <span class="cts-section-label">Occurrence</span>
+            <div class="cts-heading">Count By</div>
+            <label><input type="radio" name="cts-count" value="samples"> Samples</label>
+            <label><input type="radio" name="cts-count" value="patients" checked> Patients</label>
+
+            <div class="cts-heading">Y-Axis Value</div>
+            <select id="cts-yaxis" onchange="renderCtsChart();">
+              <option value="alt-freq">Alteration Frequency</option>
+              <option value="abs-count">Absolute Counts</option>
+            </select>
+          </div>
+
+          <label style="margin-top:8px;">
+            <input type="checkbox" id="cts-show-genomic" checked onchange="renderCtsChart();">
+            Show Genomic Alteration Types
+          </label>
+        </div>
+
+        <div id="cts-chart-area">
+          <div id="cts-chart-container"></div>
+          <div id="cts-profiling"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Plots Tab ────────────────────────────────────────────────────── -->
+    <div id="plots-tab">
+      <div id="plots-examples" style="padding: 8px 16px 0;">
+        <strong>Examples:</strong>
+        <a onclick="plotsExample('mut_dx')">Mut# vs Dx</a>
+        <a onclick="plotsExample('fga_dx')">FGA vs Dx</a>
+        <a onclick="plotsExample('mut_fga')">Mut# vs FGA</a>
+      </div>
+      <div id="plots-wrap">
+        <div id="plots-sidebar">
+          <!-- Horizontal Axis -->
+          <div class="axis-section">
+            <span class="axis-label">Horizontal Axis</span>
+            <div class="axis-heading">Data Type</div>
+            <select id="plots-h-datatype" onchange="onPlotsAxisChange('h')">
+              <option value="structural_variant">Structural Variant</option>
+              <option value="mutation">Mutation</option>
+              <option value="copy_number">Copy Number</option>
+              <option value="clinical_attribute">Clinical Attribute</option>
+            </select>
+            <div id="plots-h-sub"></div>
+          </div>
+
+          <button class="swap-btn" onclick="swapPlotsAxes()">&#8593; Swap Axes &#8595;</button>
+
+          <!-- Vertical Axis -->
+          <div class="axis-section">
+            <span class="axis-label">Vertical Axis</span>
+            <div class="axis-heading">Data Type</div>
+            <select id="plots-v-datatype" onchange="onPlotsAxisChange('v')">
+              <option value="clinical_attribute" selected>Clinical Attribute</option>
+              <option value="structural_variant">Structural Variant</option>
+              <option value="mutation">Mutation</option>
+              <option value="copy_number">Copy Number</option>
+            </select>
+            <div id="plots-v-sub"></div>
+          </div>
+
+          <!-- Plot-type controls (shown for discrete×discrete) -->
+          <div id="plots-controls">
+            <div class="cts-heading">Plot Type</div>
+            <select id="plots-type" onchange="renderPlotsChart()">
+              <option value="stacked">Stacked bar chart</option>
+              <option value="grouped">Bar chart</option>
+              <option value="pct">Percentage stacked bar chart</option>
+              <option value="table">Table</option>
+            </select>
+            <div class="cts-heading">Sort By</div>
+            <select id="plots-sort" onchange="renderPlotsChart()">
+              <option value="alpha">Alphabetically</option>
+              <option value="count">Number of samples</option>
+            </select>
+            <label style="margin-top:6px;display:block;">
+              <input type="checkbox" id="plots-horizontal" onchange="renderPlotsChart()">
+              Horizontal Bars
+            </label>
+          </div>
+          <!-- Box plot controls -->
+          <div id="plots-box-controls" style="display:none;">
+            <div class="cts-heading">Sort By</div>
+            <select id="plots-box-sort" onchange="renderPlotsChart()">
+              <option value="alpha">Alphabetically</option>
+              <option value="median">Sort by median</option>
+            </select>
+            <label style="display:block;margin-top:6px;">
+              <input type="checkbox" id="plots-connect-samples" onchange="renderPlotsChart()">
+              Connect same-patient samples
+            </label>
+          </div>
+          <!-- Scatter/Box-specific controls -->
+          <div id="plots-scatter-controls" style="display:none;">
+            <div class="cts-heading">Options</div>
+            <label style="display:block;">
+              <input type="checkbox" id="plots-log-h" onchange="renderPlotsChart()">
+              Log scale (horizontal)
+            </label>
+            <label style="display:block;">
+              <input type="checkbox" id="plots-log-v" onchange="renderPlotsChart()">
+              Log scale (vertical)
+            </label>
+            <label id="plots-regression-wrap" style="display:block;">
+              <input type="checkbox" id="plots-regression" onchange="renderPlotsChart()">
+              Show regression line
+            </label>
+          </div>
+        </div>
+
+        <div id="plots-chart-area">
+          <!-- Legacy ref: PlotsTab.tsx:5961-5962 — "Color samples by:" -->
+          <div id="plots-color-menu" style="display:none;margin-bottom:8px;font-size:12px;">
+            <strong>Color samples by:</strong>
+            <select id="plots-color-by" onchange="onPlotsColorChange()" style="font-size:12px;margin-left:6px;width:220px;">
+              <option value="">None</option>
+              <optgroup label="Genes" id="plots-color-genes"></optgroup>
+              <optgroup label="Clinical Attributes" id="plots-color-clinical"></optgroup>
+            </select>
+            <!-- Overlay type: shown when a gene is selected -->
+            <span id="plots-color-overlay-wrap" style="display:none;margin-left:10px;">
+              <label style="margin-right:8px;"><input type="checkbox" id="plots-color-mut" checked onchange="onPlotsColorChange()"> Mutation Type</label>
+              <label style="margin-right:8px;"><input type="checkbox" id="plots-color-cna" onchange="onPlotsColorChange()"> Copy Number</label>
+              <label><input type="checkbox" id="plots-color-sv" onchange="onPlotsColorChange()"> Structural Variant</label>
+            </span>
+          </div>
+          <div id="plots-info"></div>
+          <div id="plots-chart-container"></div>
+        </div>
+      </div>
+    </div>
+
+</div><!-- /results-page -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/oncoprint-bundle.js"></script>
+<script src="/static/js/geneticrules.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+// ── Global tab state ─────────────────────────────────────────────────────────
+const STUDY_ID = {{ study_id | tojson }};
+const GENES    = {{ genes | tojson }};
+const GENE_0   = GENES.length ? GENES[0] : "";
+
+let activeTab = {{ active_tab | tojson }};
+let oncoPrintLoaded = false;
+let mutationsGene = GENE_0;
+
+let ctsLoaded = false;
+let plotsInited = false;
+
+function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll(".results-tab").forEach(el => {
+        el.classList.toggle("active", el.dataset.tab === tab);
+    });
+    ["oncoprint", "mutations", "cancer-types", "plots"].forEach(t => {
+        var el = document.getElementById(t + "-tab");
+        if (el) {
+            el.classList.toggle("hidden", t !== tab);
+            el.style.display = (t === tab) ? "block" : "none";
+        }
+    });
+
+    if (tab === "oncoprint" && !oncoPrintLoaded && STUDY_ID && GENES.length) {
+        loadOncoprint();
+    }
+    if (tab === "mutations") {
+        loadMutations(mutationsGene);
+    }
+    if (tab === "cancer-types" && !ctsLoaded && STUDY_ID && GENES.length) {
+        loadCancerTypesSummary(GENE_0);
+        ctsLoaded = true;
+    }
+    if (tab === "plots" && !plotsInited && STUDY_ID && GENES.length) {
+        initPlotsTab();
+        plotsInited = true;
+    }
+}
+
+// ── On page load ─────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+    // Apply initial display for all tabs
+    ["oncoprint", "mutations", "cancer-types", "plots"].forEach(t => {
+        var el = document.getElementById(t + "-tab");
+        if (el) {
+            el.classList.toggle("hidden", t !== activeTab);
+            el.style.display = (t === activeTab) ? "block" : "none";
+        }
+    });
+
+    if (activeTab === "oncoprint" && STUDY_ID && GENES.length) {
+        loadOncoprint();
+    }
+    if (activeTab === "mutations") {
+        loadMutations(mutationsGene);
+    }
+    if (activeTab === "cancer-types" && STUDY_ID && GENES.length) {
+        loadCancerTypesSummary(GENE_0);
+        ctsLoaded = true;
+    }
+    if (activeTab === "plots" && STUDY_ID && GENES.length) {
+        initPlotsTab();
+        plotsInited = true;
+    }
+});
+
+// ── Form post helper ─────────────────────────────────────────────────────────
+async function postForm(url, fields) {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, String(v));
+    const res = await fetch(url, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`${url} → ${res.status}`);
+    return res.json();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// OncoPrint Tab — uses bundled oncoprintjs + geneticrules.js
+// ════════════════════════════════════════════════════════════════════════════
+var CLINICAL_TRACK_GROUP = 0;
+var GENETIC_TRACK_GROUP  = 1;
+
+var oncoprint = null;
+var clinicalOptions = [];
+var activeTrackKeys = {};    // attr_id → numeric trackId
+var geneticTrackIds = {};    // gene → numeric trackId
+
+// ── Color helpers (0-255 RGBA for bundled oncoprintjs) ──────────────────────
+function hexToRGBA(hex) {
+    var s = hex.replace('#', '');
+    if (s.length === 3) s = s[0]+s[0]+s[1]+s[1]+s[2]+s[2];
+    return [parseInt(s.slice(0,2),16), parseInt(s.slice(2,4),16),
+            parseInt(s.slice(4,6),16), 1];
+}
+
+var CLINICAL_PALETTE = [
+    [228,26,28,1],[55,126,184,1],[77,175,74,1],[152,78,163,1],
+    [255,127,0,1],[166,86,40,1],[247,129,191,1],[153,153,153,1],
+    [102,194,165,1],[252,141,98,1],[141,160,203,1],[231,138,195,1],
+    [166,216,84,1],[255,217,47,1],[229,196,148,1],[179,179,179,1],
+    [27,158,119,1],[217,95,2,1],[117,112,179,1],[231,41,138,1],
+    [102,166,30,1],[230,171,2,1],[166,118,29,1],[64,176,166,1],
+];
+
+// ── Sort comparator (matches DeltaUtils.ts) ─────────────────────────────────
+function geneticComparator() {
+    var cna_order  = { amp:0, homdel:1, gain:2, hetloss:3, diploid:4, undefined:5 };
+    var mut_order  = { trunc_rec:0, splice_rec:1, inframe_rec:2, promoter_rec:3,
+                       missense_rec:4, other_rec:5,
+                       trunc:6, splice:7, inframe:8, promoter:9, missense:10, other:11,
+                       undefined:12 };
+    var sv_order   = { sv_rec:0, sv:1, undefined:2 };
+    var reg_order  = { up:0, down:1, undefined:2 };
+    return function(d1, d2) {
+        var keys   = ['disp_cna','disp_mut','disp_structuralVariant','disp_mrna','disp_prot'];
+        var orders = [cna_order, mut_order, sv_order, reg_order, reg_order];
+        var diff = 0;
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i], o = orders[i];
+            var v1 = d1[k], v2 = d2[k];
+            if (v1 && v2)       diff = (o[v1]||99) - (o[v2]||99);
+            else if (v1)        diff = -1;
+            else if (v2)        diff = 1;
+            if (diff !== 0) break;
+        }
+        return diff;
+    };
+}
+
+function clinicalSort(d1, d2) {
+    var a = d1.attr_val == null ? '\uffff' : String(d1.attr_val);
+    var b = d2.attr_val == null ? '\uffff' : String(d2.attr_val);
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
+// ── Zoom ────────────────────────────────────────────────────────────────────
+var currentZoom = 1.0;
+function applyZoom(z) {
+    currentZoom = Math.max(0.01, Math.min(2.0, z));
+    if (oncoprint) oncoprint.setHorzZoom(currentZoom);
+    document.getElementById('zoom-pct').textContent = Math.round(currentZoom * 100) + '%';
+    document.getElementById('zoom-slider').value = Math.round(currentZoom * 50);
+}
+
+function showOncoPrintError(msg) {
+    document.getElementById("oncoprint-loading").style.display = "none";
+    var el = document.getElementById("oncoprint-error");
+    el.textContent = "Error: " + msg;
+    el.style.display = "block";
+}
+
+// ── Sort ────────────────────────────────────────────────────────────────────
+function updateSort() {
+    if (!oncoprint) return;
+    if (document.getElementById('sort-alphabetical').checked) {
+        oncoprint.setSortConfig({ type: 'alphabetical' });
+    } else {
+        // Sort by data — the default track comparator handles it
+        oncoprint.setSortConfig({ type: '' });
+    }
+}
+
+// ── Mutations (Color By) — switch between the 4 genetic rulesets ────────────
+function updateRuleSet() {
+    if (!oncoprint) return;
+    var distinguishType = document.getElementById('chk-distinguish-type').checked;
+    var distinguishDriver = document.getElementById('chk-distinguish-driver').checked;
+    var rules = window.geneticrules;
+    var ruleSet;
+    if (distinguishType && distinguishDriver) {
+        ruleSet = rules.genetic_rule_set_different_colors_recurrence;
+    } else if (distinguishType && !distinguishDriver) {
+        ruleSet = rules.genetic_rule_set_different_colors_no_recurrence;
+    } else if (!distinguishType && distinguishDriver) {
+        ruleSet = rules.genetic_rule_set_same_color_for_all_recurrence;
+    } else {
+        ruleSet = rules.genetic_rule_set_same_color_for_all_no_recurrence;
+    }
+    for (var gene in geneticTrackIds) {
+        oncoprint.setRuleSet(geneticTrackIds[gene], ruleSet);
+    }
+    oncoprint.resizeAndOrganizeAfterTimeout();
+}
+
+// ── View menu handlers ──────────────────────────────────────────────────────
+var allGeneticData = {};  // stored after load for hideIds
+function toggleUnaltered() {
+    if (!oncoprint) return;
+    var showUnaltered = document.getElementById('chk-unaltered').checked;
+    if (showUnaltered) {
+        oncoprint.hideIds([], true);  // show all
+    } else {
+        // Hide samples with no alterations across all genes
+        var unalteredIds = [];
+        var firstGene = GENES[0];
+        var data = allGeneticData[firstGene] || [];
+        data.forEach(function(d) {
+            if (!d.disp_mut && !d.disp_cna && !d.disp_structuralVariant && !d.na) {
+                unalteredIds.push(d.uid);
+            }
+        });
+        oncoprint.hideIds(unalteredIds, false);
+    }
+    oncoprint.resizeAndOrganizeAfterTimeout();
+}
+
+function toggleWhitespace() {
+    if (!oncoprint) return;
+    var on = document.getElementById('chk-whitespace').checked;
+    oncoprint.setCellPaddingOn(on);
+}
+
+function toggleLegends() {
+    if (!oncoprint) return;
+    var show = document.getElementById('chk-legends').checked;
+    var clinicalIds = Object.keys(activeTrackKeys).map(function(k) { return activeTrackKeys[k]; });
+    if (show) {
+        oncoprint.showTrackLegends(clinicalIds);
+    } else {
+        oncoprint.hideTrackLegends(clinicalIds);
+    }
+    oncoprint.resizeAndOrganizeAfterTimeout();
+}
+
+function toggleMinimap() {
+    if (!oncoprint) return;
+    var show = document.getElementById('chk-minimap').checked;
+    oncoprint.setMinimapVisible(show);
+}
+
+// ── Download handlers ───────────────────────────────────────────────────────
+function downloadOncoprint(fmt) {
+    if (!oncoprint) return;
+    if (fmt === 'svg') {
+        var svgEl = oncoprint.toSVG(false);
+        var serializer = new XMLSerializer();
+        var svgStr = serializer.serializeToString(svgEl);
+        var blob = new Blob([svgStr], { type: 'image/svg+xml' });
+        _downloadBlob(blob, 'oncoprint.svg');
+    } else if (fmt === 'png') {
+        oncoprint.toCanvas(function(canvas, truncated) {
+            canvas.toBlob(function(blob) {
+                _downloadBlob(blob, 'oncoprint.png');
+            });
+        }, 2);
+    } else if (fmt === 'pdf') {
+        // PDF requires a library (jsPDF + svg2pdf). For now, fall back to SVG.
+        var svgEl2 = oncoprint.toSVG(false);
+        var serializer2 = new XMLSerializer();
+        var svgStr2 = serializer2.serializeToString(svgEl2);
+        var blob2 = new Blob([svgStr2], { type: 'image/svg+xml' });
+        _downloadBlob(blob2, 'oncoprint.svg');
+    } else if (fmt === 'order') {
+        var ids = oncoprint.getIdOrder();
+        var text = ids.join('\n') + '\n';
+        var blob3 = new Blob([text], { type: 'text/plain' });
+        _downloadBlob(blob3, 'patient_order.txt');
+    }
+}
+
+function _downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ── Main loader ─────────────────────────────────────────────────────────────
+async function loadOncoprint() {
+    oncoPrintLoaded = true;
+
+    document.getElementById("oncoprint-loading").style.display = "none";
+    var cw = document.getElementById("oncoprint-container").clientWidth || 1100;
+
+    try {
+        oncoprint = new window.Oncoprint('#oncoprint-canvas', cw);
+    } catch(e) {
+        showOncoPrintError("OncoprintJS failed: " + e.message);
+        return;
+    }
+
+    oncoprint.suppressRendering();
+
+    // Load all genes in parallel
+    var dataMap = {};
+    await Promise.all(GENES.map(async function(gene) {
+        try {
+            dataMap[gene] = await postForm("/results/oncoprint/genetic-data",
+                { study_id: STUDY_ID, gene: gene });
+        } catch(e) { dataMap[gene] = []; }
+    }));
+
+    // Add one genetic track per gene
+    var firstTrackId = null;
+    for (var i = 0; i < GENES.length; i++) {
+        var gene = GENES[i];
+        var geneData = dataMap[gene] || [];
+        var alteredCount = geneData.filter(function(d) {
+            return d.disp_cna || d.disp_mut || d.disp_structuralVariant;
+        }).length;
+        var pct = geneData.length > 0
+            ? Math.round((alteredCount / geneData.length) * 100) : 0;
+
+        var trackId = oncoprint.addTracks([{
+            rule_set_params: window.geneticrules.genetic_rule_set_different_colors_recurrence,
+            label: gene,
+            description: gene + ' mutations and copy number alterations',
+            track_info: pct + '%',
+            na_z: 1.1,
+            sortCmpFn: geneticComparator(),
+            sort_direction_changeable: true,
+            target_group: GENETIC_TRACK_GROUP,
+        }])[0];
+
+        geneticTrackIds[gene] = trackId;
+
+        // Share ruleset across genes for consistent legend
+        if (firstTrackId === null) {
+            firstTrackId = trackId;
+        } else {
+            oncoprint.shareRuleSet(firstTrackId, trackId);
+        }
+    }
+
+    // Configure group ordering now that tracks exist
+    oncoprint.setTrackGroupLegendOrder([GENETIC_TRACK_GROUP, CLINICAL_TRACK_GROUP]);
+    oncoprint.setTrackGroupSortPriority([GENETIC_TRACK_GROUP, CLINICAL_TRACK_GROUP]);
+
+    // Load data into tracks
+    oncoprint.keepSorted(false);
+    for (var j = 0; j < GENES.length; j++) {
+        var g = GENES[j];
+        oncoprint.setTrackData(geneticTrackIds[g], dataMap[g] || [], 'uid');
+
+        // Set tooltip (data may be array when zoomed out)
+        (function(gene) {
+            oncoprint.setTrackTooltipFn(geneticTrackIds[gene], function(data) {
+                var items = Array.isArray(data) ? data : [data];
+                if (items.length === 1) {
+                    var d = items[0];
+                    var lines = ['<b>' + (d.uid || '') + '</b>'];
+                    if (d.disp_cna) lines.push('CNA: ' + d.disp_cna.replace(/_rec$/, '').toUpperCase());
+                    if (d.disp_mut) lines.push('Mutation: ' + d.disp_mut.replace(/_rec$/, ''));
+                    if (d.disp_structuralVariant) lines.push('Structural variant');
+                    if (d.disp_germ) lines.push('Germline');
+                    if (!d.disp_cna && !d.disp_mut && !d.disp_structuralVariant) {
+                        lines.push(d.na ? 'Not profiled' : 'No alteration');
+                    }
+                    return lines.join('<br/>');
+                }
+                // Multiple samples — show summary
+                var altered = items.filter(function(d) { return d.disp_mut || d.disp_cna || d.disp_structuralVariant; });
+                return gene + ': ' + altered.length + '/' + items.length + ' samples altered';
+            });
+        })(g);
+    }
+
+    oncoprint.keepSorted(true);
+    oncoprint.releaseRendering();
+
+    // Monkey-patch: oncoprintjs doesn't call resizeAndOrganize after all sort
+    // paths (e.g. track options menu Sort a-Z). Wrap sort() to always relayout.
+    var _origSort = oncoprint.sort.bind(oncoprint);
+    oncoprint.sort = function() {
+        var result = _origSort.apply(this, arguments);
+        oncoprint.resizeAndOrganizeAfterTimeout();
+        return result;
+    };
+
+    applyZoom(0.02);  // 2% default — same as cBioPortal
+
+    // Alteration summary
+    var firstData = dataMap[GENES[0]] || [];
+    var altered = firstData.filter(function(d) { return d.disp_mut || d.disp_cna || d.disp_structuralVariant; });
+    var alteredPat = new Set(altered.map(function(d) { return d.patient; })).size;
+    var totalPat   = new Set(firstData.map(function(d) { return d.patient; })).size;
+    var altPct = totalPat > 0 ? ((alteredPat / totalPat) * 100).toFixed(1) : "0";
+    var summaryEl = document.getElementById("results-alteration-summary");
+    summaryEl.innerHTML =
+        'Queried genes altered in <strong>' + alteredPat.toLocaleString() + ' (' + altPct + '%)</strong> ' +
+        'of ' + totalPat.toLocaleString() + ' patients';
+    summaryEl.style.display = "block";
+
+    // Store data for view menu (hideIds)
+    allGeneticData = dataMap;
+
+    // Load clinical tracks panel
+    await loadTracksPanel();
+}
+
+// ── Clinical tracks panel ───────────────────────────────────────────────────
+async function loadTracksPanel() {
+    clinicalOptions = await postForm("/results/oncoprint/clinical-options", { study_id: STUDY_ID });
+    var list = document.getElementById("tracks-list");
+    list.innerHTML = "";
+    clinicalOptions.forEach(function(opt) {
+        var item = document.createElement("div");
+        item.className = "tracks-panel-item";
+        var chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.id = "track-chk-" + opt.attr_id;
+        chk.dataset.attrId = opt.attr_id;
+        var lbl = document.createElement("label");
+        lbl.htmlFor = chk.id;
+        lbl.textContent = opt.display_name;
+        lbl.style.cssText = "margin:0;cursor:pointer;flex:1;";
+        var freq = document.createElement("span");
+        freq.className = "tracks-panel-freq";
+        freq.textContent = (opt.freq * 100).toFixed(0) + "%";
+        chk.addEventListener("change", function() {
+            if (chk.checked) addClinicalTrack(opt);
+            else removeClinicalTrack(opt.attr_id);
+        });
+        item.appendChild(chk); item.appendChild(lbl); item.appendChild(freq);
+        list.appendChild(item);
+    });
+    for (var i = 0; i < Math.min(3, clinicalOptions.length); i++) {
+        var opt = clinicalOptions[i];
+        var chk = document.getElementById("track-chk-" + opt.attr_id);
+        if (chk) { chk.checked = true; await addClinicalTrack(opt); }
+    }
+}
+
+async function addClinicalTrack(opt) {
+    if (!oncoprint || activeTrackKeys[opt.attr_id] !== undefined) return;
+    var data = await postForm("/results/oncoprint/clinical-data",
+        { study_id: STUDY_ID, attr_ids: opt.attr_id });
+
+    var allSamples = Object.keys(data);
+    var trackData = allSamples.map(function(uid) {
+        var val = (data[uid] || {})[opt.attr_id];
+        return { uid: uid, attr_val: val !== undefined ? String(val) : undefined };
+    });
+
+    var ruleSetParams = buildClinicalRuleSet(opt, trackData);
+
+    var displayLabel = opt.display_name.length > 16
+        ? opt.display_name.substring(0, 14) + '...' : opt.display_name;
+
+    var trackId = oncoprint.addTracks([{
+        rule_set_params: ruleSetParams,
+        label: displayLabel,
+        description: opt.display_name,
+        na_z: 1.1,
+        sortCmpFn: clinicalSort,
+        sort_direction_changeable: true,
+        init_sort_direction: 0,
+        target_group: CLINICAL_TRACK_GROUP,
+        removable: true,
+    }])[0];
+
+    oncoprint.setTrackData(trackId, trackData, 'uid');
+
+    // Tooltip for clinical tracks (data may be array when zoomed out)
+    (function(displayName) {
+        oncoprint.setTrackTooltipFn(trackId, function(data) {
+            var items = Array.isArray(data) ? data : [data];
+            if (items.length === 1) {
+                var d = items[0];
+                var val = d.attr_val;
+                return '<b>' + (d.uid || '') + '</b><br/>' + displayName + ': ' + (val != null ? val : 'N/A');
+            }
+            // Multiple samples at this position — show summary
+            var vals = {};
+            items.forEach(function(d) {
+                var v = d.attr_val || 'N/A';
+                vals[v] = (vals[v] || 0) + 1;
+            });
+            var lines = [displayName + ' (' + items.length + ' samples):'];
+            Object.keys(vals).sort().forEach(function(v) {
+                lines.push('&nbsp;&nbsp;' + v + ': ' + vals[v]);
+            });
+            return lines.join('<br/>');
+        });
+    })(opt.display_name);
+
+    activeTrackKeys[opt.attr_id] = trackId;
+}
+
+function buildClinicalRuleSet(opt, trackData) {
+    if (opt.datatype === "NUMBER") {
+        var vals = trackData.map(function(d) { return parseFloat(d.attr_val); }).filter(function(v) { return !isNaN(v); });
+        return { type: 'bar', legend_label: opt.display_name, value_key: 'attr_val',
+                 value_range: [vals.length ? Math.min.apply(null, vals) : 0,
+                               vals.length ? Math.max.apply(null, vals) : 1] };
+    }
+    // Categorical — use 24-color palette (0-255 RGBA)
+    var seen = {}, unique = [];
+    trackData.forEach(function(d) {
+        if (d.attr_val && !seen[d.attr_val]) { seen[d.attr_val] = true; unique.push(d.attr_val); }
+    });
+    unique.sort();
+    var category_to_color = {};
+    unique.forEach(function(v, i) { category_to_color[v] = CLINICAL_PALETTE[i % CLINICAL_PALETTE.length]; });
+    return { type: 'categorical', legend_label: opt.display_name,
+             category_key: 'attr_val', category_to_color: category_to_color };
+}
+
+function removeClinicalTrack(attrId) {
+    if (!oncoprint) return;
+    var trackId = activeTrackKeys[attrId];
+    if (trackId === undefined) return;
+    oncoprint.removeTrack(trackId);
+    delete activeTrackKeys[attrId];
+}
+
+function filterTracks(query) {
+    var q = query.toLowerCase();
+    document.querySelectorAll('.tracks-panel-item').forEach(function(item) {
+        var label = item.querySelector('label');
+        var text = label ? label.textContent.toLowerCase() : '';
+        item.style.display = (!q || text.indexOf(q) > -1) ? '' : 'none';
+    });
+}
+
+function selectAllTracks(select) {
+    document.querySelectorAll('.tracks-panel-item').forEach(function(item) {
+        if (item.style.display === 'none') return; // skip filtered-out items
+        var chk = item.querySelector('input[type=checkbox]');
+        if (!chk) return;
+        if (chk.checked !== select) {
+            chk.checked = select;
+            chk.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// ── Toolbar event wiring ────────────────────────────────────────────────────
+document.getElementById("tracks-btn").addEventListener("click", function(e) {
+    e.stopPropagation();
+    document.getElementById("tracks-panel").classList.toggle("open");
+});
+document.addEventListener("click", function() { document.getElementById("tracks-panel").classList.remove("open"); });
+document.getElementById("tracks-panel").addEventListener("click", function(e) { e.stopPropagation(); });
+
+document.getElementById('btn-zoom-in').addEventListener('click', function() { applyZoom(currentZoom * 1.3); });
+document.getElementById('btn-zoom-out').addEventListener('click', function() { applyZoom(currentZoom / 1.3); });
+document.getElementById('zoom-slider').addEventListener('input', function() { applyZoom(parseInt(this.value) / 50); });
+document.getElementById('btn-minimap').addEventListener('click', function() {
+    var chk = document.getElementById('chk-minimap');
+    chk.checked = !chk.checked;
+    toggleMinimap();
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Mutations Tab
+// ════════════════════════════════════════════════════════════════════════════
+const MUT_COLORS = {
+    missense: "#008000", trunc: "#000000", inframe: "#993404",
+    splice: "#e5802b", promoter: "#00B7CE", other: "#cf58bc",
+};
+
+let mutPage = 1;
+let mutPageSize = 25;
+let mutTotal = 0;
+let mutSortCol = "Protein_position";
+let mutSortDir = "ASC";
+let mutLoaded = false;
+
+function selectMutGene(gene, el) {
+    mutationsGene = gene;
+    mutPage = 1;
+    document.querySelectorAll(".mut-gene-tab").forEach(t => t.classList.remove("active"));
+    el.classList.add("active");
+    loadMutations(gene);
+}
+
+async function loadMutations(gene) {
+    mutLoaded = true;
+    loadLollipop(gene);
+    loadMutSummary(gene);
+    loadMutTable(gene);
+}
+
+// ── Lollipop SVG renderer ────────────────────────────────────────────────────
+async function loadLollipop(gene) {
+    document.getElementById("lollipop-loading").style.display = "";
+    document.getElementById("lollipop-svg-wrap").style.display = "none";
+    let data;
+    try {
+        data = await postForm("/results/oncoprint/lollipop", { study_id: STUDY_ID, gene });
+    } catch(e) {
+        document.getElementById("lollipop-loading").textContent = "Failed to load lollipop data.";
+        return;
+    }
+
+    document.getElementById("lollipop-loading").style.display = "none";
+    if (!data.mutations || data.mutations.length === 0) {
+        document.getElementById("lollipop-loading").style.display = "";
+        document.getElementById("lollipop-loading").textContent = "No mutation position data available for " + gene + ".";
+        return;
+    }
+
+    drawLollipop(data, gene);
+    document.getElementById("lollipop-svg-wrap").style.display = "";
+}
+
+function drawLollipop(data, gene) {
+    const muts = data.mutations;
+    const protLen = data.protein_length || Math.max(...muts.map(m => m.position)) + 20;
+
+    // Layout constants
+    const W = Math.max(600, document.getElementById("lollipop-panel").clientWidth - 40);
+    const margin = { top: 10, right: 20, bottom: 30, left: 40 };
+    const plotW = W - margin.left - margin.right;
+    const maxCount = Math.max(...muts.map(m => m.count));
+    const lolliH = Math.min(180, 20 + maxCount * 8);
+    const backboneH = 14;
+    const totalH = margin.top + lolliH + backboneH + margin.bottom + 20;
+
+    const svg = document.getElementById("lollipop-svg");
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", totalH);
+    svg.setAttribute("viewBox", `0 0 ${W} ${totalH}`);
+    svg.innerHTML = "";
+
+    function ns(tag) { return document.createElementNS("http://www.w3.org/2000/svg", tag); }
+    function toX(pos) { return margin.left + (pos / protLen) * plotW; }
+    function toY(count) { return margin.top + lolliH - (count / maxCount) * lolliH; }
+
+    const g = ns("g");
+    svg.appendChild(g);
+
+    // ── Protein backbone ────────────────────────────────────────────────────
+    const backboneY = margin.top + lolliH + 4;
+    const backbone = ns("rect");
+    backbone.setAttribute("x", margin.left);
+    backbone.setAttribute("y", backboneY);
+    backbone.setAttribute("width", plotW);
+    backbone.setAttribute("height", backboneH);
+    backbone.setAttribute("rx", 3);
+    backbone.setAttribute("fill", "#ccc");
+    g.appendChild(backbone);
+
+    // Gene label inside backbone
+    const geneLabel = ns("text");
+    geneLabel.setAttribute("x", margin.left + plotW / 2);
+    geneLabel.setAttribute("y", backboneY + backboneH / 2 + 4);
+    geneLabel.setAttribute("text-anchor", "middle");
+    geneLabel.setAttribute("font-size", "11");
+    geneLabel.setAttribute("font-weight", "bold");
+    geneLabel.setAttribute("fill", "#555");
+    geneLabel.textContent = gene + "  " + protLen + " aa";
+    g.appendChild(geneLabel);
+
+    // ── X-axis ticks ────────────────────────────────────────────────────────
+    const tickCount = Math.min(10, Math.floor(protLen / 50));
+    const tickStep = Math.ceil(protLen / tickCount / 50) * 50;
+    for (let pos = 0; pos <= protLen; pos += tickStep) {
+        const x = toX(pos);
+        const tick = ns("line");
+        tick.setAttribute("x1", x); tick.setAttribute("x2", x);
+        tick.setAttribute("y1", backboneY + backboneH);
+        tick.setAttribute("y2", backboneY + backboneH + 4);
+        tick.setAttribute("stroke", "#999"); tick.setAttribute("stroke-width", "1");
+        g.appendChild(tick);
+        const lbl = ns("text");
+        lbl.setAttribute("x", x); lbl.setAttribute("y", backboneY + backboneH + 14);
+        lbl.setAttribute("text-anchor", "middle");
+        lbl.setAttribute("font-size", "9"); lbl.setAttribute("fill", "#999");
+        lbl.textContent = pos;
+        g.appendChild(lbl);
+    }
+
+    // ── Y-axis ───────────────────────────────────────────────────────────────
+    const yAxisLabel = ns("text");
+    yAxisLabel.setAttribute("x", margin.left - 5);
+    yAxisLabel.setAttribute("y", margin.top + lolliH / 2);
+    yAxisLabel.setAttribute("text-anchor", "middle");
+    yAxisLabel.setAttribute("font-size", "9");
+    yAxisLabel.setAttribute("fill", "#999");
+    yAxisLabel.setAttribute("transform", `rotate(-90, ${margin.left - 16}, ${margin.top + lolliH / 2})`);
+    yAxisLabel.textContent = "# Patients";
+    g.appendChild(yAxisLabel);
+
+    // Y ticks
+    for (let cnt = 0; cnt <= maxCount; cnt += Math.max(1, Math.floor(maxCount / 4))) {
+        const y = toY(cnt);
+        const ytick = ns("line");
+        ytick.setAttribute("x1", margin.left - 4); ytick.setAttribute("x2", margin.left);
+        ytick.setAttribute("y1", y); ytick.setAttribute("y2", y);
+        ytick.setAttribute("stroke", "#ccc"); ytick.setAttribute("stroke-width", "1");
+        g.appendChild(ytick);
+        const ylbl = ns("text");
+        ylbl.setAttribute("x", margin.left - 6); ylbl.setAttribute("y", y + 3);
+        ylbl.setAttribute("text-anchor", "end");
+        ylbl.setAttribute("font-size", "9"); ylbl.setAttribute("fill", "#999");
+        ylbl.textContent = cnt;
+        g.appendChild(ylbl);
+    }
+
+    // ── Lollipops ────────────────────────────────────────────────────────────
+    // Sort by position for rendering; group overlapping positions
+    const grouped = {};
+    for (const m of muts) {
+        const key = m.position;
+        if (!grouped[key]) grouped[key] = { ...m, allHgvsp: [] };
+        grouped[key].allHgvsp.push(m.hgvsp_short);
+        if (m.count > grouped[key].count) {
+            grouped[key].count = m.count;
+            grouped[key].mut_type = m.mut_type;
+            grouped[key].hotspot = grouped[key].hotspot || m.hotspot;
+        }
+    }
+
+    const stemBaseY = backboneY;
+    for (const [posStr, m] of Object.entries(grouped)) {
+        const x = toX(m.position);
+        const y = toY(m.count);
+        const color = MUT_COLORS[m.mut_type] || MUT_COLORS.other;
+        const r = m.hotspot ? 6 : Math.min(6, 3 + Math.sqrt(m.count));
+
+        // stem
+        const stem = ns("line");
+        stem.setAttribute("x1", x); stem.setAttribute("x2", x);
+        stem.setAttribute("y1", y + r); stem.setAttribute("y2", stemBaseY);
+        stem.setAttribute("stroke", color); stem.setAttribute("stroke-width", "1.5");
+        stem.setAttribute("opacity", "0.7");
+        g.appendChild(stem);
+
+        // circle
+        const circle = ns("circle");
+        circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+        circle.setAttribute("r", r);
+        circle.setAttribute("fill", color);
+        circle.setAttribute("opacity", m.hotspot ? "1" : "0.85");
+        if (m.hotspot) {
+            circle.setAttribute("stroke", "#ff6d00");
+            circle.setAttribute("stroke-width", "1.5");
+        }
+        // Tooltip
+        const hgvsps = m.allHgvsp.filter((v, i, a) => a.indexOf(v) === i).slice(0, 3).join(", ");
+        circle.setAttribute("title", `${hgvsps} (${m.count} patient${m.count !== 1 ? "s" : ""})${m.hotspot ? " ★ Hotspot" : ""}`);
+        circle.style.cursor = "pointer";
+        const titleEl = ns("title");
+        titleEl.textContent = `${hgvsps} (${m.count} patient${m.count !== 1 ? "s" : ""})${m.hotspot ? " ★ Hotspot" : ""}`;
+        circle.appendChild(titleEl);
+        g.appendChild(circle);
+
+        // Label for top variants (count >= 3 or hotspot)
+        if (m.count >= 3 || m.hotspot) {
+            const shortLabel = m.allHgvsp[0] ? m.allHgvsp[0].replace("p.", "") : "";
+            const lbl = ns("text");
+            lbl.setAttribute("x", x);
+            lbl.setAttribute("y", y - r - 2);
+            lbl.setAttribute("text-anchor", "middle");
+            lbl.setAttribute("font-size", "9");
+            lbl.setAttribute("fill", color);
+            lbl.setAttribute("font-weight", m.hotspot ? "bold" : "normal");
+            lbl.textContent = shortLabel;
+            g.appendChild(lbl);
+        }
+    }
+}
+
+// ── Mutation Summary ─────────────────────────────────────────────────────────
+async function loadMutSummary(gene) {
+    document.getElementById("mut-summary-loading").style.display = "";
+    document.getElementById("mut-summary-content").style.display = "none";
+    let data;
+    try {
+        data = await postForm("/results/oncoprint/mutation-summary", { study_id: STUDY_ID, gene });
+    } catch(e) { return; }
+
+    document.getElementById("mut-summary-loading").style.display = "none";
+    document.getElementById("mut-summary-content").style.display = "";
+    document.getElementById("mut-summary-gene").textContent = gene;
+    const freq = data.total_samples > 0
+        ? ((data.mutated_samples / data.total_samples) * 100).toFixed(1) + "%"
+        : "—";
+    document.getElementById("mut-summary-freq").textContent = freq;
+
+    const TYPE_ORDER = ["missense", "trunc", "inframe", "splice", "promoter", "other"];
+    const TYPE_LABEL = { missense: "Missense", trunc: "Truncating", inframe: "In-frame", splice: "Splice", promoter: "Promoter", other: "Other" };
+    const tbody = document.getElementById("mut-summary-table");
+    tbody.innerHTML = "";
+    for (const t of TYPE_ORDER) {
+        if (!data.by_type[t]) continue;
+        const { driver, vus } = data.by_type[t];
+        if (driver + vus === 0) continue;
+        const row = document.createElement("div");
+        row.className = "mut-summary-row";
+        row.innerHTML = `
+            <span class="mut-summary-label">${TYPE_LABEL[t] || t}</span>
+            <span>
+                ${driver > 0 ? `<span class="mut-driver-pill">${driver} driver</span>` : ""}
+                ${vus > 0 ? `<span class="mut-vus-pill">${vus} VUS</span>` : ""}
+            </span>`;
+        tbody.appendChild(row);
+    }
+}
+
+// ── Mutation Table ────────────────────────────────────────────────────────────
+async function loadMutTable(gene) {
+    const tbody = document.getElementById("mut-tbody");
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;"><i class="fa fa-spinner fa-spin"></i> Loading…</td></tr>';
+
+    let data;
+    try {
+        data = await postForm("/results/oncoprint/mutations-table", {
+            study_id: STUDY_ID, gene,
+            page: mutPage, page_size: mutPageSize,
+            sort_col: mutSortCol, sort_dir: mutSortDir,
+        });
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:#c00;padding:10px;">Error: ${e.message}</td></tr>`;
+        return;
+    }
+
+    mutTotal = data.total;
+    document.getElementById("mut-table-count").textContent =
+        `${mutTotal.toLocaleString()} mutations`;
+
+    // Update sort arrows
+    document.querySelectorAll("#mut-table th").forEach(th => th.classList.remove("sort-active"));
+
+    tbody.innerHTML = "";
+    if (!data.rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No mutations found.</td></tr>';
+    }
+    for (const row of data.rows) {
+        const tr = document.createElement("tr");
+        const dispType = vcToDisp(row.mutation_type);
+        const typeClass = `mut-type-${dispType}`;
+        const typeLabel = row.mutation_type ? row.mutation_type.replace(/_/g, " ") : "—";
+        const annIcons = buildAnnIcons(row);
+        const af = row.allele_freq != null ? (row.allele_freq * 100).toFixed(1) + "%" : "—";
+        const studyLink = `/patient?studyId=${STUDY_ID}&sampleId=${encodeURIComponent(row.sample_id)}`;
+        tr.innerHTML = `
+            <td><a href="${studyLink}" style="font-family:monospace;font-size:11px;">${row.sample_id || "—"}</a></td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${row.cancer_type || ''}">${row.cancer_type || "—"}</td>
+            <td><strong>${row.hgvsp_short || "—"}</strong></td>
+            <td>${annIcons}</td>
+            <td><span class="mut-type-badge ${typeClass}">${typeLabel}</span></td>
+            <td>${af}</td>
+            <td>${row.mut_count != null ? row.mut_count.toLocaleString() : "—"}</td>`;
+        tbody.appendChild(tr);
+    }
+
+    // Pagination
+    const totalPages = Math.ceil(mutTotal / mutPageSize);
+    document.getElementById("pag-info").textContent = `Page ${mutPage} of ${totalPages} (${mutTotal.toLocaleString()} total)`;
+    document.getElementById("pag-prev").disabled = mutPage <= 1;
+    document.getElementById("pag-next").disabled = mutPage >= totalPages;
+}
+
+function vcToDisp(vc) {
+    const map = { Missense_Mutation:"missense", Nonsense_Mutation:"trunc", Frame_Shift_Del:"trunc", Frame_Shift_Ins:"trunc", In_Frame_Del:"inframe", In_Frame_Ins:"inframe", Splice_Site:"splice", Splice_Region:"splice", "5'Flank":"promoter" };
+    return map[vc] || "other";
+}
+
+function buildAnnIcons(row) {
+    let icons = "";
+    if (row.hotspot_type) {
+        icons += `<span class="ann-icon ann-hotspot" title="Cancer Hotspot: ${row.hotspot_type}">H</span>`;
+    }
+    if (row.moalmanac_drug) {
+        const sig = row.moalmanac_clinical_significance || "Actionable";
+        icons += `<span class="ann-icon ann-drug" title="MOAlmanac: ${row.moalmanac_drug} (${sig})">M</span>`;
+    }
+    if (row.civic_evidence_id) {
+        icons += `<span class="ann-icon ann-civic" title="CIViC evidence #${row.civic_evidence_id}">C</span>`;
+    }
+    return icons || '<span style="color:#ccc;font-size:10px;">—</span>';
+}
+
+function sortMutTable(col) {
+    if (mutSortCol === col) {
+        mutSortDir = mutSortDir === "ASC" ? "DESC" : "ASC";
+    } else {
+        mutSortCol = col;
+        mutSortDir = "ASC";
+    }
+    mutPage = 1;
+    loadMutTable(mutationsGene);
+}
+
+function changeMutPage(delta) {
+    const totalPages = Math.ceil(mutTotal / mutPageSize);
+    mutPage = Math.max(1, Math.min(totalPages, mutPage + delta));
+    loadMutTable(mutationsGene);
+}
+
+let mutSearchTimer = null;
+function onMutSearch(val) {
+    // Client-side search: filter rendered rows
+    clearTimeout(mutSearchTimer);
+    mutSearchTimer = setTimeout(() => {
+        const q = val.toLowerCase();
+        document.querySelectorAll("#mut-tbody tr").forEach(tr => {
+            tr.style.display = q && !tr.textContent.toLowerCase().includes(q) ? "none" : "";
+        });
+    }, 200);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Cancer Types Summary Tab
+// ════════════════════════════════════════════════════════════════════════════
+const ALTERATION_COLORS = {
+    mutation:           '#008000',
+    structural_variant: '#8B00C9',
+    amplification:      '#ff0000',
+    deep_deletion:      '#0000ff',
+    shallow_deletion:   '#8fd8d8',
+    gain:               'rgb(255,182,193)',
+    multiple:           '#666666',
+};
+const ALTERATION_LABELS = {
+    mutation: 'Mutation', structural_variant: 'Structural Variant',
+    amplification: 'Amplification', deep_deletion: 'Deep Deletion',
+    shallow_deletion: 'Shallow Deletion', gain: 'Gain', multiple: 'Multiple Alterations',
+};
+const ALT_TYPES = ['mutation','structural_variant','amplification','deep_deletion','gain','shallow_deletion','multiple'];
+
+let ctsChart = null;
+let ctsDataCache = {};  // gene -> server response
+let ctsActiveGene = GENE_0;
+
+function switchCtsGene(gene, el) {
+    ctsActiveGene = gene;
+    document.querySelectorAll("#cts-gene-tabs .cts-gene-btn").forEach(b =>
+        b.classList.toggle("active", b.textContent.trim() === gene));
+    if (ctsDataCache[gene]) {
+        renderCtsChart();
+    } else {
+        loadCancerTypesSummary(gene);
+    }
+}
+
+async function loadCancerTypesSummary(gene) {
+    ctsActiveGene = gene || ctsActiveGene;
+    var groupBy = document.querySelector('input[name="cts-group"]:checked').value;
+    var countBy = document.querySelector('input[name="cts-count"]:checked').value;
+    try {
+        var data = await postForm("/results/oncoprint/cancer-types-summary", {
+            study_id: STUDY_ID, gene: ctsActiveGene, group_by: groupBy, count_by: countBy,
+        });
+        ctsDataCache[ctsActiveGene] = data;
+        // Update slider max values
+        if (data.categories.length) {
+            var maxTotal = Math.max(...data.categories.map(c => c.total));
+            document.getElementById("cts-min-total").max = maxTotal;
+            document.getElementById("cts-max-total").textContent = maxTotal;
+            var maxPct = Math.max(...data.categories.map(c => {
+                var altered = ALT_TYPES.reduce((s,t) => s + (c[t]||0), 0) - (c.multiple||0);
+                return c.total ? Math.round(altered / c.total * 100) : 0;
+            }));
+            document.getElementById("cts-max-pct").textContent = maxPct + "%";
+            document.getElementById("cts-min-pct").max = maxPct;
+        }
+        renderCtsChart();
+    } catch(e) {
+        console.error("CTS load error:", e);
+    }
+}
+
+function renderCtsChart() {
+    var data = ctsDataCache[ctsActiveGene];
+    if (!data || !data.categories.length) return;
+
+    var minTotal = parseInt(document.getElementById("cts-min-total").value) || 0;
+    var minPct = parseInt(document.getElementById("cts-min-pct").value) || 0;
+    var sortBy = document.getElementById("cts-sort").value;
+    var yAxis = document.getElementById("cts-yaxis").value;
+    var showGenomic = document.getElementById("cts-show-genomic").checked;
+
+    // Filter
+    var cats = data.categories.filter(c => {
+        if (c.total < minTotal) return false;
+        var altered = ALT_TYPES.reduce((s,t) => s + (c[t]||0), 0) - (c.multiple||0);
+        var pct = c.total ? (altered / c.total * 100) : 0;
+        return pct >= minPct;
+    });
+
+    // Sort
+    if (sortBy === "alpha") {
+        cats.sort((a,b) => a.name.localeCompare(b.name));
+    } else {
+        cats.sort((a,b) => {
+            var aAlt = ALT_TYPES.reduce((s,t) => s + (a[t]||0), 0) - (a.multiple||0);
+            var bAlt = ALT_TYPES.reduce((s,t) => s + (b[t]||0), 0) - (b.multiple||0);
+            var aVal = a.total ? aAlt/a.total : 0;
+            var bVal = b.total ? bAlt/b.total : 0;
+            return bVal - aVal;
+        });
+    }
+
+    // Build ECharts option
+    var catNames = cats.map(c => c.name);
+
+    // Determine which alteration types to show
+    var typesToShow = showGenomic ? ALT_TYPES : ['mutation','multiple'];
+
+    var series = typesToShow.map(type => ({
+        name: ALTERATION_LABELS[type],
+        type: 'bar',
+        stack: 'total',
+        barWidth: 20,
+        data: cats.map(c => {
+            var val = c[type] || 0;
+            if (yAxis === "alt-freq") {
+                return c.total ? +(val / c.total * 100).toFixed(1) : 0;
+            }
+            return val;
+        }),
+        itemStyle: { color: ALTERATION_COLORS[type] },
+        emphasis: { focus: 'series' },
+    }));
+
+    // ── Container sizing ──────────────────────────────────────────────────
+    // Legacy: CancerSummaryChart.tsx
+    //   chartWidth  = xLabels.length * (barWidth + barSeparation) + 100
+    //   barWidth=20, barSeparation=8  → 28px per bar
+    var chartW = Math.max(300, catNames.length * 28 + 190);  // +150 left +40 right padding
+    var container = document.getElementById("cts-chart-container");
+    container.style.width = chartW + "px";
+
+    // ── Build profiling scatter data (✚ marks below bars) ────────────────
+    var profDataTypes = [
+        {key: "sv", label: "Structural variant data"},
+        {key: "mutation", label: "Mutation data"},
+        {key: "cna", label: "CNA data"},
+    ];
+    var profLabels = profDataTypes.map(d => d.label);
+
+    var profScatterData = [];
+    profDataTypes.forEach((dt, yi) => {
+        cats.forEach((c, xi) => {
+            var profiled = c.profiled && c.profiled[dt.key] > 0;
+            profScatterData.push([xi, yi, profiled ? 1 : 0]);
+        });
+    });
+
+    // ── Layout constants matching legacy CancerSummaryChart.tsx ──────────
+    // adjustedLongestLabelLength: VictoryChartUtils.ts
+    //   caps*2 + lowercase*1 + spaces*2 + other*1  (per label, take max)
+    // bottomPadding: CancerSummaryChart.tsx:477
+    //   adjustedLongestLabelLength(xLabels) * 5 + 40  (uncapped)
+    function adjustedLabelLength(label) {
+        var caps = (label.match(/[A-Z]/g) || []).length;
+        var lower = (label.match(/[a-z]/g) || []).length;
+        var spaces = (label.match(/\s/g) || []).length;
+        var other = label.length - caps - lower - spaces;
+        return caps * 2 + lower * 1 + spaces * 2 + other * 1;
+    }
+    var longestAdjusted = Math.max(...catNames.map(adjustedLabelLength));
+    var xLabelHeight = longestAdjusted * 5 + 40;
+
+    // Legacy: barChartHeight=400, scatterChartHeight = profDataTypes * 28 + 100
+    // svgHeight = barChartHeight + scatterChartHeight + bottomPadding - 100
+    var barChartHeight = 400;
+    var profGridHeight = 60;  // ECharts equivalent of scatterChartHeight
+    var profGridGap = 12;
+    var legendHeight = 40;
+    var scatterChartHeight = profDataTypes.length * 28 + 100;
+    var chartH = barChartHeight + scatterChartHeight + xLabelHeight - 100;
+    container.style.height = chartH + "px";
+
+    if (!ctsChart) {
+        ctsChart = echarts.init(container);
+    } else {
+        ctsChart.resize({width: chartW, height: chartH});
+    }
+
+    ctsChart.setOption({
+        tooltip: [{
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: function(params) {
+                // Filter to only bar series (xAxisIndex 0)
+                var barParams = params.filter(p => p.seriesType === 'bar');
+                if (!barParams.length) return '';
+                var cat = barParams[0].name;
+                var catData = cats.find(c => c.name === cat);
+                var lines = ['<b>' + cat + '</b>'];
+                if (catData) {
+                    var altered = ALT_TYPES.reduce((s,t) => s + (catData[t]||0), 0) - (catData.multiple||0);
+                    var pct = catData.total ? (altered / catData.total * 100).toFixed(1) : 0;
+                    lines.push('Altered: ' + altered + '/' + catData.total + ' (' + pct + '%)');
+                }
+                barParams.forEach(p => {
+                    if (p.value > 0) {
+                        lines.push('<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';margin-right:4px;"></span>' + p.seriesName + ': ' + p.value + (yAxis === 'alt-freq' ? '%' : ''));
+                    }
+                });
+                return lines.join('<br>');
+            },
+        }],
+        legend: {
+            bottom: 0,
+            data: typesToShow.map(t => ALTERATION_LABELS[t]),
+            icon: 'circle',
+            itemWidth: 10, itemHeight: 10,
+        },
+        grid: [
+            // Bar chart grid (top)
+            { left: 150, right: 40, top: 20, bottom: profGridHeight + profGridGap + xLabelHeight + legendHeight },
+            // Profiling scatter grid (bottom, with gap from bar chart)
+            { left: 150, right: 40, top: 'auto', height: profGridHeight,
+              bottom: xLabelHeight + legendHeight },
+        ],
+        xAxis: [
+            // Bar chart x-axis (hidden labels — labels come from scatter axis)
+            {
+                type: 'category', data: catNames, gridIndex: 0,
+                axisLabel: { show: false }, axisTick: { show: false },
+                axisLine: { show: false },
+            },
+            // Profiling scatter x-axis (with rotated labels)
+            {
+                type: 'category', data: catNames, gridIndex: 1,
+                position: 'bottom',
+                axisLabel: { rotate: 50, fontSize: 11, interval: 0 },
+                axisTick: { show: false }, axisLine: { show: false },
+            },
+        ],
+        yAxis: [
+            // Bar chart y-axis
+            {
+                type: 'value', gridIndex: 0,
+                name: yAxis === 'alt-freq' ? 'Alteration Frequency' : 'Absolute Counts',
+                nameLocation: 'middle', nameGap: 40,
+                axisLabel: { formatter: yAxis === 'alt-freq' ? '{value}%' : '{value}' },
+            },
+            // Profiling scatter y-axis (data type labels)
+            {
+                type: 'category', data: profLabels, gridIndex: 1,
+                axisLabel: { fontSize: 11 },
+                axisTick: { show: false }, axisLine: { show: false },
+                splitLine: { show: false },
+            },
+        ],
+        series: [
+            // Alteration bar series
+            ...series.map(s => Object.assign(s, { xAxisIndex: 0, yAxisIndex: 0 })),
+            // Profiling status ✚ marks (custom series)
+            {
+                type: 'custom',
+                xAxisIndex: 1, yAxisIndex: 1,
+                data: profScatterData,
+                renderItem: function(params, api) {
+                    var xVal = api.value(0);
+                    var yVal = api.value(1);
+                    var profiled = api.value(2);
+                    var coord = api.coord([xVal, yVal]);
+                    return {
+                        type: 'text',
+                        x: coord[0], y: coord[1],
+                        style: {
+                            text: '✚',
+                            fill: profiled ? '#333' : '#ddd',
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            textVerticalAlign: 'middle',
+                        },
+                    };
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(p) {
+                        var catIdx = p.value[0], dtIdx = p.value[1];
+                        var cat = catNames[catIdx];
+                        var dt = profDataTypes[dtIdx];
+                        var c = cats[catIdx];
+                        var count = c.profiled && c.profiled[dt.key] || 0;
+                        return '<b>' + cat + '</b><br>' + dt.label + ': ' +
+                            (count > 0 ? count + ' profiled' : 'Not profiled');
+                    },
+                },
+            },
+        ],
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    }, true);
+
+    // Clear old HTML profiling grid
+    document.getElementById("cts-profiling").innerHTML = "";
+}
+
+// Re-fetch when group_by or count_by changes
+document.querySelectorAll('input[name="cts-group"], input[name="cts-count"]').forEach(el => {
+    el.addEventListener("change", () => {
+        ctsDataCache = {};  // clear cache since grouping changed
+        loadCancerTypesSummary(ctsActiveGene);
+    });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Plots Tab
+// ════════════════════════════════════════════════════════════════════════════
+let plotsChart = null;
+let plotsCliOpts = [];  // cached clinical attribute options
+let plotsData = null;   // last server response
+let plotsColorData = null;  // per-sample color overlay from server
+var molecularProfiles = {{ molecular_profiles | tojson }};
+
+const PlotsState = {
+    hAxis: { dataType: 'structural_variant', gene: GENE_0, plotBy: 'variant_vs_no_variant' },
+    vAxis: { dataType: 'clinical_attribute', attributeId: 'CANCER_TYPE' },
+};
+
+// Unique color palette for bar chart series
+const PLOTS_PALETTE = [
+    '#2986E2','#DC3912','#FF9900','#109618','#990099',
+    '#0099C6','#DD4477','#66AA00','#B82E2E','#316395',
+    '#994499','#22AA99','#AAAA11','#6633CC','#E67300',
+    '#8B0707','#651067','#329262','#5574A6','#3B3EAC',
+];
+
+// Legacy ref: PlotsTabUtils.tsx:2070-2072 — cnaCategoryOrder
+// Order derived from cnaToAppearance keys ['-2','-1','0','1','2']
+var CNA_CATEGORY_ORDER = [
+    "Deep Deletion", "Shallow Deletion", "Diploid", "Gain", "Amplification",
+];
+
+// Legacy ref: PlotsTabUtils.tsx:2020-2046 — cnaToAppearance stroke colors
+// AlterationColors.ts:23 CNA_COLOR_AMP=#ff0000, :27 CNA_COLOR_HOMDEL=#0000ff
+// Colors.ts:19 DEFAULT_GREY=#bebebe
+var CNA_COLORS = {
+    "Deep Deletion": "#0000ff",
+    "Shallow Deletion": "#2aced4",
+    "Diploid": "#bebebe",
+    "Gain": "#ff8c9f",
+    "Amplification": "#ff0000",
+};
+
+async function initPlotsTab() {
+    // Fetch clinical attribute options (molecular profiles already rendered server-side)
+    try {
+        plotsCliOpts = await postForm("/results/oncoprint/plots-clinical-options", { study_id: STUDY_ID });
+    } catch(e) { console.error(e); }
+
+    // Populate color menu dropdowns
+    var genesGroup = document.getElementById("plots-color-genes");
+    GENES.forEach(function(g) {
+        genesGroup.innerHTML += '<option value="gene:' + g + '">' + g + '</option>';
+    });
+    var clinGroup = document.getElementById("plots-color-clinical");
+    plotsCliOpts.forEach(function(opt) {
+        clinGroup.innerHTML += '<option value="clinical:' + opt.attr_id + '">' + opt.display_name + '</option>';
+    });
+
+    // Build sub-controls for default axes
+    buildAxisSubControls('h');
+    buildAxisSubControls('v');
+
+    // Load initial data
+    await loadPlotsData();
+}
+
+// Legacy ref: PlotsTab.tsx — vertical axis gene selector includes "Same gene (X)"
+// when the horizontal axis has a gene selected.
+function _buildGeneSelect(prefix, axis, state) {
+    var html = '<div class="cts-heading">Gene</div>';
+    html += '<select id="' + prefix + '-gene" onchange="onPlotsSubChange(\'' + axis + '\')">';
+    // "Same gene" option on vertical axis
+    if (axis === 'v') {
+        var hGene = PlotsState.hAxis.gene;
+        if (hGene) {
+            var isSame = !state.gene || state.gene === hGene;
+            html += '<option value="' + hGene + '"' + (isSame ? ' selected' : '') + '>Same gene (' + hGene + ')</option>';
+        }
+    }
+    GENES.forEach(function(g) {
+        // On vertical axis, skip the gene already shown as "Same gene"
+        if (axis === 'v' && g === PlotsState.hAxis.gene) return;
+        html += '<option value="' + g + '"' + (g === state.gene ? ' selected' : '') + '>' + g + '</option>';
+    });
+    html += '</select>';
+    return html;
+}
+
+function buildAxisSubControls(axis) {
+    var prefix = 'plots-' + axis;
+    var dt = document.getElementById(prefix + '-datatype').value;
+    var container = document.getElementById(prefix + '-sub');
+    var state = axis === 'h' ? PlotsState.hAxis : PlotsState.vAxis;
+
+    var html = '';
+
+    if (dt === 'mutation') {
+        state.dataType = 'mutation';
+        html += '<div class="cts-heading">Plot Mutations by</div>';
+        html += '<select id="' + prefix + '-plotby" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        html += '<option value="mutated_vs_wildtype">Mutated vs Wild-type</option>';
+        html += '<option value="type">Type</option>';
+        html += '<option value="driver_vs_vus">Driver vs VUS</option>';
+        html += '<option value="vaf">Variant Allele Frequency</option>';
+        html += '</select>';
+        html += _buildGeneSelect(prefix, axis, state);
+        state.plotBy = state.plotBy || 'mutated_vs_wildtype';
+    } else if (dt === 'structural_variant') {
+        state.dataType = 'structural_variant';
+        html += '<div class="cts-heading">Plot Structural variants by</div>';
+        html += '<select id="' + prefix + '-plotby" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        html += '<option value="variant_vs_no_variant">Variant vs No Variant</option>';
+        html += '<option value="variant_type">Variant Type</option>';
+        html += '</select>';
+        html += _buildGeneSelect(prefix, axis, state);
+        state.plotBy = 'variant_vs_no_variant';
+    } else if (dt === 'copy_number') {
+        state.dataType = 'copy_number';
+        // Legacy ref: PlotsTab.tsx:2748-2800 — dataTypeToDataSourceOptions
+        // Loads molecular profiles from API, uses profile.name (line 2794) as label.
+        // PlotsTab.tsx:2757-2767 filters by alteration type + showProfileInAnalysisTab.
+        var cnaProfiles = (molecularProfiles || []).filter(function(p) {
+            return p.genetic_alteration_type === 'COPY_NUMBER_ALTERATION' && p.show_profile_in_analysis_tab;
+        });
+        var cnaProfileName = cnaProfiles.length > 0
+            ? cnaProfiles[0].profile_name
+            : 'Putative copy-number alterations from GISTIC';
+        html += '<div class="cts-heading">Copy Number Profile</div>';
+        html += '<select id="' + prefix + '-cnaprofile"' + (cnaProfiles.length <= 1 ? ' disabled' : '') + '>';
+        if (cnaProfiles.length > 0) {
+            cnaProfiles.forEach(function(p) {
+                html += '<option value="' + p.stable_id + '">' + p.profile_name + '</option>';
+            });
+        } else {
+            html += '<option>' + cnaProfileName + '</option>';
+        }
+        html += '</select>';
+        html += _buildGeneSelect(prefix, axis, state);
+        delete state.plotBy;
+    } else if (dt === 'clinical_attribute') {
+        state.dataType = 'clinical_attribute';
+        html += '<div class="cts-heading">Clinical Attribute</div>';
+        html += '<select id="' + prefix + '-attr" onchange="onPlotsSubChange(\'' + axis + '\')">';
+        plotsCliOpts.forEach(opt => {
+            var sel = opt.attr_id === (state.attributeId || 'CANCER_TYPE') ? ' selected' : '';
+            html += '<option value="' + opt.attr_id + '"' + sel + '>' + opt.display_name + '</option>';
+        });
+        html += '</select>';
+        delete state.gene;
+        delete state.plotBy;
+    }
+
+    container.innerHTML = html;
+}
+
+function onPlotsAxisChange(axis) {
+    buildAxisSubControls(axis);
+    onPlotsSubChange(axis);
+}
+
+function onPlotsSubChange(axis) {
+    var prefix = 'plots-' + axis;
+    var state = axis === 'h' ? PlotsState.hAxis : PlotsState.vAxis;
+    var dt = document.getElementById(prefix + '-datatype').value;
+
+    state.dataType = dt;
+
+    if (dt === 'clinical_attribute') {
+        var attrEl = document.getElementById(prefix + '-attr');
+        state.attributeId = attrEl ? attrEl.value : 'CANCER_TYPE';
+        delete state.gene; delete state.plotBy;
+    } else {
+        var geneEl = document.getElementById(prefix + '-gene');
+        state.gene = geneEl ? geneEl.value : GENE_0;
+        delete state.attributeId;
+        if (dt === 'mutation' || dt === 'structural_variant') {
+            var plotByEl = document.getElementById(prefix + '-plotby');
+            state.plotBy = plotByEl ? plotByEl.value : 'mutated_vs_wildtype';
+        } else {
+            delete state.plotBy;
+        }
+    }
+
+    loadPlotsData();
+}
+
+function swapPlotsAxes() {
+    var tmp = JSON.parse(JSON.stringify(PlotsState.hAxis));
+    PlotsState.hAxis = JSON.parse(JSON.stringify(PlotsState.vAxis));
+    PlotsState.vAxis = tmp;
+
+    // Swap dropdown selections
+    var hSel = document.getElementById('plots-h-datatype');
+    var vSel = document.getElementById('plots-v-datatype');
+    var tmpVal = hSel.value;
+    hSel.value = PlotsState.hAxis.dataType;
+    vSel.value = PlotsState.vAxis.dataType;
+
+    buildAxisSubControls('h');
+    buildAxisSubControls('v');
+    loadPlotsData();
+}
+
+async function loadPlotsData() {
+    try {
+        plotsData = await postForm("/results/oncoprint/plots-data", {
+            study_id: STUDY_ID,
+            h_config: JSON.stringify(PlotsState.hAxis),
+            v_config: JSON.stringify(PlotsState.vAxis),
+        });
+        // Show/hide plot-type-specific controls
+        var isScatterOrBox = plotsData.plot_type === "scatter" || plotsData.plot_type === "box";
+        var barControls = document.getElementById("plots-controls");
+        var boxControls = document.getElementById("plots-box-controls");
+        var scatterControls = document.getElementById("plots-scatter-controls");
+        barControls.style.display = plotsData.plot_type === "bar" ? "block" : "none";
+        boxControls.style.display = plotsData.plot_type === "box" ? "block" : "none";
+        scatterControls.style.display = isScatterOrBox ? "block" : "none";
+        // Legacy ref: PlotsTab.tsx:5961 — color menu not shown for DiscreteVsDiscrete
+        document.getElementById("plots-color-menu").style.display = isScatterOrBox ? "block" : "none";
+        // Reset color data when plot type changes
+        plotsColorData = null;
+        // Log scale checkboxes: only for numeric axes (scatter has both, box has one)
+        document.getElementById("plots-log-h").parentElement.style.display =
+            plotsData.plot_type === "scatter" ? "block" : "none";
+        document.getElementById("plots-log-v").parentElement.style.display =
+            (plotsData.plot_type === "scatter" || plotsData.plot_type === "box") ? "block" : "none";
+        // Regression line only for scatter
+        document.getElementById("plots-regression-wrap").style.display =
+            plotsData.plot_type === "scatter" ? "block" : "none";
+
+        var bannerParts = [];
+        if (plotsData.h_total != null) bannerParts.push("Horizontal: " + plotsData.h_total.toLocaleString());
+        if (plotsData.v_total != null) bannerParts.push("Vertical: " + plotsData.v_total.toLocaleString());
+        bannerParts.push("Plotted: " + plotsData.total_samples.toLocaleString());
+        document.getElementById("plots-info").textContent = bannerParts.join(" / ") + " samples";
+
+        renderPlotsChart();
+    } catch(e) {
+        console.error("Plots load error:", e);
+    }
+}
+
+function renderPlotsChart() {
+    if (!plotsData) return;
+
+    var container = document.getElementById("plots-chart-container");
+
+    // Table view: render HTML directly, dispose ECharts if active
+    if (plotsData.plot_type === "bar" && document.getElementById("plots-type").value === "table") {
+        if (plotsChart) { plotsChart.dispose(); plotsChart = null; }
+        renderPlotsTable();
+        return;
+    }
+
+    // For chart views, ensure ECharts instance exists
+    if (!plotsChart) {
+        container.innerHTML = '';
+        plotsChart = echarts.init(container);
+        window.addEventListener("resize", () => plotsChart && plotsChart.resize());
+    }
+
+    if (plotsData.plot_type === "bar") {
+        renderPlotsBar();
+    } else if (plotsData.plot_type === "scatter") {
+        renderPlotsScatter();
+    } else if (plotsData.plot_type === "box") {
+        renderPlotsBox();
+    }
+}
+
+function renderPlotsBar() {
+    var d = plotsData;
+    var plotType = document.getElementById("plots-type").value;
+    var sortBy = document.getElementById("plots-sort").value;
+    var horizontal = document.getElementById("plots-horizontal").checked;
+
+    // ── Axis swap — legacy MultipleCategoryBarPlotUtils.ts:makePlotData ──
+    // When horizontalBars=true:
+    //   majorCategory (bar labels / Y-axis) = vertData (CNA values)
+    //   minorCategory (series colors)       = horzData (Cancer Types)
+    // When horizontalBars=false:
+    //   majorCategory (bar labels / X-axis) = horzData (Cancer Types)
+    //   minorCategory (series colors)       = vertData (CNA values)
+    //
+    // Our API returns: categories = h_values, series = v_values
+    // So when horizontal, we need to transpose the cross-tab matrix.
+
+    var rawCats = d.categories;     // h-axis values (majorCategory when vertical)
+    var rawSeries = d.series;       // v-axis values (minorCategory when vertical)
+
+    var cats, series;
+    if (horizontal) {
+        // Transpose: swap major/minor categories
+        // rawSeries names become the new bar labels (categories)
+        // rawCats become the new series names (colors)
+        var newCats = rawSeries.map(function(sr) { return sr.name; });
+        var newSeriesData = rawCats.map(function(cat, ci) {
+            var data = rawSeries.map(function(sr) { return sr.data[ci] || 0; });
+            return { name: cat, data: data };
+        });
+        cats = newCats;
+        rawSeries = newSeriesData;
+    } else {
+        cats = rawCats;
+    }
+
+    // Sort categories
+    // Legacy ref: MultipleCategoryBarPlotUtils.ts:88-105 — sortDataByCategory()
+    // When CNA, use fixed cnaCategoryOrder regardless of user sort selection.
+    var catIndices = cats.map((c,i) => i);
+    var isCNACats = (horizontal ? d.v_data_type : d.h_data_type) === 'copy_number';
+    if (isCNACats) {
+        // Legacy ref: PlotsTabUtils.tsx:2070-2072 — cnaCategoryOrder is always applied
+        catIndices.sort((a,b) => CNA_CATEGORY_ORDER.indexOf(cats[a]) - CNA_CATEGORY_ORDER.indexOf(cats[b]));
+    } else if (sortBy === "alpha") {
+        catIndices.sort((a,b) => cats[a].localeCompare(cats[b]));
+    } else {
+        catIndices.sort((a,b) => {
+            var sumA = rawSeries.reduce((s,sr) => s + (sr.data[a]||0), 0);
+            var sumB = rawSeries.reduce((s,sr) => s + (sr.data[b]||0), 0);
+            return sumB - sumA;
+        });
+    }
+
+    cats = catIndices.map(i => cats[i]);
+
+    // Legacy ref: PlotsTab.tsx:5690 barWidth={20}
+    // MultipleCategoryBarPlot.tsx:423-430 — halved for grouped with >10 minor categories
+    var bw = 20;
+    if (plotType === 'grouped' && rawSeries.length > 10) bw = 10;
+
+    series = rawSeries.map((sr, si) => {
+        var data = catIndices.map(i => sr.data[i] || 0);
+
+        if (plotType === "pct") {
+            data = data.map((val, ci) => {
+                var total = rawSeries.reduce((s, sr2) => s + (sr2.data[catIndices[ci]]||0), 0);
+                return total ? +(val / total * 100).toFixed(1) : 0;
+            });
+        }
+
+        return {
+            name: sr.name,
+            type: 'bar',
+            stack: plotType === 'grouped' ? undefined : 'total',
+            barWidth: bw,
+            data: data,
+            // Legacy ref: PlotsTabUtils.tsx:2020-2046 — cnaToAppearance colors
+            itemStyle: { color: CNA_COLORS[sr.name] || PLOTS_PALETTE[si % PLOTS_PALETTE.length] },
+        };
+    });
+
+    // ── Layout sizing — legacy: MultipleCategoryBarPlot.tsx ──────────────
+    //
+    // Constants (MultipleCategoryBarPlot.tsx):
+    //   CATEGORY_LABEL_HORZ_ANGLE = 50
+    //   DEFAULT_LEFT_PADDING  = 25
+    //   DEFAULT_BOTTOM_PADDING = 10
+    //   PLOT_SIDELENGTH = 650  (PlotsTabUtils.tsx:150, passed as chartBase)
+    //   barWidth = 20, domainPadding = 20
+    //
+    // biggestCategoryLabelSize (line 700):
+    //   getTextWidth(longestLabel, fontFamily, fontSize)
+    //   horizontal → raw pixel width
+    //   vertical   → width * |sin(50°)|
+    //
+    // chartWidth (line 161):
+    //   horizontal → chartBase (650)
+    //   vertical   → chartExtent (numBars * barSpacing + domainPadding + 100)
+    //
+    // chartHeight (line 179):
+    //   horizontal → chartExtent
+    //   vertical   → chartBase (650)
+    //
+    // leftPadding (line 646):
+    //   horizontal → biggestCategoryLabelSize
+    //   vertical   → DEFAULT_LEFT_PADDING (25)
+    //
+    // bottomPadding (line 672):
+    //   vertical   → biggestCategoryLabelSize + legendHeight
+    //   horizontal → DEFAULT_BOTTOM_PADDING (10) + legendHeight
+    //
+    // svgWidth  = leftPadding + chartWidth + rightPadding
+    // svgHeight = topPadding + chartHeight + bottomPadding
+
+    var CATEGORY_LABEL_ANGLE = 50;
+    var PLOT_SIDELENGTH = 650;
+
+    // Approximate getTextWidth at fontSize 11: ~6.5px per char
+    var maxLabelPx = Math.max(...cats.map(function(label) {
+        return label.length * 6.5;
+    }));
+
+    // Legacy ref: MultipleCategoryBarPlot.tsx:388-408 — chartExtent
+    //   PLOT_DATA_PADDING_PIXELS = 100 (domainPadding, line 76)
+    //   miscPadding = 100 (line 389)
+    //   stacked: numBars = numCategories
+    //   chartExtent = categoryCoord(numBars-1) + 2*domainPadding + miscPadding
+    //   categoryCoord(i) = i * (barWidth + barSeparation)  (line 752)
+    var DOMAIN_PADDING = 100;
+    var miscPadding = 100;
+    var numBars = cats.length;
+    var barStep = bw + (plotType === 'grouped' ? 0 : 0.2 * bw);  // barWidth + barSeparation
+    var chartExtent = (numBars - 1) * barStep + 2 * DOMAIN_PADDING + miscPadding;
+
+    // Legacy ref: MultipleCategoryBarPlot.tsx:161-177 (chartWidth) and :179-196 (chartHeight)
+    // The bar-axis dimension uses chartExtent (sized to fit bars tightly).
+    // The value-axis dimension uses chartBase (PLOT_SIDELENGTH = 650).
+    // Math.max with axisLabel width ensures room for the axis label text.
+    var axisLabelPx = 100;  // rough estimate for axis label text width
+    var leftPad, bottomPad, chartW, chartH;
+    if (horizontal) {
+        // horizontal: categories on Y-axis (chartExtent), values on X-axis (chartBase)
+        leftPad = maxLabelPx + 10;
+        bottomPad = 40;
+        chartW = Math.max(PLOT_SIDELENGTH, axisLabelPx);
+        chartH = Math.max(chartExtent, axisLabelPx);
+    } else {
+        // vertical: categories on X-axis (chartExtent), values on Y-axis (chartBase)
+        leftPad = 60;
+        bottomPad = maxLabelPx * Math.abs(Math.sin(CATEGORY_LABEL_ANGLE * Math.PI / 180)) + 20;
+        chartW = Math.max(chartExtent, axisLabelPx);
+        chartH = Math.max(PLOT_SIDELENGTH, axisLabelPx);
+    }
+
+    // Resize container to fit content
+    var container = document.getElementById("plots-chart-container");
+    var totalW = leftPad + chartW + 180;   // +180 for right legend + padding
+    var totalH = 20 + chartH + bottomPad;  // +20 for top padding
+    container.style.width = Math.max(totalW, 500) + "px";
+    container.style.height = Math.max(totalH, 400) + "px";
+    plotsChart.resize();
+
+    // ── Axis labels — legacy MultipleCategoryBarPlot.tsx:535-643 ─────────
+    // horzAxis label: horizontal → [countAxisLabel, axisLabelX] : [axisLabelX]
+    // vertAxis label: horizontal → [axisLabelY] : [axisLabelY, countAxisLabel]
+    // countAxisLabel = "# samples" (or "(%)" for percentage)
+    var countLabel = plotType === 'pct' ? '(%)' : '# samples';
+
+    var catAxis = {
+        type: 'category', data: cats,
+        axisLabel: { rotate: horizontal ? 0 : CATEGORY_LABEL_ANGLE, fontSize: 11, interval: 0 },
+    };
+    var valAxis = {
+        type: 'value',
+        nameLocation: 'middle',
+        axisLabel: { formatter: plotType === 'pct' ? '{value}%' : '{value}' },
+    };
+
+    // ── Axis labels — legacy MultipleCategoryBarPlot.tsx:535-643 ─────────
+    // horzAxis (X): horizontal → [countLabel, axisLabelX] : [axisLabelX]
+    // vertAxis (Y): horizontal → [axisLabelY] : [axisLabelY, countLabel]
+    // After transpose, h_label is minor (series), v_label is major (categories)
+    if (horizontal) {
+        // X = value axis showing counts, labeled with minor category axis name
+        valAxis.name = countLabel + '\n' + d.h_label;
+        valAxis.nameGap = 35;
+    } else {
+        // Y = value axis showing counts, labeled with minor category axis name
+        valAxis.name = d.v_label + '\n' + countLabel;
+        valAxis.nameGap = 50;
+    }
+
+    // Legacy ref: MultipleCategoryBarPlot.tsx:201-211 — legendLocation computed
+    // PlotsTab.tsx:414 — LEGEND_TO_BOTTOM_WIDTH_THRESHOLD = 550
+    var legendOnBottom = chartW > 550 || series.length > 15;
+    var legend, gridRight, gridBottom;
+    if (legendOnBottom) {
+        var legendRows = Math.ceil(series.length / 4);  // LEGEND_ITEMS_PER_ROW = 4
+        var legendH = legendRows * 24 + 15;  // 23.7 per row + BOTTOM_LEGEND_PADDING
+        legend = { orient: 'horizontal', bottom: 0, icon: 'rect', itemWidth: 12, itemHeight: 12 };
+        gridRight = 40;
+        gridBottom = bottomPad + legendH;
+    } else {
+        legend = { orient: 'vertical', right: 10, top: 'middle', icon: 'rect', itemWidth: 12, itemHeight: 12 };
+        gridRight = 160;
+        gridBottom = bottomPad;
+    }
+
+    var option = {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: legend,
+        grid: { left: leftPad, right: gridRight, top: 20, bottom: gridBottom },
+        xAxis: horizontal ? valAxis : catAxis,
+        yAxis: horizontal ? catAxis : valAxis,
+        series: series,
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    };
+
+    plotsChart.setOption(option, true);
+}
+
+// ── Coloring Menu ────────────────────────────────────────────────────────────
+
+async function onPlotsColorChange() {
+    var sel = document.getElementById("plots-color-by").value;
+    var overlayWrap = document.getElementById("plots-color-overlay-wrap");
+
+    if (!sel) {
+        plotsColorData = null;
+        overlayWrap.style.display = "none";
+        renderPlotsChart();
+        return;
+    }
+
+    var parts = sel.split(":");
+    var kind = parts[0];   // "gene" or "clinical"
+    var value = parts[1];  // gene symbol or attr_id
+
+    if (kind === "gene") {
+        overlayWrap.style.display = "inline";
+        // Fetch whichever overlays are checked
+        var configs = [];
+        if (document.getElementById("plots-color-mut").checked) {
+            configs.push({ type: "mutation", gene: value });
+        }
+        if (document.getElementById("plots-color-cna").checked) {
+            configs.push({ type: "cna", gene: value });
+        }
+        if (document.getElementById("plots-color-sv").checked) {
+            configs.push({ type: "sv", gene: value });
+        }
+        // Use the first checked overlay (combine later if needed)
+        if (configs.length === 0) {
+            plotsColorData = null;
+        } else {
+            try {
+                plotsColorData = await postForm("/results/oncoprint/plots-color-data", {
+                    study_id: STUDY_ID,
+                    color_config: JSON.stringify(configs[0]),
+                });
+            } catch(e) { console.error(e); plotsColorData = null; }
+        }
+    } else {
+        overlayWrap.style.display = "none";
+        try {
+            plotsColorData = await postForm("/results/oncoprint/plots-color-data", {
+                study_id: STUDY_ID,
+                color_config: JSON.stringify({ type: "clinical", attribute_id: value }),
+            });
+        } catch(e) { console.error(e); plotsColorData = null; }
+    }
+    renderPlotsChart();
+}
+
+// Legacy ref: PlotsTab.tsx:65 — maybeSetLogScale; transform is log2(value + 1)
+function _applyLog(val) { return Math.log2(val + 1); }
+
+function renderPlotsScatter() {
+    var d = plotsData;
+    var logH = document.getElementById("plots-log-h").checked;
+    var logV = document.getElementById("plots-log-v").checked;
+    var showRegression = document.getElementById("plots-regression").checked;
+    var cd = plotsColorData;
+
+    var hLabel = d.h_label + (logH ? ' (log2(value + 1))' : '');
+    var vLabel = d.v_label + (logV ? ' (log2(value + 1))' : '');
+
+    // Reset container to default size for scatter
+    var container = document.getElementById("plots-chart-container");
+    container.style.width = "100%";
+    container.style.height = "550px";
+    plotsChart.resize();
+
+    var seriesList = [];
+
+    if (cd && cd.order && cd.order.length > 0) {
+        // Group points by color category
+        var groups = {};
+        cd.order.forEach(function(cat) { groups[cat] = []; });
+        d.points.forEach(function(p) {
+            var cat = cd.samples[p.sample_id] || cd.order[cd.order.length - 1];
+            if (!groups[cat]) groups[cat] = [];
+            var x = logH ? _applyLog(p.x) : p.x;
+            var y = logV ? _applyLog(p.y) : p.y;
+            groups[cat].push([x, y]);
+        });
+
+        cd.order.forEach(function(cat) {
+            if (!groups[cat] || groups[cat].length === 0) return;
+            seriesList.push({
+                name: cat,
+                type: 'scatter',
+                data: groups[cat],
+                symbolSize: 4,
+                itemStyle: { color: cd.colors[cat] || '#999', opacity: 0.7 },
+            });
+        });
+    } else {
+        // No coloring — single blue series
+        var points = d.points.map(function(p) {
+            return [logH ? _applyLog(p.x) : p.x, logV ? _applyLog(p.y) : p.y];
+        });
+        seriesList.push({
+            type: 'scatter', data: points,
+            symbolSize: 4, itemStyle: { color: '#2986E2', opacity: 0.6 },
+        });
+    }
+
+    // Regression line (least-squares) — computed on all visible points
+    if (showRegression) {
+        var allPts = [];
+        seriesList.forEach(function(s) { if (s.type === 'scatter') allPts = allPts.concat(s.data); });
+        if (allPts.length >= 2) {
+            var n = allPts.length;
+            var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            allPts.forEach(function(pt) {
+                sumX += pt[0]; sumY += pt[1]; sumXY += pt[0]*pt[1]; sumX2 += pt[0]*pt[0];
+            });
+            var denom = n * sumX2 - sumX * sumX;
+            if (Math.abs(denom) > 1e-10) {
+                var slope = (n * sumXY - sumX * sumY) / denom;
+                var intercept = (sumY - slope * sumX) / n;
+                var xMin = Math.min.apply(null, allPts.map(function(p){return p[0];}));
+                var xMax = Math.max.apply(null, allPts.map(function(p){return p[0];}));
+                seriesList.push({
+                    type: 'line', data: [[xMin, slope*xMin+intercept], [xMax, slope*xMax+intercept]],
+                    symbol: 'none', lineStyle: { color: '#dc3912', width: 2 },
+                    tooltip: { show: false },
+                });
+            }
+        }
+    }
+
+    plotsChart.setOption({
+        tooltip: {
+            trigger: 'item',
+            formatter: function(p) {
+                if (p.seriesType !== 'scatter') return '';
+                return '<b>' + (p.seriesName || '') + '</b><br>' +
+                    d.h_label + ': ' + p.value[0].toFixed(2) + '<br>' +
+                    d.v_label + ': ' + p.value[1].toFixed(2);
+            },
+        },
+        legend: cd && cd.order && cd.order.length > 0
+            ? { bottom: 0, orient: 'horizontal', icon: 'circle', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } }
+            : undefined,
+        grid: { left: 90, right: 40, top: 20, bottom: cd && cd.order ? 80 : 60 },
+        xAxis: { type: 'value', name: hLabel, nameLocation: 'middle', nameGap: 35 },
+        yAxis: { type: 'value', name: vLabel, nameLocation: 'middle', nameGap: 60 },
+        series: seriesList,
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    }, true);
+}
+
+function renderPlotsBox() {
+    var d = plotsData;
+    var logV = document.getElementById("plots-log-v").checked;
+    var sortBy = document.getElementById("plots-box-sort").value;
+    var cd = plotsColorData;
+
+    // Sort categories
+    var indices = d.categories.map(function(_, i) { return i; });
+    if (sortBy === "median") {
+        indices.sort(function(a, b) { return d.box_data[b][2] - d.box_data[a][2]; });
+    } else {
+        indices.sort(function(a, b) { return d.categories[a].localeCompare(d.categories[b]); });
+    }
+    var cats = indices.map(function(i) { return d.categories[i]; });
+    var boxData = indices.map(function(i) { return d.box_data[i]; });
+
+    if (logV) {
+        boxData = boxData.map(function(b) { return b.map(_applyLog); });
+    }
+    var vLabel = d.v_label + (logV ? ' (log2(value + 1))' : '');
+
+    // Legacy MultipleCategoryBarPlot.tsx:672-686: bottomPadding = biggestCategoryLabelSize
+    var maxLabelPx = Math.max(...cats.map(function(label) { return label.length * 6.5; }));
+    var boxBottomPad = maxLabelPx * Math.abs(Math.sin(50 * Math.PI / 180)) + 20;
+    var hasLegend = cd && cd.order && cd.order.length > 0;
+
+    var container = document.getElementById("plots-chart-container");
+    container.style.width = "100%";
+    container.style.height = (650 + boxBottomPad + (hasLegend ? 60 : 20)) + "px";
+    plotsChart.resize();
+
+    var seriesList = [{
+        type: 'boxplot',
+        data: boxData,
+        itemStyle: { color: '#fff', borderColor: '#2986E2' },
+    }];
+
+    // Color overlay: scatter points on top of boxes
+    if (hasLegend && d.box_raw_data) {
+        // box_raw_data: {category: [{sample_id, value}]}
+        var catIndex = {};
+        cats.forEach(function(c, i) { catIndex[c] = i; });
+
+        cd.order.forEach(function(colorCat) {
+            var pts = [];
+            cats.forEach(function(cat, ci) {
+                var rawPts = d.box_raw_data[cat] || [];
+                rawPts.forEach(function(rp) {
+                    if ((cd.samples[rp.sample_id] || '') === colorCat) {
+                        var val = logV ? _applyLog(rp.value) : rp.value;
+                        pts.push([ci, val]);
+                    }
+                });
+            });
+            if (pts.length > 0) {
+                seriesList.push({
+                    name: colorCat,
+                    type: 'scatter',
+                    data: pts,
+                    symbolSize: 4,
+                    itemStyle: { color: cd.colors[colorCat] || '#999', opacity: 0.7 },
+                });
+            }
+        });
+    }
+
+    // Connect same-patient samples across box categories
+    var connectSamples = document.getElementById("plots-connect-samples").checked;
+    if (connectSamples && d.box_raw_data) {
+        var catIndex = catIndex || {};
+        cats.forEach(function(c, i) { catIndex[c] = i; });
+        // Group raw points by patient_id
+        var patientPoints = {};
+        cats.forEach(function(cat) {
+            (d.box_raw_data[cat] || []).forEach(function(rp) {
+                var pid = rp.patient_id || rp.sample_id;
+                if (!patientPoints[pid]) patientPoints[pid] = [];
+                var val = logV ? _applyLog(rp.value) : rp.value;
+                patientPoints[pid].push([catIndex[cat], val]);
+            });
+        });
+        // Draw lines for patients with points in multiple categories
+        var lineData = [];
+        Object.keys(patientPoints).forEach(function(pid) {
+            var pts = patientPoints[pid];
+            if (pts.length > 1) {
+                for (var i = 0; i < pts.length - 1; i++) {
+                    lineData.push([{ coord: pts[i] }, { coord: pts[i + 1] }]);
+                }
+            }
+        });
+        if (lineData.length > 0) {
+            seriesList.push({
+                type: 'scatter', data: [], symbolSize: 0,
+                markLine: {
+                    silent: true,
+                    symbol: ['none', 'none'],
+                    lineStyle: { color: '#999', type: 'dashed', width: 1, opacity: 0.5 },
+                    data: lineData,
+                    label: { show: false },
+                },
+            });
+        }
+    }
+
+    plotsChart.setOption({
+        tooltip: { trigger: 'item' },
+        legend: hasLegend
+            ? { bottom: 0, orient: 'horizontal', icon: 'circle', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } }
+            : undefined,
+        grid: { left: 90, right: 40, top: 20, bottom: boxBottomPad + (hasLegend ? 50 : 0) },
+        xAxis: {
+            type: 'category', data: cats,
+            axisLabel: { rotate: 50, fontSize: 11, interval: 0 },
+        },
+        yAxis: { type: 'value', name: vLabel, nameLocation: 'middle', nameGap: 50 },
+        series: seriesList,
+        toolbox: {
+            right: 10, top: 0,
+            feature: { saveAsImage: { title: 'Download', pixelRatio: 2 } },
+        },
+    }, true);
+}
+
+// Legacy ref: PlotsTab.tsx:434-445 — Table plot option for DiscreteVsDiscrete
+function renderPlotsTable() {
+    var d = plotsData;
+    var container = document.getElementById("plots-chart-container");
+    container.style.width = "100%";
+    container.style.height = "auto";
+
+    var html = '<table style="border-collapse:collapse;font-size:12px;margin-top:8px;">';
+    // Header row: blank corner + series names
+    html += '<tr><th style="border:1px solid #ccc;padding:4px 8px;background:#f5f5f5;">' +
+        d.h_label + ' \\ ' + d.v_label + '</th>';
+    d.series.forEach(function(sr) {
+        html += '<th style="border:1px solid #ccc;padding:4px 8px;background:#f5f5f5;">' + sr.name + '</th>';
+    });
+    html += '<th style="border:1px solid #ccc;padding:4px 8px;background:#eee;font-weight:600;">Total</th></tr>';
+
+    // Data rows
+    d.categories.forEach(function(cat, ci) {
+        html += '<tr><td style="border:1px solid #ccc;padding:4px 8px;font-weight:600;background:#f5f5f5;">' + cat + '</td>';
+        var rowTotal = 0;
+        d.series.forEach(function(sr) {
+            var val = sr.data[ci] || 0;
+            rowTotal += val;
+            html += '<td style="border:1px solid #ccc;padding:4px 8px;text-align:right;">' + val + '</td>';
+        });
+        html += '<td style="border:1px solid #ccc;padding:4px 8px;text-align:right;font-weight:600;background:#fafafa;">' + rowTotal + '</td></tr>';
+    });
+
+    // Totals row
+    html += '<tr><td style="border:1px solid #ccc;padding:4px 8px;font-weight:600;background:#eee;">Total</td>';
+    var grandTotal = 0;
+    d.series.forEach(function(sr, si) {
+        var colTotal = sr.data.reduce(function(s, v) { return s + (v || 0); }, 0);
+        grandTotal += colTotal;
+        html += '<td style="border:1px solid #ccc;padding:4px 8px;text-align:right;font-weight:600;background:#fafafa;">' + colTotal + '</td>';
+    });
+    html += '<td style="border:1px solid #ccc;padding:4px 8px;text-align:right;font-weight:700;background:#eee;">' + grandTotal + '</td></tr>';
+    html += '</table>';
+
+    container.innerHTML = html;
+}
+
+function plotsExample(type) {
+    if (type === 'mut_dx') {
+        PlotsState.hAxis = { dataType: 'mutation', gene: GENE_0, plotBy: 'mutated_vs_wildtype' };
+        PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'CANCER_TYPE' };
+    } else if (type === 'fga_dx') {
+        PlotsState.hAxis = { dataType: 'clinical_attribute', attributeId: 'FRACTION_GENOME_ALTERED' };
+        PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'CANCER_TYPE' };
+    } else if (type === 'mut_fga') {
+        PlotsState.hAxis = { dataType: 'mutation', gene: GENE_0, plotBy: 'mutated_vs_wildtype' };
+        PlotsState.vAxis = { dataType: 'clinical_attribute', attributeId: 'FRACTION_GENOME_ALTERED' };
+    }
+
+    document.getElementById('plots-h-datatype').value = PlotsState.hAxis.dataType;
+    document.getElementById('plots-v-datatype').value = PlotsState.vAxis.dataType;
+    buildAxisSubControls('h');
+    buildAxisSubControls('v');
+    loadPlotsData();
+}
+</script>
+{% endblock %}

@@ -38,7 +38,11 @@
             {% for study in studies %}
             <li class="studyItem">
                 <label>
-                    <input type="checkbox">
+                    <input type="checkbox" class="study-checkbox"
+                           data-study-id="{{ study.id }}"
+                           data-study-name="{{ study.name }}"
+                           data-study-samples="{{ study.samples }}"
+                           onchange="updateStudySelection()">
                     <span class="studyName">{{ study.name }}</span>
                 </label>
                 <div class="studyMeta">

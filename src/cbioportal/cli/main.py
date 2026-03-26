@@ -6,6 +6,7 @@ import sys
 import typer
 
 from cbioportal.cli.commands import beta, config_cmd, data, search
+from cbioportal.cli.commands.annotate import annotate
 
 app = typer.Typer(help="cbio — cBioPortal data access from your terminal")
 
@@ -26,6 +27,7 @@ def main(
         run_repl()
 
 
+app.command("annotate", help="Annotate study variants with MOAlmanac, CIViC, IntOGen, and vibe-vep")(annotate)
 app.add_typer(search.app, name="search")
 app.add_typer(data.app, name="data")
 app.add_typer(config_cmd.app, name="config")

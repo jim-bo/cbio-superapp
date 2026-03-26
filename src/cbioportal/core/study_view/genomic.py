@@ -275,7 +275,11 @@ def get_cna_genes(
     filter_json: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """Return [{gene, cna_type, n_samples, n_profiled, freq}] (AMP=cna_value 2, HOMDEL=cna_value -2).
+    """Return [{gene, cna_type, n_samples, n_profiled, freq}] (AMP=cna_value>=2, HOMDEL=cna_value<=-1.5).
+
+    The legacy portal treats cna_value <= -1.5 as HOMDEL (not just -2).
+    Some studies (e.g. msk_chord_2024) have cna_value = -1.5 representing
+    deep deletions that the portal groups with homozygous deletions.
 
     When gene panel data is available, freq = n_samples / n_profiled_for_gene.
     Falls back to freq = n_samples / total_filtered_samples otherwise.
@@ -324,10 +328,10 @@ def get_cna_genes(
                 cna_counts AS (
                     SELECT
                         hugo_symbol,
-                        CASE WHEN cna_value = 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                        CASE WHEN cna_value >= 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
                         COUNT(DISTINCT sample_id) AS n_samples
                     FROM {table}
-                    WHERE cna_value IN (2, -2)
+                    WHERE (cna_value >= 2 OR cna_value <= -1.5)
                     AND sample_id IN (SELECT SAMPLE_ID FROM filtered_samples)
                     -- Skip isoforms to match portal counts for CDKN2A
                     AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
@@ -351,12 +355,12 @@ def get_cna_genes(
             sql = f"""
                 SELECT
                     hugo_symbol,
-                    CASE WHEN cna_value = 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                    CASE WHEN cna_value >= 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
                     COUNT(DISTINCT sample_id) AS n_samples,
                     {total} AS n_profiled,
                     ROUND(100.0 * COUNT(DISTINCT sample_id) / NULLIF({total}, 0), 1) AS freq
                 FROM {table}
-                WHERE cna_value IN (2, -2)
+                WHERE (cna_value >= 2 OR cna_value <= -1.5)
                 AND sample_id IN ({filter_sql})
                 -- Skip isoforms to match portal counts for CDKN2A
                 AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
@@ -368,9 +372,21 @@ def get_cna_genes(
     except Exception:
         return []
 
+    # Fetch cytoband from gene_reference (populated from HGNC location column)
+    cytoband_map: dict[str, str] = {}
+    try:
+        cb_rows = conn.execute(
+            "SELECT hugo_gene_symbol, cytoband FROM gene_reference "
+            "WHERE cytoband IS NOT NULL AND cytoband != ''"
+        ).fetchall()
+        cytoband_map = {r[0]: r[1] for r in cb_rows}
+    except Exception:
+        pass
+
     return [
         {
             "gene": r[0],
+            "cytoband": cytoband_map.get(r[0], ""),
             "cna_type": r[1],
             "n_samples": r[2],
             "n_profiled": r[3],

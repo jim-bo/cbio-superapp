@@ -1,6 +1,6 @@
 """Homepage route handlers."""
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from typing import Annotated
 
 from cbioportal.core.study_repository import (
@@ -8,6 +8,8 @@ from cbioportal.core.study_repository import (
     SPECIAL_COLLECTIONS,
     get_study_catalog,
     get_cancer_type_counts,
+    get_query_form_context,
+    validate_genes,
 )
 
 router = APIRouter()
@@ -36,6 +38,7 @@ def _build_context(conn, study_names, cancer_type="All", data_types=None):
         ct = s["cancer_type"]
         pmid = s["pmid"].split(",")[0].strip() if s["pmid"] else None
         grouped.setdefault(ct, []).append({
+            "id": s["id"],
             "name": s["name"],
             "samples": s["sample_count"],
             "description": s["description"],
@@ -92,3 +95,30 @@ async def filter_studies(
     return request.app.state.templates.TemplateResponse(
         "home/partials/cancer_study_list.html", {"request": request, **ctx}
     )
+
+
+@router.get("/query", response_class=HTMLResponse)
+async def query_page(
+    request: Request,
+    study_ids: str = "",
+):
+    """Render the query-by-gene form as a standalone page."""
+    conn = request.app.state.db_conn
+    ids = [s.strip() for s in study_ids.split(",") if s.strip()]
+    if not ids:
+        return HTMLResponse("No studies selected. <a href='/'>Go back</a>", status_code=400)
+    ctx = get_query_form_context(conn, ids)
+    return request.app.state.templates.TemplateResponse(
+        "query/page.html", {"request": request, **ctx}
+    )
+
+
+@router.post("/validate-genes")
+async def validate_genes_endpoint(
+    request: Request,
+    genes: Annotated[str, Form()] = "",
+):
+    """Validate gene symbols against the gene_reference table."""
+    conn = request.app.state.db_conn
+    result = validate_genes(conn, genes)
+    return JSONResponse(result)

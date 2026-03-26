@@ -5,7 +5,7 @@
     <form id="filter-form"
           hx-post="/studies"
           hx-target="#study-list-wrapper"
-          hx-trigger="change"
+          hx-trigger="filter-changed"
           hx-swap="innerHTML"
           style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
 
@@ -42,7 +42,8 @@
                                         <label style="font-weight: normal; cursor: pointer; margin: 0;">
                                             <input type="checkbox" name="data_types" value="{{ value }}"
                                                    {% if value in selected_data_types %}checked{% endif %}
-                                                   style="margin-right: 6px;">
+                                                   style="margin-right: 6px;"
+                                                   onchange="this.closest('form').dispatchEvent(new Event('filter-changed'))">
                                             {{ label }}
                                         </label>
                                     </li>

@@ -111,3 +111,167 @@ def get_cancer_type_counts(
     organ_counts = {k: v for k, v in all_counts.items() if k not in special_keys}
 
     return organ_counts, special_counts
+
+
+# ── Query form helpers ───────────────────────────────────────────────────────
+
+# Map data_type values to display labels for genomic profiles
+_PROFILE_LABELS = {
+    "mutation": "Mutations",
+    "sv": "Structural Variant",
+    "cna": "Putative copy-number alterations from GISTIC",
+}
+
+_PROFILE_ORDER = ["mutation", "sv", "cna"]
+
+
+def get_query_form_context(conn, study_ids: list[str]) -> dict:
+    """Build template context for the query-by-gene form."""
+    # Study metadata
+    studies_info = []
+    total_samples = 0
+    all_data_types: set[str] = set()
+
+    for sid in study_ids:
+        try:
+            row = conn.execute(
+                "SELECT study_id, name FROM studies WHERE study_id = ?", [sid]
+            ).fetchone()
+            name = row[1] if row else sid
+        except Exception:
+            name = sid
+
+        try:
+            n = conn.execute(f'SELECT COUNT(*) FROM "{sid}_sample"').fetchone()[0]
+        except Exception:
+            n = 0
+
+        try:
+            dts = conn.execute(
+                "SELECT data_type FROM study_data_types WHERE study_id = ?", [sid]
+            ).fetchall()
+            dt_set = {r[0] for r in dts}
+        except Exception:
+            dt_set = set()
+
+        studies_info.append({"id": sid, "name": name, "samples": n, "data_types": dt_set})
+        total_samples += n
+        all_data_types |= dt_set
+
+    # Genomic profiles (only show if study has the data type)
+    profiles = []
+    for dt in _PROFILE_ORDER:
+        if dt in all_data_types:
+            profiles.append({"id": dt, "label": _PROFILE_LABELS.get(dt, dt), "checked": True})
+
+    # Case set options
+    case_sets = _build_case_sets(conn, study_ids[0], all_data_types) if study_ids else []
+
+    return {
+        "studies_info": studies_info,
+        "study_ids_str": ",".join(study_ids),
+        "total_samples": total_samples,
+        "profiles": profiles,
+        "case_sets": case_sets,
+    }
+
+
+def _build_case_sets(conn, study_id: str, data_types: set[str]) -> list[dict]:
+    """Build case set options with sample counts."""
+    try:
+        total = conn.execute(f'SELECT COUNT(*) FROM "{study_id}_sample"').fetchone()[0]
+    except Exception:
+        return [{"id": "all", "name": "All samples", "count": 0}]
+
+    sets = [{"id": f"{study_id}_all", "name": "All samples", "count": total}]
+
+    # Samples with mutation and CNA data
+    if "mutation" in data_types and "cna" in data_types:
+        try:
+            n = conn.execute(f"""
+                SELECT COUNT(DISTINCT SAMPLE_ID) FROM "{study_id}_gene_panel"
+                WHERE mutations IS NOT NULL AND cna IS NOT NULL
+            """).fetchone()[0]
+            sets.append({
+                "id": f"{study_id}_cnaseq",
+                "name": "Samples with mutation and CNA data",
+                "count": n,
+            })
+        except Exception:
+            pass
+
+    # Samples with mutation data
+    if "mutation" in data_types:
+        try:
+            n = conn.execute(f"""
+                SELECT COUNT(DISTINCT SAMPLE_ID) FROM "{study_id}_gene_panel"
+                WHERE mutations IS NOT NULL
+            """).fetchone()[0]
+            sets.append({
+                "id": f"{study_id}_sequenced",
+                "name": "Samples with mutation data",
+                "count": n,
+            })
+        except Exception:
+            pass
+
+    # Samples with CNA data
+    if "cna" in data_types:
+        try:
+            n = conn.execute(f"""
+                SELECT COUNT(DISTINCT SAMPLE_ID) FROM "{study_id}_gene_panel"
+                WHERE cna IS NOT NULL
+            """).fetchone()[0]
+            sets.append({
+                "id": f"{study_id}_cna",
+                "name": "Samples with CNA data",
+                "count": n,
+            })
+        except Exception:
+            pass
+
+    return sets
+
+
+def validate_genes(conn, gene_text: str) -> dict:
+    """Validate gene symbols against gene_reference table."""
+    symbols = [g.strip().upper() for g in gene_text.replace(",", " ").split() if g.strip()]
+    if not symbols:
+        return {"valid": [], "invalid": [], "aliases": {}}
+
+    valid = []
+    invalid = []
+    aliases = {}
+
+    # Check against gene_reference
+    placeholders = ", ".join(["?"] * len(symbols))
+    try:
+        rows = conn.execute(
+            f"SELECT UPPER(hugo_gene_symbol) FROM gene_reference WHERE UPPER(hugo_gene_symbol) IN ({placeholders})",
+            symbols,
+        ).fetchall()
+        known = {r[0] for r in rows}
+    except Exception:
+        known = set()
+
+    # Check aliases if gene_alias table exists
+    alias_map = {}
+    try:
+        rows = conn.execute(
+            f"SELECT UPPER(alias), hugo_symbol FROM gene_alias WHERE UPPER(alias) IN ({placeholders})",
+            symbols,
+        ).fetchall()
+        alias_map = {r[0]: r[1] for r in rows}
+    except Exception:
+        pass
+
+    for sym in symbols:
+        if sym in known:
+            valid.append(sym)
+        elif sym in alias_map:
+            valid.append(alias_map[sym])
+            aliases[sym] = alias_map[sym]
+        else:
+            invalid.append(sym)
+
+    return {"valid": valid, "invalid": invalid, "aliases": aliases}

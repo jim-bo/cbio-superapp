@@ -1,4 +1,9 @@
-"""Molecular Almanac (MoAlmanac) variant annotator with bulk DuckDB caching."""
+"""Molecular Almanac (MoAlmanac) variant annotator with bulk DuckDB caching.
+
+DEPRECATED: This module is kept for backward compatibility with data_puller.py.
+New code should use cbioportal.core.annotation.reference.moalmanac instead,
+which adds feature_type/alt_type support for CNA and fusion matching.
+"""
 import httpx
 import json
 from datetime import datetime, timedelta

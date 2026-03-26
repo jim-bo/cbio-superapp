@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Query — cBioPortal{% endblock %}
+
+{% block extra_css %}
+<style>
+.query-section {
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+.query-section-label {
+    min-width: 190px;
+    font-size: 14px;
+    font-weight: 700;
+}
+.query-section-label .hint {
+    font-size: 12px;
+    font-weight: normal;
+    margin-top: 4px;
+}
+.query-section-body {
+    flex: 1;
+    max-width: 560px;
+}
+.profile-row {
+    margin-bottom: 6px;
+}
+.profile-row label {
+    font-weight: normal;
+    cursor: pointer;
+}
+#btn-submit-query {
+    font-size: 16px;
+    padding: 10px 30px;
+}
+#btn-submit-query:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#gene-textarea {
+    font-family: monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding: 30px 20px;">
+
+    <!-- Section 1: Selected Studies -->
+    <div class="query-section">
+        <div class="query-section-label">Selected Studies:</div>
+        <div class="query-section-body" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <a href="/" class="btn btn-default btn-sm">Modify</a>
+            {% for study in studies_info %}
+            <span>{{ study.name }}</span>
+            <span style="color: #888;">|</span>
+            <span style="color: #888;"><strong>({{ "{:,}".format(study.samples) }}</strong> total samples)</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Section 2: Select Genomic Profiles -->
+    <div class="query-section">
+        <div class="query-section-label">Select Genomic Profiles:</div>
+        <div class="query-section-body">
+            {% for profile in profiles %}
+            <div class="profile-row">
+                <label>
+                    <input type="checkbox" class="profile-checkbox"
+                           value="{{ profile.id }}"
+                           {% if profile.checked %}checked{% endif %}>
+                    {{ profile.label }}
+                    <i class="fa fa-question-circle" style="color: #aaa; margin-left: 4px;"
+                       title="Include {{ profile.label }} data in results"></i>
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Section 3: Select Patient/Case Set -->
+    <div class="query-section">
+        <div class="query-section-label">
+            Select Patient/Case Set:
+            <div class="hint" style="color: #2374c8;">
+                To build your own case set,<br>
+                <a href="/study/summary?id={{ studies_info[0].id }}">try out our enhanced Study View.</a>
+            </div>
+        </div>
+        <div class="query-section-body">
+            <select id="case-set-select" class="form-control" style="font-size: 13px;">
+                {% for cs in case_sets %}
+                <option value="{{ cs.id }}"
+                        {% if 'mutation and CNA' in cs.name %}selected{% endif %}>
+                    {{ cs.name }} ({{ "{:,}".format(cs.count) }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Section 4: Enter Genes -->
+    <div class="query-section">
+        <div class="query-section-label">
+            Enter Genes:
+            <div class="hint">
+                <strong style="color: #c00;">Hint:</strong>
+                <a href="https://docs.cbioportal.org/user-guide/by-page/#oql" target="_blank" style="color: #2374c8;">
+                    Learn Onco Query Language (OQL)<br>
+                    to write more powerful queries <i class="fa fa-external-link"></i>
+                </a>
+            </div>
+        </div>
+        <div class="query-section-body">
+            <select class="form-control" style="font-size: 13px; margin-bottom: 8px;">
+                <option>User-defined List</option>
+            </select>
+            <textarea id="gene-textarea"
+                      class="form-control"
+                      rows="5"
+                      placeholder="Enter HUGO Gene Symbols, Gene Aliases, or OQL"
+                      oninput="onGeneInput()"></textarea>
+            <div id="gene-validation-msg" style="margin-top: 6px; font-size: 13px; color: #c00;">
+                Please enter one or more gene symbols.
+            </div>
+            <div id="gene-invalid-msg" style="margin-top: 6px; font-size: 13px; color: #c00; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+        <button id="btn-submit-query" class="btn btn-primary btn-lg" onclick="submitQuery()" disabled>
+            Submit Query
+        </button>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+var _queryStudyIds = {{ study_ids_str | tojson }};
+
+function onGeneInput() {
+    var text = document.getElementById('gene-textarea').value.trim();
+    var btn = document.getElementById('btn-submit-query');
+    var emptyMsg = document.getElementById('gene-validation-msg');
+    var invalidMsg = document.getElementById('gene-invalid-msg');
+
+    if (!text) {
+        btn.disabled = true;
+        emptyMsg.style.display = 'block';
+        invalidMsg.style.display = 'none';
+        return;
+    }
+    emptyMsg.style.display = 'none';
+    btn.disabled = false;
+
+    // Debounced validation
+    clearTimeout(window._geneValidTimer);
+    window._geneValidTimer = setTimeout(function() {
+        var formData = new FormData();
+        formData.append('genes', text);
+        fetch('/validate-genes', { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.invalid && data.invalid.length > 0) {
+                    invalidMsg.style.color = '#c00';
+                    invalidMsg.textContent = 'Unknown gene symbols: ' + data.invalid.join(', ');
+                    invalidMsg.style.display = 'block';
+                } else {
+                    invalidMsg.style.display = 'none';
+                }
+                if (data.aliases && Object.keys(data.aliases).length > 0) {
+                    var parts = [];
+                    for (var alias in data.aliases) {
+                        parts.push(alias + ' \u2192 ' + data.aliases[alias]);
+                    }
+                    invalidMsg.style.color = '#666';
+                    invalidMsg.textContent = 'Aliases resolved: ' + parts.join(', ');
+                    invalidMsg.style.display = 'block';
+                }
+            });
+    }, 500);
+}
+
+function submitQuery() {
+    var geneText = document.getElementById('gene-textarea').value.trim();
+    if (!geneText) return;
+
+    var profiles = [];
+    document.querySelectorAll('.profile-checkbox:checked').forEach(function(chk) {
+        profiles.push(chk.value);
+    });
+
+    var caseSet = document.getElementById('case-set-select').value;
+
+    var url = '/results/oncoprint?'
+        + 'cancer_study_list=' + encodeURIComponent(_queryStudyIds)
+        + '&gene_list=' + encodeURIComponent(geneText.replace(/\s+/g, ' ').trim())
+        + '&profileFilter=' + encodeURIComponent(profiles.join(','))
+        + '&case_set_id=' + encodeURIComponent(caseSet);
+
+    window.location.href = url;
+}
+</script>
+{% endblock %}

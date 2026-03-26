@@ -29,10 +29,15 @@ def get_numeric_histogram(
     attribute_id: str,
     filter_json: str | None = None,
     bin_size: float | None = None,
+    clip_min: float | None = None,
+    clip_max: float | None = None,
 ) -> list[dict]:
     """Return equal-width histogram bins for a numeric clinical attribute.
 
     Auto-computes bin_size when not provided to yield roughly 10–20 bins.
+    When clip_min/clip_max are set, values at or below clip_min are collapsed
+    into a ``≤{clip_min}`` bin and values above clip_max into ``>{clip_max}``,
+    matching the legacy cBioPortal age histogram style.
     Returns [{"x": "0-10", "y": count}, ..., {"x": "NA", "y": na_count}].
     The "NA" entry is only included when na_count > 0.
     """
@@ -98,6 +103,44 @@ def get_numeric_histogram(
         else:
             label = f"{start:.1f}-{end:.1f}"
         result.append({"x": label, "y": r[1]})
+
+    # Collapse bins outside clip_min/clip_max into edge bins
+    if clip_min is not None and result:
+        clip_label = f"≤{int(clip_min)}" if clip_min == int(clip_min) else f"≤{clip_min}"
+        low_count = 0
+        kept = []
+        for item in result:
+            # Parse the bin start from the label
+            try:
+                bin_start = float(item["x"].split("-")[0])
+            except ValueError:
+                kept.append(item)
+                continue
+            if bin_start < clip_min:
+                low_count += item["y"]
+            else:
+                kept.append(item)
+        if low_count > 0:
+            kept.insert(0, {"x": clip_label, "y": low_count})
+        result = kept
+
+    if clip_max is not None and result:
+        clip_label = f">{int(clip_max)}" if clip_max == int(clip_max) else f">{clip_max}"
+        high_count = 0
+        kept = []
+        for item in result:
+            try:
+                bin_end = float(item["x"].split("-")[1]) if "-" in item["x"] else float("inf")
+            except (ValueError, IndexError):
+                kept.append(item)
+                continue
+            if bin_end > clip_max + bin_size:
+                high_count += item["y"]
+            else:
+                kept.append(item)
+        if high_count > 0:
+            kept.append({"x": clip_label, "y": high_count})
+        result = kept
 
     # NA count
     try:

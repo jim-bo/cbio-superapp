@@ -12,6 +12,7 @@ Internal modules:
     hugo         — normalize_hugo_symbols() (3-pass system)
     gene_reference — ensure_gene_reference(), load_gene_*, sync_oncotree()
     schema       — create_global_views(), categorize_study(), load_study_metadata()
+    molecular_profiles — load_molecular_profiles() (meta_*.txt → molecular_profiles table)
 """
 import os
 import time
@@ -30,6 +31,7 @@ from .gene_reference import (
     load_gene_symbol_updates,
     load_gene_aliases,
     load_gene_panel_definitions,
+    populate_cytoband_from_hgnc,
     sync_oncotree,
     retrieve_oncotree_cancer_types,
     get_oncotree_root,
@@ -275,6 +277,11 @@ def load_study(
             })
         if all_attrs:
             _upsert_clinical_attribute_meta(conn, raw_study_id, all_attrs)
+
+        # Parse meta_*.txt files for molecular profile metadata (profile names, etc.)
+        from .molecular_profiles import load_molecular_profiles
+        load_molecular_profiles(conn, raw_study_id, study_path)
+
         return loaded_any
     except Exception as e:
         typer.echo(f"Error loading {raw_study_id}: {e}")
