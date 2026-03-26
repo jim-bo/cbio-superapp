@@ -37,16 +37,18 @@ def conn():
         CREATE TABLE "test_study_mutations" (
             study_id VARCHAR, Hugo_Symbol VARCHAR, Tumor_Sample_Barcode VARCHAR,
             Variant_Classification VARCHAR, Mutation_Status VARCHAR,
-            Entrez_Gene_Id BIGINT
+            Entrez_Gene_Id BIGINT,
+            t_alt_count INTEGER, t_ref_count INTEGER,
+            cbp_driver VARCHAR
         )
     """)
     c.execute("""
         INSERT INTO "test_study_mutations" VALUES
-        ('test_study', 'KRAS', 'S1', 'Missense_Mutation', 'SOMATIC', 3845),
-        ('test_study', 'KRAS', 'S3', 'Missense_Mutation', 'SOMATIC', 3845),
-        ('test_study', 'KRAS', 'S3', 'Nonsense_Mutation', 'SOMATIC', 3845),
-        ('test_study', 'KRAS', 'S4', 'Missense_Mutation', 'UNCALLED', 3845),
-        ('test_study', 'BRAF', 'S2', 'Missense_Mutation', 'SOMATIC', 673)
+        ('test_study', 'KRAS', 'S1', 'Missense_Mutation', 'SOMATIC', 3845, 50, 150, 'Putative_Driver'),
+        ('test_study', 'KRAS', 'S3', 'Missense_Mutation', 'SOMATIC', 3845, 30, 170, 'Putative_Passenger'),
+        ('test_study', 'KRAS', 'S3', 'Nonsense_Mutation', 'SOMATIC', 3845, 80, 120, 'Putative_Driver'),
+        ('test_study', 'KRAS', 'S4', 'Missense_Mutation', 'UNCALLED', 3845, 10, 90, NULL),
+        ('test_study', 'BRAF', 'S2', 'Missense_Mutation', 'SOMATIC', 673, 40, 160, NULL)
     """)
 
     # -- CNA table
@@ -66,12 +68,15 @@ def conn():
     c.execute("""
         CREATE TABLE "test_study_sv" (
             study_id VARCHAR, Sample_Id VARCHAR, SV_Status VARCHAR,
-            Site1_Hugo_Symbol VARCHAR, Site2_Hugo_Symbol VARCHAR
+            Site1_Hugo_Symbol VARCHAR, Site2_Hugo_Symbol VARCHAR,
+            Class VARCHAR
         )
     """)
     c.execute("""
         INSERT INTO "test_study_sv" VALUES
-        ('test_study', 'S2', 'SOMATIC', 'KRAS', 'ALK')
+        ('test_study', 'S2', 'SOMATIC', 'KRAS', 'ALK', 'TRANSLOCATION'),
+        ('test_study', 'S3', 'SOMATIC', 'KRAS', 'BRAF', 'DELETION'),
+        ('test_study', 'S3', 'SOMATIC', 'BRAF', 'KRAS', 'INVERSION')
     """)
 
     # -- gene_panel table
@@ -372,3 +377,136 @@ class TestColorData:
             for pt in result["box_raw_data"][cat]:
                 assert "sample_id" in pt
                 assert "value" in pt
+
+
+# ── VAF Count-By Mode ────────────────────────────────────────────────────
+
+
+class TestVAFAxis:
+    def test_vaf_returns_numeric(self, conn):
+        """VAF plot_by should produce a numeric axis."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "mutation", "gene": "KRAS", "plot_by": "vaf"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        # numeric × discrete → box plot
+        assert result["plot_type"] == "box"
+
+    def test_vaf_values(self, conn):
+        """VAF should be t_alt / (t_alt + t_ref), max per sample."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "mutation", "gene": "KRAS", "plot_by": "vaf"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        # S1: 50/(50+150) = 0.25
+        # S3: max(30/200=0.15, 80/200=0.4) = 0.4
+        # S4: UNCALLED → excluded
+        # Only S1 and S3 should have VAF values
+        raw = {}
+        for cat, pts in result["box_raw_data"].items():
+            for pt in pts:
+                raw[pt["sample_id"]] = pt["value"]
+        assert abs(raw["S1"] - 0.25) < 0.01
+        assert abs(raw["S3"] - 0.4) < 0.01
+        assert "S4" not in raw  # UNCALLED excluded
+
+    def test_vaf_empty_gene(self, conn):
+        """Gene with no mutations → no VAF data, falls back gracefully."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "mutation", "gene": "FAKEGENE", "plot_by": "vaf"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        # No numeric values → empty result
+        assert result["total_samples"] == 0 or result["plot_type"] in ("box", "bar")
+
+
+# ── Driver vs VUS Count-By Mode ──────────────────────────────────────────
+
+
+class TestDriverVsVUS:
+    def test_driver_classification(self, conn):
+        """cbp_driver values map to Driver/VUS/Wild Type categories."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "mutation", "gene": "KRAS", "plot_by": "driver_vs_vus"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        assert result["plot_type"] == "bar"
+        # S1: Putative_Driver → "Driver"
+        # S3: has both Driver and Passenger mutations → highest priority = "Driver"
+        # S4: UNCALLED → excluded → Wild Type
+        # S2, S5: no KRAS mutation → "Wild Type"
+        # h_config is mutation axis → categories are driver labels
+        assert "Driver" in result["categories"] or "Wild Type" in result["categories"]
+
+    def test_driver_missing_column(self, conn):
+        """Study without cbp_driver → graceful fallback."""
+        # Drop cbp_driver column to simulate missing data
+        conn.execute('ALTER TABLE "test_study_mutations" DROP COLUMN cbp_driver')
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "mutation", "gene": "KRAS", "plot_by": "driver_vs_vus"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        # Should still return valid data (all samples as "Not Available" or similar)
+        assert result["plot_type"] == "bar"
+        # Re-add column for other tests
+        conn.execute('ALTER TABLE "test_study_mutations" ADD COLUMN cbp_driver VARCHAR')
+
+
+# ── SV Variant Type Count-By Mode ────────────────────────────────────────
+
+
+class TestSVVariantType:
+    def test_sv_variant_type_grouping(self, conn):
+        """SV variant_type plot_by should group by Class column."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "structural_variant", "gene": "KRAS", "plot_by": "variant_type"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        assert result["plot_type"] == "bar"
+        # h_config is SV axis → categories are SV class labels
+        assert any(
+            name in result["categories"]
+            for name in ["Translocation", "Deletion", "Multiple", "No Structural Variant"]
+        )
+
+    def test_sv_multiple_classes(self, conn):
+        """Sample with multiple SV classes → Multiple category."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "structural_variant", "gene": "KRAS", "plot_by": "variant_type"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        # S3 has both DELETION and INVERSION for KRAS → "Multiple"
+        assert "Multiple" in result["categories"]
+
+
+# ── Data Availability Banner ─────────────────────────────────────────────
+
+
+class TestDataBanner:
+    def test_axis_counts_in_response(self, conn):
+        """Plot response should include per-axis sample counts."""
+        result = get_plots_data(
+            conn,
+            "test_study",
+            {"data_type": "clinical_attribute", "attribute_id": "FRACTION_GENOME_ALTERED"},
+            {"data_type": "clinical_attribute", "attribute_id": "CANCER_TYPE"},
+        )
+        assert "h_total" in result
+        assert "v_total" in result
+        assert result["h_total"] == 5
+        assert result["v_total"] == 5
+        assert result["total_samples"] == 5

@@ -757,6 +757,10 @@ table#mut-table tr:hover td { background: #f9f9f9; }
               <option value="alpha">Alphabetically</option>
               <option value="median">Sort by median</option>
             </select>
+            <label style="display:block;margin-top:6px;">
+              <input type="checkbox" id="plots-connect-samples" onchange="renderPlotsChart()">
+              Connect same-patient samples
+            </label>
           </div>
           <!-- Scatter/Box-specific controls -->
           <div id="plots-scatter-controls" style="display:none;">
@@ -2100,6 +2104,8 @@ function buildAxisSubControls(axis) {
         html += '<select id="' + prefix + '-plotby" onchange="onPlotsSubChange(\'' + axis + '\')">';
         html += '<option value="mutated_vs_wildtype">Mutated vs Wild-type</option>';
         html += '<option value="type">Type</option>';
+        html += '<option value="driver_vs_vus">Driver vs VUS</option>';
+        html += '<option value="vaf">Variant Allele Frequency</option>';
         html += '</select>';
         html += _buildGeneSelect(prefix, axis, state);
         state.plotBy = state.plotBy || 'mutated_vs_wildtype';
@@ -2108,6 +2114,7 @@ function buildAxisSubControls(axis) {
         html += '<div class="cts-heading">Plot Structural variants by</div>';
         html += '<select id="' + prefix + '-plotby" onchange="onPlotsSubChange(\'' + axis + '\')">';
         html += '<option value="variant_vs_no_variant">Variant vs No Variant</option>';
+        html += '<option value="variant_type">Variant Type</option>';
         html += '</select>';
         html += _buildGeneSelect(prefix, axis, state);
         state.plotBy = 'variant_vs_no_variant';
@@ -2226,8 +2233,11 @@ async function loadPlotsData() {
         document.getElementById("plots-regression-wrap").style.display =
             plotsData.plot_type === "scatter" ? "block" : "none";
 
-        document.getElementById("plots-info").textContent =
-            "Showing " + plotsData.total_samples + " samples with data in both profiles (axes)";
+        var bannerParts = [];
+        if (plotsData.h_total != null) bannerParts.push("Horizontal: " + plotsData.h_total.toLocaleString());
+        if (plotsData.v_total != null) bannerParts.push("Vertical: " + plotsData.v_total.toLocaleString());
+        bannerParts.push("Plotted: " + plotsData.total_samples.toLocaleString());
+        document.getElementById("plots-info").textContent = bannerParts.join(" / ") + " samples";
 
         renderPlotsChart();
     } catch(e) {
@@ -2708,6 +2718,45 @@ function renderPlotsBox() {
                 });
             }
         });
+    }
+
+    // Connect same-patient samples across box categories
+    var connectSamples = document.getElementById("plots-connect-samples").checked;
+    if (connectSamples && d.box_raw_data) {
+        var catIndex = catIndex || {};
+        cats.forEach(function(c, i) { catIndex[c] = i; });
+        // Group raw points by patient_id
+        var patientPoints = {};
+        cats.forEach(function(cat) {
+            (d.box_raw_data[cat] || []).forEach(function(rp) {
+                var pid = rp.patient_id || rp.sample_id;
+                if (!patientPoints[pid]) patientPoints[pid] = [];
+                var val = logV ? _applyLog(rp.value) : rp.value;
+                patientPoints[pid].push([catIndex[cat], val]);
+            });
+        });
+        // Draw lines for patients with points in multiple categories
+        var lineData = [];
+        Object.keys(patientPoints).forEach(function(pid) {
+            var pts = patientPoints[pid];
+            if (pts.length > 1) {
+                for (var i = 0; i < pts.length - 1; i++) {
+                    lineData.push([{ coord: pts[i] }, { coord: pts[i + 1] }]);
+                }
+            }
+        });
+        if (lineData.length > 0) {
+            seriesList.push({
+                type: 'scatter', data: [], symbolSize: 0,
+                markLine: {
+                    silent: true,
+                    symbol: ['none', 'none'],
+                    lineStyle: { color: '#999', type: 'dashed', width: 1, opacity: 0.5 },
+                    data: lineData,
+                    label: { show: false },
+                },
+            });
+        }
     }
 
     plotsChart.setOption({

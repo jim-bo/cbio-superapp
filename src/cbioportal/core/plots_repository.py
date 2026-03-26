@@ -281,23 +281,38 @@ def get_plots_data(
     v_values = _get_axis_values(conn, study_id, v_config)
 
     # Intersect samples present in both axes
-    common_ids = set(h_values["values"].keys()) & set(v_values["values"].keys())
+    h_ids = set(h_values["values"].keys())
+    v_ids = set(v_values["values"].keys())
+    common_ids = h_ids & v_ids
+    axis_counts = {"h_total": len(h_ids), "v_total": len(v_ids)}
+
     if not common_ids:
-        return {"plot_type": "bar", "categories": [], "series": [], "total_samples": 0}
+        return {"plot_type": "bar", "categories": [], "series": [], "total_samples": 0, **axis_counts}
 
     h_numeric = h_values["is_numeric"]
     v_numeric = v_values["is_numeric"]
 
     if not h_numeric and not v_numeric:
-        return _build_bar_data(
+        result = _build_bar_data(
             h_values, v_values, common_ids,
             h_data_type=h_config.get("data_type", ""),
             v_data_type=v_config.get("data_type", ""),
         )
     elif h_numeric and v_numeric:
-        return _build_scatter_data(h_values, v_values, common_ids)
+        result = _build_scatter_data(h_values, v_values, common_ids)
     else:
-        return _build_box_data(h_values, v_values, common_ids)
+        # Fetch sample→patient map for connect-samples feature
+        try:
+            sp_rows = conn.execute(
+                f'SELECT SAMPLE_ID, PATIENT_ID FROM "{study_id}_sample"'
+            ).fetchall()
+            sample_patient = {r[0]: r[1] for r in sp_rows}
+        except Exception:
+            sample_patient = {}
+        result = _build_box_data(h_values, v_values, common_ids, sample_patient)
+
+    result.update(axis_counts)
+    return result
 
 
 def _normalize_config(config: dict) -> dict:
@@ -419,6 +434,72 @@ def _get_mutation_axis(conn, study_id: str, config: dict) -> dict:
         profile_name = get_molecular_profile_name(conn, study_id, "mutation")
         return {"values": values, "is_numeric": False, "label": f"{gene}: {profile_name}"}
 
+    elif plot_by == "vaf":
+        # VAF = t_alt_count / (t_alt_count + t_ref_count), max per sample
+        vaf_rows = conn.execute(
+            f'SELECT Tumor_Sample_Barcode, t_alt_count, t_ref_count '
+            f'FROM "{study_id}_mutations" '
+            f"WHERE Hugo_Symbol = ? "
+            f"AND (Mutation_Status IS NULL OR Mutation_Status != 'UNCALLED') "
+            f"AND t_alt_count IS NOT NULL AND t_ref_count IS NOT NULL",
+            [gene],
+        ).fetchall()
+
+        sample_vaf: dict[str, float] = {}
+        for sid, t_alt, t_ref in vaf_rows:
+            if sid not in all_ids:
+                continue
+            total = float(t_alt) + float(t_ref)
+            if total == 0:
+                continue
+            vaf = float(t_alt) / total
+            if sid not in sample_vaf or vaf > sample_vaf[sid]:
+                sample_vaf[sid] = vaf
+
+        # Only include samples that have VAF data (numeric axis)
+        return {
+            "values": sample_vaf,
+            "is_numeric": True,
+            "label": f"{gene}: Variant Allele Frequency",
+        }
+
+    elif plot_by == "driver_vs_vus":
+        # Check if cbp_driver column exists
+        has_driver = conn.execute(
+            "SELECT count(*) FROM information_schema.columns "
+            f"WHERE table_name = '{study_id}_mutations' AND column_name = 'cbp_driver'"
+        ).fetchone()[0]
+
+        if not has_driver:
+            # Column missing — all samples get "Not Available"
+            values = {sid: "Not Available" for sid in all_ids}
+            return {"values": values, "is_numeric": False, "label": f"{gene}: Driver vs VUS"}
+
+        driver_rows = conn.execute(
+            f'SELECT Tumor_Sample_Barcode, cbp_driver '
+            f'FROM "{study_id}_mutations" '
+            f"WHERE Hugo_Symbol = ? AND (Mutation_Status IS NULL OR Mutation_Status != 'UNCALLED')",
+            [gene],
+        ).fetchall()
+
+        _DRIVER_MAP = {
+            "Putative_Driver": "Driver",
+            "Putative_Passenger": "VUS",
+        }
+        sample_driver: dict[str, str] = {}
+        _DRIVER_PRIORITY = {"Driver": 2, "VUS": 1, "Unknown": 0}
+        for sid, driver_val in driver_rows:
+            if sid not in all_ids:
+                continue
+            label = _DRIVER_MAP.get(driver_val, "Unknown")
+            if sid not in sample_driver or _DRIVER_PRIORITY.get(label, 0) > _DRIVER_PRIORITY.get(sample_driver[sid], 0):
+                sample_driver[sid] = label
+
+        values = {}
+        for sid in all_ids:
+            values[sid] = sample_driver.get(sid, "Wild Type")
+        return {"values": values, "is_numeric": False, "label": f"{gene}: Driver vs VUS"}
+
     else:  # mutated_vs_wildtype
         mutated = {sid for sid, _ in mut_rows if sid in all_ids}
         values = {sid: ("Mutated" if sid in mutated else "Wild Type") for sid in all_ids}
@@ -435,22 +516,51 @@ def _get_sv_axis(conn, study_id: str, config: dict) -> dict:
     ).fetchall()
     all_ids = {r[0] for r in all_samples}
 
-    sv_rows = conn.execute(
-        f'SELECT Sample_Id FROM "{study_id}_sv" '
-        f"WHERE Site1_Hugo_Symbol = ? OR Site2_Hugo_Symbol = ?",
-        [gene, gene],
-    ).fetchall()
-    sv_samples = {r[0] for r in sv_rows if r[0] in all_ids}
+    if plot_by == "variant_type":
+        # Group by SV Class column
+        sv_rows = conn.execute(
+            f'SELECT Sample_Id, Class FROM "{study_id}_sv" '
+            f"WHERE Site1_Hugo_Symbol = ? OR Site2_Hugo_Symbol = ?",
+            [gene, gene],
+        ).fetchall()
 
-    values = {
-        sid: ("With Structural Variants" if sid in sv_samples else "No Structural Variants")
-        for sid in all_ids
-    }
-    return {
-        "values": values,
-        "is_numeric": False,
-        "label": f"{gene}: Variant vs No Variant",
-    }
+        sample_classes: dict[str, set[str]] = {}
+        for sid, cls in sv_rows:
+            if sid not in all_ids:
+                continue
+            label = (cls or "Other").title()  # TRANSLOCATION → Translocation
+            sample_classes.setdefault(sid, set()).add(label)
+
+        values = {}
+        for sid in all_ids:
+            classes = sample_classes.get(sid)
+            if not classes:
+                values[sid] = "No Structural Variant"
+            elif len(classes) > 1:
+                values[sid] = "Multiple"
+            else:
+                values[sid] = next(iter(classes))
+
+        profile_name = get_molecular_profile_name(conn, study_id, "sv")
+        return {"values": values, "is_numeric": False, "label": f"{gene}: {profile_name}"}
+
+    else:  # variant_vs_no_variant
+        sv_rows = conn.execute(
+            f'SELECT Sample_Id FROM "{study_id}_sv" '
+            f"WHERE Site1_Hugo_Symbol = ? OR Site2_Hugo_Symbol = ?",
+            [gene, gene],
+        ).fetchall()
+        sv_samples = {r[0] for r in sv_rows if r[0] in all_ids}
+
+        values = {
+            sid: ("With Structural Variants" if sid in sv_samples else "No Structural Variants")
+            for sid in all_ids
+        }
+        return {
+            "values": values,
+            "is_numeric": False,
+            "label": f"{gene}: Variant vs No Variant",
+        }
 
 
 def _get_cna_axis(conn, study_id: str, config: dict) -> dict:
@@ -568,7 +678,10 @@ def _build_scatter_data(h_values: dict, v_values: dict, common_ids: set) -> dict
     }
 
 
-def _build_box_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
+def _build_box_data(
+    h_values: dict, v_values: dict, common_ids: set,
+    sample_patient: dict | None = None,
+) -> dict:
     """Build box plot data for numeric × discrete."""
     # Ensure numeric is on v-axis, discrete on h-axis
     if h_values["is_numeric"]:
@@ -577,6 +690,9 @@ def _build_box_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
     else:
         num_vals, cat_vals = v_values, h_values
         swapped = False
+
+    if sample_patient is None:
+        sample_patient = {}
 
     from collections import defaultdict
     import statistics
@@ -609,9 +725,13 @@ def _build_box_data(h_values: dict, v_values: dict, common_ids: set) -> dict:
             vals[q3_idx],      # Q3
             vals[-1],          # max
         ])
-        # Raw sample values for scatter overlay coloring
+        # Raw sample values for scatter overlay coloring + patient_id for connect-samples
         box_raw_data[cat] = [
-            {"sample_id": sid, "value": float(num_vals["values"][sid])}
+            {
+                "sample_id": sid,
+                "value": float(num_vals["values"][sid]),
+                "patient_id": sample_patient.get(sid, sid),
+            }
             for sid in common_ids
             if str(cat_vals["values"][sid]) == cat
         ]

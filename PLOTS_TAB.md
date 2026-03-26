@@ -151,13 +151,14 @@ Conditional example links (`PlotsTab.tsx:6378-6380`):
 > - Sort by median for box plots
 >
 > - Coloring menu with gene (mutation/CNA/SV) and clinical attribute overlays
+> - VAF count-by mode — numeric axis using `t_alt_count / (t_alt_count + t_ref_count)`, max per sample
+> - Driver vs VUS count-by mode — uses `cbp_driver` column when present, graceful fallback when missing
+> - SV Variant Type count-by mode — groups by SV `Class` column (Translocation/Deletion/etc.)
+> - Connect same-patient samples toggle for box plots (dashed lines between categories)
+> - Data availability banner — per-axis and intersection sample counts above chart
 >
-> **Remaining gaps (blocked on new data columns or minor features):**
-> - DriverVsVUS count-by mode — needs `putative_driver` field in MAF loader
-> - VAF count-by mode — needs `t_alt_count`/`t_ref_count` in MAF loader
-> - SV VariantType count-by mode — needs `variantClass` in SV loader
-> - Connect samples toggle — lines between same-patient samples in box plots
-> - Data availability banner — detailed per-axis sample counts
+> **Remaining gaps:**
+> - Driver vs VUS not testable on `msk_chord_2024` (study lacks `cbp_driver` annotation)
 
 ---
 
