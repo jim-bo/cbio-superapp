@@ -761,7 +761,7 @@ Shows sample counts for each axis and their intersection. Styled with background
 | Bar chart (stacked) | Yes | Yes | |
 | Bar chart (grouped) | Yes | Yes | |
 | Bar chart (100% stacked) | Yes | Yes | |
-| Table plot | Yes | No | |
+| Table plot | Yes | Yes | |
 | Scatter plot | Yes | Yes | Missing coloring overlay |
 | Box plot | Yes | Yes | Missing coloring overlay |
 | Waterfall plot | Yes | No | Only used with generic assay |
@@ -772,11 +772,11 @@ Shows sample counts for each axis and their intersection. Styled with background
 | Color by clinical attribute | Yes | No | |
 | **UI Features** | | | |
 | Swap axes | Yes | Yes | |
-| Quick plots pills | Yes | No | |
-| Log scale | Yes | No | |
-| Regression line | Yes | No | Client-side linear regression |
+| Quick plots pills | Yes | Yes | Different presets (Mut# vs Dx, FGA vs Dx, Mut# vs FGA) — adapted for available data |
+| Log scale | Yes | Yes | log2(value + 1) transform for scatter and box plots |
+| Regression line | Yes | Yes | Client-side least-squares linear regression on scatter |
 | Horizontal bars toggle | Yes | Yes | |
-| Sort by options | Yes | Partial | Alphabetical + sample count; missing median sort |
+| Sort by options | Yes | Yes | Alphabetical + sample count (bar); alphabetical + median (box) |
 | Connect samples (box) | Yes | No | Multi-sample patients |
 | Data availability banner | Yes | No | Sample count display |
 | **Export** | | | |
