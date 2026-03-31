@@ -24,6 +24,7 @@ counts across studies.
 ## Key files
 
 - `database.py` — DuckDB connection factory (`get_connection()`)
+- `session_repository.py` — SQLAlchemy sessions DB (SQLite dev / PostgreSQL prod); model, engine factory, CRUD
 - `fetcher.py` — Data download utilities (fetch study files from cBioPortal datahub)
 - `study_repository.py` — Homepage queries (study list, cancer type counts)
 - `study_view_repository.py` — Backward-compat shim; imports from `study_view/`
