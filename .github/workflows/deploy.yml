@@ -1,0 +1,142 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# CLOUD RUN DEPLOYMENT — currently triggered manually only (workflow_dispatch).
+#
+# To enable automatic deploys on push to main, change the trigger to:
+#   on:
+#     push:
+#       branches: [main]
+#
+# ── GCP Prerequisites (one-time setup) ───────────────────────────────────────
+#
+# 1. Create Workload Identity Federation pool + GitHub OIDC provider:
+#      gcloud iam workload-identity-pools create github \
+#        --project=PROJECT --location=global \
+#        --display-name="GitHub Actions"
+#
+#      gcloud iam workload-identity-pools providers create-oidc github-provider \
+#        --project=PROJECT --location=global \
+#        --workload-identity-pool=github \
+#        --issuer-uri="https://token.actions.githubusercontent.com" \
+#        --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository"
+#
+# 2. Create a service account and grant required roles:
+#      gcloud iam service-accounts create cbio-deployer \
+#        --project=PROJECT --display-name="cBioPortal Cloud Run Deployer"
+#
+#      for role in roles/run.admin roles/artifactregistry.writer \
+#                  roles/iam.serviceAccountTokenCreator roles/cloudsql.client; do
+#        gcloud projects add-iam-policy-binding PROJECT \
+#          --member="serviceAccount:cbio-deployer@PROJECT.iam.gserviceaccount.com" \
+#          --role="$role"
+#      done
+#
+# 3. Bind the GitHub repo to the service account via WIF:
+#      gcloud iam service-accounts add-iam-policy-binding \
+#        cbio-deployer@PROJECT.iam.gserviceaccount.com \
+#        --project=PROJECT \
+#        --role=roles/iam.workloadIdentityUser \
+#        --member="principalSet://iam.googleapis.com/projects/PROJECT_NUM/locations/global/workloadIdentityPools/github/attribute.repository/OWNER/REPO"
+#
+# ── Required GitHub Secrets ───────────────────────────────────────────────────
+#
+#   WIF_PROVIDER        — projects/PROJECT_NUM/locations/global/workloadIdentityPools/github/providers/github-provider
+#   WIF_SERVICE_ACCOUNT — cbio-deployer@PROJECT.iam.gserviceaccount.com
+#   GCP_PROJECT         — your GCP project ID
+#   CBIO_SESSIONS_DB_URL — postgresql+psycopg2://user:pass@/dbname?host=/cloudsql/PROJECT:REGION:INSTANCE
+#
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: false
+        default: "production"
+
+env:
+  GCP_REGION: us-central1
+  SERVICE: cbio-revamp
+  REPO: cbio
+  IMAGE_NAME: cbio-revamp
+
+jobs:
+  build-push-deploy:
+    name: Build, Push, Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write  # Required for Workload Identity Federation
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ── Auth to GCP via Workload Identity Federation (no stored keys) ──────
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # ── Configure Docker to push to Artifact Registry ─────────────────────
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      # ── Build and push Docker image ───────────────────────────────────────
+      - name: Build and push Docker image
+        env:
+          REGISTRY: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REPO }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          IMAGE="${REGISTRY}/${{ env.IMAGE_NAME }}"
+          docker build \
+            -t "${IMAGE}:${SHORT_SHA:0:7}" \
+            -t "${IMAGE}:latest" \
+            .
+          docker push "${IMAGE}:${SHORT_SHA:0:7}"
+          docker push "${IMAGE}:latest"
+
+      # ── Run Alembic migrations before the new container goes live ─────────
+      - name: Run Alembic migrations
+        env:
+          CBIO_SESSIONS_DB_URL: ${{ secrets.CBIO_SESSIONS_DB_URL }}
+        run: |
+          pip install uv --quiet
+          uv sync --frozen --no-dev
+          uv run alembic upgrade head
+
+      # ── Deploy to Cloud Run ───────────────────────────────────────────────
+      - name: Deploy to Cloud Run
+        env:
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          CBIO_SESSIONS_DB_URL: ${{ secrets.CBIO_SESSIONS_DB_URL }}
+          REGISTRY: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REPO }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image "${REGISTRY}/${{ env.IMAGE_NAME }}:${SHORT_SHA:0:7}" \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --memory 8Gi \
+            --cpu 2 \
+            --min-instances 0 \
+            --max-instances 3 \
+            --port 8080 \
+            --timeout 300 \
+            --cpu-boost \
+            --set-env-vars "CBIO_GCS_DB_URI=${{ secrets.CBIO_GCS_DB_URI }}" \
+            --set-env-vars "CBIO_SESSIONS_DB_URL=${CBIO_SESSIONS_DB_URL}" \
+            --set-env-vars "CBIO_SECURE_COOKIES=1" \
+            --set-env-vars "CBIO_DB_PATH=/app/data/cbioportal.duckdb" \
+            --allow-unauthenticated \
+            --project "${GCP_PROJECT}"
+
+      - name: Print service URL
+        run: |
+          gcloud run services describe ${{ env.SERVICE }} \
+            --region ${{ env.GCP_REGION }} \
+            --format "value(status.url)"

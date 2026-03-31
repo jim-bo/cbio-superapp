@@ -1,0 +1,40 @@
+# Local data — too large for image; fetched from GCS at runtime
+data/
+*.duckdb
+*.db
+*.wal
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environment — rebuilt inside Docker
+.venv/
+
+# Git internals and sibling worktrees
+.git/
+*-worktree/
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Tests — not needed at runtime
+tests/
+
+# Node (Vite build artifacts if generated locally)
+node_modules/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
