@@ -1,20 +1,23 @@
 """SessionSyncMiddleware — server-side session auto-save.
 
-Intercepts every successful POST to /study/summary/chart/* and fire-and-forgets
-a session upsert using the study_id and filter_json that are already in the
-request body. This means filter state is persisted automatically without any
-JavaScript changes to the chart update loop.
+Intercepts every successful POST to /study/summary/chart/* and saves the
+session state synchronously before returning the response.
+
+Why synchronous? `BaseHTTPMiddleware.call_next` returns a streaming response
+wrapper that does not honour `.background` (the body streams through a
+different mechanism). `asyncio.create_task` inside the middleware can also be
+GC'd before running. Since the save is a local SQLite write (<1 ms), running
+it inline has no meaningful impact on latency.
 
 Starlette/FastAPI form-body reads are single-pass: the route handler consumes
 the body stream. This middleware buffers the raw bytes *before* passing the
 request to the next handler, then re-injects them so the route handler sees a
-fresh stream.
+fresh stream. Form parsing (including multipart) is done on a second rebind
+using Starlette's own parser so both content-types are handled correctly.
 """
 from __future__ import annotations
 
-import asyncio
 import json
-import urllib.parse
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -35,21 +38,20 @@ class SessionSyncMiddleware(BaseHTTPMiddleware):
             and request.url.path.startswith("/study/summary/chart/")
         )
 
-        if should_sync:
-            # Buffer the body so the route handler can still read it.
-            raw_body = await request.body()
-            request = _rebind_body(request, raw_body)
+        if not should_sync:
+            return await call_next(request)
 
-        response = await call_next(request)
+        # Buffer the body so the route handler can still read it.
+        raw_body = await request.body()
+        raw_token = request.cookies.get("cbio_session_token")
+        session_factory = request.app.state.session_factory
 
-        if should_sync and response.status_code == 200:
-            asyncio.create_task(
-                _save_session(
-                    raw_body,
-                    request.cookies.get("cbio_session_token"),
-                    request.app.state.session_factory,
-                )
-            )
+        response = await call_next(_rebind_body(request, raw_body))
+
+        # Save synchronously — await the async form parse inline so it
+        # completes before we return the response.  SQLite write is <1 ms.
+        if response.status_code == 200 and raw_token:
+            await _save_session(request, raw_body, raw_token, session_factory)
 
         return response
 
@@ -69,17 +71,18 @@ def _rebind_body(request: Request, raw_body: bytes) -> Request:
 
 
 async def _save_session(
+    request: Request,
     raw_body: bytes,
-    raw_token: str | None,
+    raw_token: str,
     session_factory,
 ) -> None:
-    """Parse form fields and upsert a settings session. Never raises."""
+    """Parse form fields via Starlette's parser and upsert a settings session. Never raises."""
     try:
-        if not raw_token:
-            return
-
-        # Parse application/x-www-form-urlencoded body.
-        form = dict(urllib.parse.parse_qsl(raw_body.decode("utf-8", errors="replace")))
+        # Use a fresh rebound request so Starlette's form parser (which handles
+        # both multipart/form-data and application/x-www-form-urlencoded) gets
+        # a clean body stream — the original was already consumed by call_next.
+        form_req = _rebind_body(request, raw_body)
+        form = await form_req.form()
         study_id: str | None = form.get("study_id")
         filter_json: str | None = form.get("filter_json")
 

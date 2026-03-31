@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import os
+import secrets
 
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse
@@ -9,6 +11,10 @@ from pydantic import ValidationError
 from typing import Annotated
 
 from cbioportal.core.session_repository import fetch_settings, get_session
+
+_TOKEN_COOKIE = "cbio_session_token"
+_TOKEN_BYTES = 32
+_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2  # 2 years
 from cbioportal.core.study_view_repository import (
     get_study_metadata,
     get_clinical_counts,
@@ -102,13 +108,22 @@ async def study_summary(request: Request, id: str, session_id: str | None = None
 
     Restores saved filter state server-side so the page loads with the right
     filters already applied — no client-side async fetch needed.
+
+    Also mints the session cookie if absent, so the middleware can start
+    auto-saving filter state on the first chart POST that follows.
     """
     conn = request.app.state.db_conn
     meta = get_study_metadata(conn, id)
     if not meta:
         raise HTTPException(status_code=404, detail="Study not found")
 
-    raw_token = request.cookies.get("cbio_session_token")
+    # Resolve or mint the session token.
+    raw_token = request.cookies.get(_TOKEN_COOKIE)
+    new_token: str | None = None
+    if not raw_token:
+        raw_token = secrets.token_hex(_TOKEN_BYTES)
+        new_token = raw_token  # will be set as a cookie on the response
+
     restored_filters: dict = {}
     resolved_session_id: str = session_id or ""
 
@@ -132,7 +147,7 @@ async def study_summary(request: Request, id: str, session_id: str | None = None
         # Session lookup must never break the page render.
         pass
 
-    return request.app.state.templates.TemplateResponse(
+    response = request.app.state.templates.TemplateResponse(
         "study_view/page.html",
         {
             "request": request,
@@ -142,6 +157,18 @@ async def study_summary(request: Request, id: str, session_id: str | None = None
             "session_id": resolved_session_id,
         },
     )
+
+    if new_token:
+        response.set_cookie(
+            key=_TOKEN_COOKIE,
+            value=new_token,
+            max_age=_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="lax",
+            secure=os.environ.get("CBIO_SECURE_COOKIES", "0") == "1",
+        )
+
+    return response
 
 
 @router.get("/study/clinicalData", response_class=HTMLResponse)
