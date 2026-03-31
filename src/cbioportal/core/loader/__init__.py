@@ -144,13 +144,26 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
     Args:
         filter_zeros: If True, exclude rows where value == 0 (used for CNA to save space).
     """
-    _NON_SAMPLE = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband", "Composite.Element.REF"}
+    # ENTITY_STABLE_ID is used by methylation probe files (cg* probe IDs).
+    # In those files, NAME holds the Hugo symbol; DESCRIPTION and TRANSCRIPT_ID are metadata.
+    _NON_SAMPLE = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband", "Composite.Element.REF",
+                   "ENTITY_STABLE_ID", "NAME", "DESCRIPTION", "TRANSCRIPT_ID"}
     with open(filepath) as f:
         for line in f:
             if not line.startswith("#"):
                 header_cols = line.strip().split("\t")
                 break
-    hugo_col = header_cols.index("Hugo_Symbol") if "Hugo_Symbol" in header_cols else None
+    # Resolve which column holds the Hugo symbol.
+    # Methylation probe files (pan-cancer atlas) use NAME instead of Hugo_Symbol.
+    if "Hugo_Symbol" in header_cols:
+        hugo_col = header_cols.index("Hugo_Symbol")
+        hugo_col_name = "Hugo_Symbol"
+    elif "NAME" in header_cols:
+        hugo_col = header_cols.index("NAME")
+        hugo_col_name = "NAME"
+    else:
+        hugo_col = None
+        hugo_col_name = None
     composite_col = header_cols.index("Composite.Element.REF") if "Composite.Element.REF" in header_cols else None
     sample_cols = [c for c in header_cols if c not in _NON_SAMPLE]
     n_samples = len(sample_cols)
@@ -166,7 +179,7 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
         else:
             exclude_clause = None
         if hugo_col is not None:
-            hugo_select = "Hugo_Symbol as hugo_symbol,"
+            hugo_select = f'"{hugo_col_name}" as hugo_symbol,'
             join_clause = ""
         elif composite_col is not None:
             hugo_select = 'split_part("Composite.Element.REF", \'|\', 1) as hugo_symbol,'
