@@ -138,3 +138,57 @@ cbio-revamp/
   git -C /path/to/claude-worktree checkout --detach main
   git branch -d feature/my-feature
   ```
+
+## Session Service
+
+The session service (`core/session_repository.py`, `web/routes/session.py`,
+`web/middleware/session_sync.py`) persists page state so browser refreshes restore
+where you were, and lets users share state via a URL.
+
+**Session syncing is server-side (not JS):**
+- **Save:** `SessionSyncMiddleware` intercepts chart POSTs (which already carry
+  `study_id` + `filter_json`) and fire-and-forgets a session upsert. Zero JS changes.
+- **Restore:** The `GET /study/summary` handler looks up the session and injects
+  restored filters into the Jinja2 template context. Zero JS async fetch needed.
+- **Share:** A "Copy link" button copies `window.location.href` (which already has
+  `?session_id=` set by the server on page load).
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `CBIO_SESSIONS_DB_URL` | `sqlite:///data/sessions.db` | SQLAlchemy DB URL |
+| `CBIO_SECURE_COOKIES` | `0` | Set to `1` for HTTPS deployments |
+
+**Run Alembic migrations (prod):**
+```bash
+CBIO_SESSIONS_DB_URL=postgresql+psycopg2://user:pass@host/dbname uv run alembic upgrade head
+```
+
+### SQLite / PostgreSQL / AlloyDB compatibility rules — MUST follow
+
+1. **Use `JSON` column type — never `JSONB`.** `JSON` maps to text on SQLite; `JSONB`
+   breaks SQLite entirely.
+2. **Keep `render_as_batch=True` in `alembic/env.py`** — required for SQLite `ALTER TABLE`.
+   It is harmless on PostgreSQL/AlloyDB.
+3. **JSON path queries must use SQLAlchemy's subscript operator**
+   (`Model.data["key"].as_string()`) — never write raw `JSON_EXTRACT()` or `->>` SQL.
+   SQLAlchemy compiles this correctly for both dialects.
+4. **No AlloyDB-specific features** — no columnar engine, no vector indexes, no pg
+   extensions not in standard PostgreSQL 14.
+5. **No `RETURNING` in raw SQL** — use `db.refresh(record)` after commit instead.
+   SQLite < 3.35 does not support `RETURNING`.
+6. **Sessions DB is completely separate from DuckDB.** Never mix the two connections.
+
+### Route ordering in `session.py`
+
+Specific routes (`/settings`, `/settings/fetch`, `/virtual_study/save`, `/share/{id}`)
+**must be registered before** the generic `/{session_type}` wildcard routes. FastAPI
+matches routes in registration order — putting specific routes after the wildcard causes
+them to be silently swallowed by the generic handler.
+
+### In-memory SQLite tests
+
+Use `poolclass=StaticPool` when creating the test engine. Without it, each new
+SQLAlchemy connection gets a fresh SQLite in-memory database (empty, no schema).
+`StaticPool` forces all connections to share the same in-memory DB instance.

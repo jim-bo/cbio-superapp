@@ -1,11 +1,14 @@
 """Study View route handlers — /study/summary?id=..."""
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from typing import Annotated
 
+from cbioportal.core.session_repository import fetch_settings, get_session
 from cbioportal.core.study_view_repository import (
     get_study_metadata,
     get_clinical_counts,
@@ -94,14 +97,50 @@ async def charts_meta_endpoint(request: Request, id: str):
 
 
 @router.get("/study/summary", response_class=HTMLResponse)
-async def study_summary(request: Request, id: str):
-    """Render the Study View summary (dashboard) page."""
+async def study_summary(request: Request, id: str, session_id: str | None = None):
+    """Render the Study View summary (dashboard) page.
+
+    Restores saved filter state server-side so the page loads with the right
+    filters already applied — no client-side async fetch needed.
+    """
     conn = request.app.state.db_conn
     meta = get_study_metadata(conn, id)
     if not meta:
         raise HTTPException(status_code=404, detail="Study not found")
+
+    raw_token = request.cookies.get("cbio_session_token")
+    restored_filters: dict = {}
+    resolved_session_id: str = session_id or ""
+
+    try:
+        db = request.app.state.session_factory()
+        try:
+            if session_id:
+                # Explicit session_id in URL — shared link or bookmark.
+                record = get_session(db, session_id)
+                if record and record.type == "settings":
+                    restored_filters = record.data.get("filters") or {}
+            elif raw_token:
+                # No explicit session — restore auto-saved settings for this study.
+                record = fetch_settings(db, "study_view", [id], raw_token)
+                if record:
+                    restored_filters = record.data.get("filters") or {}
+                    resolved_session_id = record.id
+        finally:
+            db.close()
+    except Exception:
+        # Session lookup must never break the page render.
+        pass
+
     return request.app.state.templates.TemplateResponse(
-        "study_view/page.html", {"request": request, "meta": meta, "active_tab": "summary"}
+        "study_view/page.html",
+        {
+            "request": request,
+            "meta": meta,
+            "active_tab": "summary",
+            "restored_filters": json.dumps(restored_filters),
+            "session_id": resolved_session_id,
+        },
     )
 
 

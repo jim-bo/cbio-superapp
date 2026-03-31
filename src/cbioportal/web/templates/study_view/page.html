@@ -71,17 +71,36 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 
 <script type="text/javascript">
+    // filters is injected server-side from the saved session (if any),
+    // so the dashboard loads with the right state without an extra round-trip.
+    const _restoredFilters = {{ restored_filters | default('{}') | safe }};
     const DashboardState = {
         studyId: "{{ meta.study_id }}",
         nPatients: {{ meta.n_patients }},
         nSamples: {{ meta.n_samples }},
-        filters: { clinicalDataFilters: [], mutationFilter: { genes: [] }, svFilter: { genes: [] }, cnaFilter: { genes: [] } },
+        filters: Object.assign(
+            { clinicalDataFilters: [], mutationFilter: { genes: [] }, svFilter: { genes: [] }, cnaFilter: { genes: [] } },
+            _restoredFilters
+        ),
         chartsMeta: [],
     };
 
     const Charts = { Pies: {}, Bars: {}, Scatter: null, KM: null };
     const widgetData = {};        // last-fetched data per attrId for CSV download
     const tableSearchState = {};  // current search query per attrId (string | undefined)
+
+    // Put session_id in the URL so the page is bookmarkable / shareable.
+    // Runs immediately (synchronous) — no async needed.
+    (function() {
+        const sid = "{{ session_id | default('') }}";
+        if (sid) {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('session_id') !== sid) {
+                url.searchParams.set('session_id', sid);
+                window.history.replaceState(null, '', url.toString());
+            }
+        }
+    })();
 </script>
 
 {% if active_tab == 'summary' %}

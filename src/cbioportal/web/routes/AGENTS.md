@@ -25,6 +25,7 @@ see `web/schemas.py` → `DashboardFilters`.
 
 - `home.py` — Homepage routes (`/`, `/studies`)
 - `study_view.py` — Study view routes (`/study/summary`, all `/study/summary/chart/*`)
+- `session.py` — Session service REST API (`/api/session/*`); specific routes before generic wildcard
 
 ## When to cite legacy code
 
