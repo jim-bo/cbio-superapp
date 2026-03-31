@@ -552,12 +552,23 @@ def load_all_studies(
     studies = all_studies[start:end]
     typer.echo(f"Found {len(all_studies)} total studies. Processing batch of {len(studies)}.")
     total_loaded = 0
+    failed_studies = []
     with typer.progressbar(studies, label="Loading studies") as progress:
         for study_path in progress:
-            load_study_metadata(conn, study_path)
-            if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression):
-                total_loaded += 1
-            conn.execute("CHECKPOINT")
+            try:
+                load_study_metadata(conn, study_path)
+                if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression):
+                    total_loaded += 1
+                conn.execute("CHECKPOINT")
+            except Exception as e:
+                failed_studies.append((study_path.name, str(e)))
+                typer.echo(f"\nSkipping {study_path.name}: {e}")
+                continue
+
+    if failed_studies:
+        typer.echo(f"\n{len(failed_studies)} studies failed:")
+        for name, err in failed_studies:
+            typer.echo(f"  {name}: {err}")
     create_global_views(conn)
     metrics = monitor.get_metrics()
     return total_loaded, metrics
