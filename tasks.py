@@ -138,7 +138,7 @@ def run_local(c, port=8080, db_file=DB_FILE):
         f" -p {port}:8080"
         f" -v {db_dir}:/app/data:ro"
         f" -e CBIO_DB_PATH=/app/data/{db_filename}"
-        f" -e CBIO_SESSIONS_DB_URL=sqlite:///data/sessions.db"
+        f" -e CBIO_SESSIONS_DB_URL=sqlite:////tmp/sessions.db"
         f" -e CBIO_SECURE_COOKIES=0"
         f" -e PORT=8080"
         f" {IMAGE}:latest"

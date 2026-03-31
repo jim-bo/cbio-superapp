@@ -1,11 +1,10 @@
-# syntax=docker/dockerfile:1
 # ── Stage 1: dependency builder ───────────────────────────────────────────────
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
 
 # Copy dependency manifests first for layer-cache efficiency
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 
 # Install production deps into the project venv (no dev extras)
 RUN uv sync --frozen --no-dev --no-install-project
@@ -15,7 +14,7 @@ COPY src/ ./src/
 RUN uv sync --frozen --no-dev
 
 # ── Stage 2: runtime image ────────────────────────────────────────────────────
-FROM python:3.12-slim-bookworm AS runtime
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS runtime
 
 WORKDIR /app
 
