@@ -440,11 +440,8 @@ def load_study(
                               f'"{raw_study_id}_protein"', "protein_value")
             normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
-        if load_expression and methylation_files:
-            _load_wide_matrix(conn, raw_study_id, methylation_files[0],
-                              f'"{raw_study_id}_methylation"', "methylation_value")
-            normalize_hugo_symbols(conn, raw_study_id)
-            loaded_any = True
+        # Methylation skipped — 22k probes × hundreds of samples produces hundreds of
+        # millions of rows across pan-cancer studies with no current web view consumer.
         if load_expression:
             # Load generic assay profiles (treatment response, etc.)
             # We load ALL meta_*.txt files with genetic_alteration_type=GENERIC_ASSAY
