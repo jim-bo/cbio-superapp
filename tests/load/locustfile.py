@@ -1,10 +1,11 @@
 """
 cBioPortal load test scenarios.
 
-Three user classes with different weights:
+Four user classes:
   StudyViewUser  (weight 3) — realistic dashboard session
   HomepageUser   (weight 2) — homepage browsing
   HeavyQueryUser (weight 1) — stress: heavy endpoints back-to-back
+  MetricsUser    (weight 0) — polls /metrics every 5 s; memory appears in report
 
 Usage:
     # Headless (CI / inv tasks)
@@ -17,7 +18,7 @@ Usage:
 """
 import random
 
-from locust import HttpUser, between, task
+from locust import HttpUser, between, constant, task
 
 from studies import (
     ACTIVE_FILTER,
@@ -126,3 +127,42 @@ class HeavyQueryUser(HttpUser):
         form = {"study_id": _LARGE_STUDY, "filter_json": EMPTY_FILTER}
         for endpoint in HEAVY_ENDPOINTS:
             self.client.post(endpoint, data=form, name=endpoint)
+
+
+class MetricsUser(HttpUser):
+    """
+    Polls GET /metrics every 5 s and reports RSS memory (MiB) as a custom
+    "request" so it appears in the Locust HTML report alongside latency rows.
+
+    The p50/p95/p99 columns will show MiB values — read them as memory, not ms.
+
+    weight=0 means Locust never auto-spawns this user. It is always spawned
+    exactly once via fixed_count=1, regardless of the -u flag, so memory is
+    sampled continuously without inflating the user count.
+    """
+
+    weight = 0
+    fixed_count = 1
+    wait_time = constant(5)
+
+    @task
+    def sample_memory(self):
+        with self.client.get("/metrics", catch_response=True) as resp:
+            if resp.status_code == 200:
+                data = resp.json()
+                rss = data.get("rss_mib", 0)
+                resp.success()
+                # Fire a synthetic event with rss_mib as "response_time" so it
+                # appears as its own row in the HTML report with MiB values.
+                # The /metrics HTTP latency is suppressed (not named, not tracked).
+                self.environment.events.request.fire(
+                    request_type="mem_mib",
+                    name="rss",
+                    response_time=rss,
+                    response_length=0,
+                    exception=None,
+                    context={},
+                )
+                print(f"[mem] rss={rss} MiB  vms={data.get('vms_mib', 0)} MiB")
+            else:
+                resp.failure(f"/metrics returned {resp.status_code}")

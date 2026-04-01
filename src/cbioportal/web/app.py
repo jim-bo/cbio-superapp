@@ -16,6 +16,7 @@ from cbioportal.web.routes import home as home_router
 from cbioportal.web.routes import study_view as study_view_router
 from cbioportal.web.routes import results_view as results_view_router
 from cbioportal.web.routes import session as session_router
+from cbioportal.web.routes import metrics as metrics_router
 from cbioportal.web.middleware.session_sync import SessionSyncMiddleware
 
 logger = logging.getLogger(__name__)
@@ -125,5 +126,6 @@ def create_app():
     app.include_router(study_view_router.router)
     app.include_router(results_view_router.router)
     app.include_router(session_router.router)
+    app.include_router(metrics_router.router)
 
     return app
