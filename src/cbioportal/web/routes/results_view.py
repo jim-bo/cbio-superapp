@@ -1,12 +1,13 @@
 """Results View route handlers — /results/oncoprint?cancer_study_list=...&gene_list=..."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from typing import Annotated
 
 import json
 
+from cbioportal.core.database import get_db
 from cbioportal.core.oncoprint_repository import (
     get_oncoprint_data,
     get_clinical_track_options,
@@ -61,8 +62,9 @@ def _get_study_meta(conn, study_id: str) -> dict:
 
 
 @router.get("/results/oncoprint", response_class=HTMLResponse)
-async def oncoprint_page(
+def oncoprint_page(
     request: Request,
+    conn=Depends(get_db),
     cancer_study_list: str = "",
     gene_list: str = "",
     case_set_id: str = "",
@@ -74,7 +76,6 @@ async def oncoprint_page(
     # Support space- or %20-separated gene list; keep all genes for multi-gene OncoPrint
     genes = [g.strip() for g in gene_list.replace(",", " ").split() if g.strip()]
 
-    conn = request.app.state.db_conn
     meta = _get_study_meta(conn, study_id) if study_id else {}
     profiles = get_molecular_profiles(conn, study_id) if study_id else []
 
@@ -93,36 +94,33 @@ async def oncoprint_page(
 
 
 @router.post("/results/oncoprint/genetic-data")
-async def oncoprint_genetic_data(
-    request: Request,
+def oncoprint_genetic_data(
     study_id: Annotated[str, Form()],
     gene: Annotated[str, Form()],
+    conn=Depends(get_db),
 ):
     """Return GeneticTrackDatum[] for one gene in a study."""
-    conn = request.app.state.db_conn
     data = get_oncoprint_data(conn, study_id, gene)
     return JSONResponse(data)
 
 
 @router.post("/results/oncoprint/clinical-options")
-async def oncoprint_clinical_options(
-    request: Request,
+def oncoprint_clinical_options(
     study_id: Annotated[str, Form()],
+    conn=Depends(get_db),
 ):
     """Return [{attr_id, display_name, freq, datatype}] sorted by completeness."""
-    conn = request.app.state.db_conn
     options = get_clinical_track_options(conn, study_id)
     return JSONResponse(options)
 
 
 @router.post("/results/oncoprint/clinical-data")
-async def oncoprint_clinical_data(
-    request: Request,
+def oncoprint_clinical_data(
     study_id: Annotated[str, Form()],
+    conn=Depends(get_db),
     attr_ids: Annotated[str, Form()] = "",
 ):
     """Return {sampleId: {attrId: value}} for the requested attributes."""
-    conn = request.app.state.db_conn
     ids = [a.strip() for a in attr_ids.split(",") if a.strip()]
     data = get_clinical_track_data(conn, study_id, ids)
     return JSONResponse(data)
@@ -131,41 +129,38 @@ async def oncoprint_clinical_data(
 # ── Mutations Tab ─────────────────────────────────────────────────────────────
 
 @router.post("/results/oncoprint/lollipop")
-async def mutations_lollipop(
-    request: Request,
+def mutations_lollipop(
     study_id: Annotated[str, Form()],
     gene: Annotated[str, Form()],
+    conn=Depends(get_db),
 ):
     """Return lollipop plot data: aggregated positions + protein length."""
-    conn = request.app.state.db_conn
     data = get_lollipop_data(conn, study_id, gene)
     return JSONResponse(data)
 
 
 @router.post("/results/oncoprint/mutation-summary")
-async def mutations_summary(
-    request: Request,
+def mutations_summary(
     study_id: Annotated[str, Form()],
     gene: Annotated[str, Form()],
+    conn=Depends(get_db),
 ):
     """Return per-type mutation summary for the right panel."""
-    conn = request.app.state.db_conn
     data = get_mutation_summary(conn, study_id, gene)
     return JSONResponse(data)
 
 
 @router.post("/results/oncoprint/mutations-table")
-async def mutations_table_data(
-    request: Request,
+def mutations_table_data(
     study_id: Annotated[str, Form()],
     gene: Annotated[str, Form()],
+    conn=Depends(get_db),
     page: Annotated[int, Form()] = 1,
     page_size: Annotated[int, Form()] = 25,
     sort_col: Annotated[str, Form()] = "Protein_position",
     sort_dir: Annotated[str, Form()] = "ASC",
 ):
     """Return paginated mutation rows for the mutations table."""
-    conn = request.app.state.db_conn
     data = get_mutations_table(conn, study_id, gene, page, page_size, sort_col, sort_dir)
     return JSONResponse(data)
 
@@ -173,15 +168,14 @@ async def mutations_table_data(
 # ── Cancer Types Summary Tab ─────────────────────────────────────────────────
 
 @router.post("/results/oncoprint/cancer-types-summary")
-async def cancer_types_summary(
-    request: Request,
+def cancer_types_summary(
     study_id: Annotated[str, Form()],
     gene: Annotated[str, Form()],
+    conn=Depends(get_db),
     group_by: Annotated[str, Form()] = "CANCER_TYPE",
     count_by: Annotated[str, Form()] = "patients",
 ):
     """Return alteration breakdown per cancer type for one gene."""
-    conn = request.app.state.db_conn
     data = get_cancer_types_summary(conn, study_id, gene, group_by, count_by)
     return JSONResponse(data)
 
@@ -189,14 +183,13 @@ async def cancer_types_summary(
 # ── Plots Tab ────────────────────────────────────────────────────────────────
 
 @router.post("/results/oncoprint/plots-data")
-async def plots_data(
-    request: Request,
+def plots_data(
     study_id: Annotated[str, Form()],
+    conn=Depends(get_db),
     h_config: Annotated[str, Form()] = "{}",
     v_config: Annotated[str, Form()] = "{}",
 ):
     """Return cross-tabulated data for the plots chart."""
-    conn = request.app.state.db_conn
     h = json.loads(h_config)
     v = json.loads(v_config)
     data = get_plots_data(conn, study_id, h, v)
@@ -204,36 +197,33 @@ async def plots_data(
 
 
 @router.post("/results/oncoprint/plots-clinical-options")
-async def plots_clinical_options(
-    request: Request,
+def plots_clinical_options(
     study_id: Annotated[str, Form()],
+    conn=Depends(get_db),
 ):
     """Return available clinical attributes for axis dropdowns."""
-    conn = request.app.state.db_conn
     data = get_clinical_attribute_options(conn, study_id)
     return JSONResponse(data)
 
 
 @router.post("/results/oncoprint/plots-generic-assay-entities")
-async def plots_generic_assay_entities(
-    request: Request,
+def plots_generic_assay_entities(
     study_id: Annotated[str, Form()],
     stable_id: Annotated[str, Form()],
+    conn=Depends(get_db),
 ):
     """Return sorted entity IDs (e.g. drug names) for a generic assay profile."""
-    conn = request.app.state.db_conn
     entities = get_generic_assay_entities(conn, study_id, stable_id)
     return JSONResponse({"entities": entities})
 
 
 @router.post("/results/oncoprint/plots-color-data")
-async def plots_color_data(
-    request: Request,
+def plots_color_data(
     study_id: Annotated[str, Form()],
+    conn=Depends(get_db),
     color_config: Annotated[str, Form()] = "{}",
 ):
     """Return per-sample color overlay data for scatter/box coloring."""
-    conn = request.app.state.db_conn
     config = json.loads(color_config)
     data = get_color_data(conn, study_id, config)
     return JSONResponse(data)

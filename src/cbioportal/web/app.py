@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import sessionmaker
 
-from cbioportal.core.database import get_connection, DEFAULT_DB_PATH
+from cbioportal.core.database import get_connection, configure as configure_db, DEFAULT_DB_PATH
 from cbioportal.core.study_repository import load_study_names
 from cbioportal.core.session_repository import Base, make_engine
 from cbioportal.web.routes import home as home_router
@@ -75,25 +75,30 @@ async def lifespan(app: FastAPI):
     if gcs_uri:
         _download_duckdb_from_gcs(gcs_uri, db_path)
 
-    # Open a read-only connection to the DuckDB database
-    app.state.db_conn = get_connection(db_path, read_only=True)
+    # Pre-create the read-only connection pool (sequentially, main thread).
+    # Route handlers borrow a connection via Depends(get_db).
+    configure_db(db_path)
 
-    # Load study display names from the studies table in the DB
-    app.state.study_names = load_study_names(app.state.db_conn)
+    # Load study display names at startup using a temporary connection.
+    _startup_conn = get_connection(db_path, read_only=True)
+    app.state.study_names = load_study_names(_startup_conn)
+    _startup_conn.close()
 
     # Sessions DB (SQLAlchemy — SQLite for dev, PostgreSQL/AlloyDB for prod).
     # Base.metadata.create_all is a no-op when the table already exists.
     # Alembic (`uv run alembic upgrade head`) is the authoritative tool for prod.
     sessions_url = os.environ.get("CBIO_SESSIONS_DB_URL", _DEFAULT_SESSIONS_DB)
     engine = make_engine(sessions_url)
-    Base.metadata.create_all(engine)
+    try:
+        Base.metadata.create_all(engine)
+    except Exception:
+        pass  # Sibling worker already created the table (SQLite race with --workers > 1)
     app.state.session_factory = sessionmaker(
         bind=engine, autoflush=False, autocommit=False
     )
 
     yield
 
-    app.state.db_conn.close()
     engine.dispose()
 
 
