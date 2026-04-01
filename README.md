@@ -144,3 +144,42 @@ This approach is directly inspired by cBioPortal's ClickHouse backend:
 - `genomic_event_derived` table in `clickhouse.sql`
 - `ClickhouseAlterationMapper.xml` for the simplified query patterns
 - Application-level caching of unfiltered results via EhCache/Redis
+
+## Concurrency and Load Testing
+
+Load tests are in `tests/load/` and use [Locust](https://locust.io). Reports are saved as HTML files in that directory. Run them with:
+
+```bash
+inv smoke-test          # 2 users, 30 s — quick sanity check
+inv load-test           # 20 users, 120 s — standard baseline
+inv load-test --users 100 --duration 120s   # stress test
+```
+
+### Benchmark results (local Docker, M-series Mac, 100 concurrent users, 120 s)
+
+Tests ran against the three largest loaded studies: `msk_impact_50k_2026` (54k samples), `msk_chord_2024` (25k), `ccle_broad_2019` (817k mutations).
+
+| Configuration | p50 | p95 | Failures | Report |
+|---|---|---|---|---|
+| Baseline — 1 worker, 1 shared connection | 25 s | 40 s | 0 | `baseline-single-connection-report.html` |
+| Level 1 — 2 uvicorn workers | 18 s | 36 s | 1 | `two-worker-report.html` |
+| Level 2 — 2 workers + connection pool (4 total) | **3.6 s** | **6.8 s** | 1\* | `pool-queue-report.html` |
+
+\*Single MetricsUser connection-reset; not a real request failure.
+
+### Why it is designed this way
+
+**`def` routes, not `async def`**
+DuckDB queries are CPU-bound and blocking. FastAPI runs `async def` handlers on the asyncio event loop; a blocking DuckDB call there freezes *all* concurrent requests until it completes. Declaring handlers as plain `def` causes FastAPI to run them in its anyio thread pool (default 40 threads), so requests truly execute in parallel.
+
+**Pre-created `queue.Queue` connection pool**
+DuckDB's Python binding is not thread-safe for concurrent initialisation. Creating connections from multiple threads simultaneously corrupts internal C state (`malloc(): double linked list corrupted`). The solution is to create all connections sequentially in the main thread at startup and distribute them to request threads via a `queue.Queue`. This is the pattern [recommended by DuckDB for multi-threaded Python servers](https://duckdb.org/docs/api/python/overview.html).
+
+**`_POOL_SIZE = 2` per worker (4 total)**
+Each DuckDB connection can cache aggressively. Testing showed that 8 connections (pool_size=4 × 2 workers) exhausted container RAM on the 23 GB database (`OutOfMemoryException`). Two connections per worker is the stable sweet spot: enough concurrency for the anyio thread pool to overlap I/O, small enough to keep peak RSS under 10 GiB.
+
+**`memory_limit = '6GB'` per connection**
+Without a cap, a single large aggregation query (e.g. mutated-genes on the 54k-sample cohort) can request a 3–4 GiB contiguous allocation. The cap forces DuckDB to spill intermediate results to `temp_directory` rather than exhausting the host, and prevents one heavy query from starving all others.
+
+**`temp_directory = '/tmp/duckdb_temp'`**
+On Cloud Run and local Docker the DuckDB file is mounted read-only (`:ro`). DuckDB's default is to create its temp directory alongside the database file, which fails on a read-only mount. `/tmp` is always writable.
