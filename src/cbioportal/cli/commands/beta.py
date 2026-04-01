@@ -204,6 +204,7 @@ def study(study_id: str) -> None:
 def serve(
     port: int = typer.Option(8000, help="Port to run the server on"),
     host: str = typer.Option("127.0.0.1", help="Host to run the server on"),
+    workers: int = typer.Option(1, help="Number of uvicorn worker processes (>1 enables parallel DuckDB connections)"),
 ) -> None:
     """Launch the FastAPI/HTMX webserver."""
-    server.run(port=port, host=host)
+    server.run(port=port, host=host, workers=workers)

@@ -42,4 +42,7 @@ EXPOSE 8080
 
 # Shell form required so Cloud Run's injected $PORT expands at runtime.
 # --host 0.0.0.0 is required for Cloud Run to receive external traffic.
-CMD ["sh", "-c", "python -m cbioportal.cli.main beta serve --host 0.0.0.0 --port ${PORT:-8080}"]
+# --workers 2 matches Cloud Run's 2 vCPUs: each worker gets its own DuckDB
+# connection, doubling concurrent query capacity without touching the codebase.
+# DuckDB read-only mmap lets multiple processes share OS memory pages.
+CMD ["sh", "-c", "python -m cbioportal.cli.main beta serve --host 0.0.0.0 --port ${PORT:-8080} --workers 2"]
