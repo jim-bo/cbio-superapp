@@ -44,6 +44,7 @@ packages = ["src/cbioportal"]
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "locust>=2.32",
     "pillow>=10.0",
     "playwright>=1.58.0",
     "pytest>=9.0.2",

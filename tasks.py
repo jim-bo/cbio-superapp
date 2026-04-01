@@ -9,6 +9,8 @@ Usage:
     inv run-local
     inv logs
     inv migrate
+    inv smoke-test
+    inv load-test
 
 Configuration — set via environment variables or override with -e:
     GCP_PROJECT      GCP project ID (required)
@@ -185,3 +187,54 @@ def migrate(c, db_url=None):
         raise SystemExit(1)
 
     c.run("uv run alembic upgrade head", env=env, echo=True)
+
+
+# ── Load testing ──────────────────────────────────────────────────────────────
+
+@task(
+    help={
+        "host": "Target URL (default: http://localhost:8082)",
+        "users": "Number of concurrent users (default: 2)",
+        "duration": "Test duration, e.g. 30s, 2m (default: 30s)",
+    }
+)
+def smoke_test(c, host="http://localhost:8082", users=2, duration="30s"):
+    """Quick smoke test — 2 users, 30 s, verifies all endpoints respond.
+
+    Requires the app to be running (inv run-local or a live URL).
+    HTML report written to tests/load/smoke-report.html.
+    """
+    c.run(
+        f"uv run locust -f tests/load/locustfile.py"
+        f" --host {host}"
+        f" --headless -u {users} -r 1 -t {duration}"
+        f" --html tests/load/smoke-report.html"
+        f" --only-summary",
+        echo=True,
+    )
+
+
+@task(
+    help={
+        "host": "Target URL (default: http://localhost:8082)",
+        "users": "Number of concurrent users (default: 20)",
+        "spawn_rate": "Users spawned per second (default: 2)",
+        "duration": "Test duration, e.g. 120s, 5m (default: 120s)",
+    }
+)
+def load_test(c, host="http://localhost:8082", users=20, spawn_rate=2, duration="120s"):
+    """Full load test — 20 concurrent users, 2 min, HTML report.
+
+    Requires the app to be running (inv run-local or a live URL).
+    HTML report written to tests/load/load-report.html.
+
+    Example against Cloud Run:
+        inv load-test --host https://cbio-revamp-xxx.run.app --users 50
+    """
+    c.run(
+        f"uv run locust -f tests/load/locustfile.py"
+        f" --host {host}"
+        f" --headless -u {users} -r {spawn_rate} -t {duration}"
+        f" --html tests/load/load-report.html",
+        echo=True,
+    )
