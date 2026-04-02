@@ -83,6 +83,53 @@ Documentation for the experimental local web app and datahub ingestion can be fo
 
 ---
 
+## Cloud Run Deployment
+
+Merging to `main` automatically tests, builds, and deploys to Cloud Run via GitHub Actions.
+
+### First-time setup
+
+1. **Run the WIF setup script** (creates GCP service account + Workload Identity Federation):
+   ```bash
+   GCP_PROJECT=your-project GITHUB_REPO=owner/repo ./scripts/setup-wif.sh
+   ```
+
+2. **Add GitHub secrets** (printed by the script):
+   | Secret | Description |
+   |---|---|
+   | `WIF_PROVIDER` | Workload Identity Federation provider resource name |
+   | `WIF_SERVICE_ACCOUNT` | GCP service account email |
+   | `GCP_PROJECT` | GCP project ID |
+
+3. **Set the GCS bucket** as a GitHub Actions variable (not a secret):
+   - Go to Settings → Variables → Actions → New repository variable
+   - Name: `CBIO_GCS_BUCKET`, Value: your bucket name
+
+4. **Upload the DuckDB** to GCS:
+   ```bash
+   inv sync-db
+   ```
+
+5. **Push to main** — the workflow will trigger automatically.
+
+### Updating data
+
+The deploy pipeline does not update the DuckDB. To refresh study data:
+
+```bash
+# Load/update studies locally
+uv run cbio beta db add msk_chord_2024
+
+# Upload to GCS
+inv sync-db
+
+# Cloud Run picks up the new DB on next instance start (FUSE mount).
+# To force immediate refresh:
+gcloud run services update cbio-revamp --region us-central1 --no-traffic-migration
+```
+
+---
+
 ## Study View Performance: Pre-computed Derived Tables
 
 The study view dashboard shows per-gene mutation/CNA/SV frequencies across a cohort.
