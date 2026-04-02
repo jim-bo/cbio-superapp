@@ -33,7 +33,7 @@ COPY alembic.ini ./alembic.ini
 # Venv bin first so the installed `cbio` entry point is found
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Data directory — GCS download target or bind-mount for local testing
+# Data directory — DuckDB mounted via GCS FUSE or bind-mount
 RUN mkdir -p /app/data && chown cbio:cbio /app/data
 
 USER cbio

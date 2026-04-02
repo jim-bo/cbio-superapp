@@ -1,8 +1,9 @@
+import asyncio
 import logging
 import os
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
-from urllib.parse import urlparse
 
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
@@ -23,57 +24,35 @@ logger = logging.getLogger(__name__)
 _DEFAULT_SESSIONS_DB = "sqlite:///data/sessions.db"
 
 
-def _download_duckdb_from_gcs(gcs_uri: str, dest_path: Path) -> None:
-    """Download the DuckDB file from GCS if not already current.
+def _warm_page_cache(db_path: Path, study_ids: list[str]) -> None:
+    """Scan heavy tables to pull GCS FUSE data into the OS page cache.
 
-    Only called when CBIO_GCS_DB_URI is set. Authenticates via Application
-    Default Credentials — on Cloud Run this is the attached service account.
-    Skips download if the local file already matches the remote blob size.
+    Runs in a background thread so it doesn't block the lifespan (which
+    would prevent uvicorn from accepting connections / passing health checks).
+    On local disk this completes near-instantly.
     """
+    conn = get_connection(db_path, read_only=True)
     try:
-        from google.cloud import storage  # type: ignore[import]
-    except ImportError as exc:
-        raise RuntimeError(
-            "google-cloud-storage is required when CBIO_GCS_DB_URI is set. "
-            "Ensure it is listed in pyproject.toml dependencies."
-        ) from exc
-
-    parsed = urlparse(gcs_uri)
-    if parsed.scheme != "gs":
-        raise ValueError(f"CBIO_GCS_DB_URI must start with gs://, got: {gcs_uri!r}")
-
-    bucket_name = parsed.netloc
-    blob_name = parsed.path.lstrip("/")
-
-    dest_path.parent.mkdir(parents=True, exist_ok=True)
-
-    client = storage.Client()
-    blob = client.bucket(bucket_name).blob(blob_name)
-
-    if dest_path.exists():
-        blob.reload()
-        if dest_path.stat().st_size == blob.size:
-            logger.info(
-                "DuckDB already current at %s (%d bytes), skipping GCS download.",
-                dest_path,
-                blob.size,
-            )
-            return
-
-    logger.info("Downloading DuckDB from %s to %s ...", gcs_uri, dest_path)
-    blob.download_to_filename(str(dest_path))
-    logger.info("DuckDB download complete: %s", dest_path)
+        for study_id in study_ids:
+            for suffix in ("mutations", "cna", "sv", "gene_panel"):
+                table = f'"{study_id}_{suffix}"'
+                try:
+                    conn.execute(
+                        f"SELECT COUNT(*), MIN(COLUMNS(*)) FROM {table}"
+                    ).fetchall()
+                    logger.info("Warmed page cache for %s", table)
+                except Exception:
+                    pass  # Table may not exist for this study
+    finally:
+        conn.close()
+    logger.info("Page cache warmup complete")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Download DuckDB from GCS if CBIO_GCS_DB_URI is set (Cloud Run).
-    # Falls back to local CBIO_DB_PATH for local dev / bind-mount usage.
-    gcs_uri = os.environ.get("CBIO_GCS_DB_URI")
+    # DuckDB is either at CBIO_DB_PATH (local dev / bind-mount) or mounted
+    # via GCS FUSE volume (Cloud Run). No download step needed.
     db_path = Path(os.environ.get("CBIO_DB_PATH", DEFAULT_DB_PATH))
-
-    if gcs_uri:
-        _download_duckdb_from_gcs(gcs_uri, db_path)
 
     # Pre-create the read-only connection pool (sequentially, main thread).
     # Route handlers borrow a connection via Depends(get_db).
@@ -83,6 +62,16 @@ async def lifespan(app: FastAPI):
     _startup_conn = get_connection(db_path, read_only=True)
     app.state.study_names = load_study_names(_startup_conn)
     _startup_conn.close()
+
+    # Warm the OS page cache in a background thread. This scans the heaviest
+    # tables so GCS FUSE data lands in Linux's page cache. The lifespan yields
+    # immediately so uvicorn can accept connections and pass health checks.
+    warmup_thread = threading.Thread(
+        target=_warm_page_cache,
+        args=(db_path, list(app.state.study_names)),
+        daemon=True,
+    )
+    warmup_thread.start()
 
     # Sessions DB (SQLAlchemy — SQLite for dev, PostgreSQL/AlloyDB for prod).
     # Base.metadata.create_all is a no-op when the table already exists.

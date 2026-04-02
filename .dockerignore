@@ -1,4 +1,4 @@
-# Local data — too large for image; fetched from GCS at runtime
+# Data files — mounted at runtime via GCS FUSE or bind-mount
 data/
 *.duckdb
 *.db

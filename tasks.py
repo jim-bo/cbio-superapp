@@ -37,12 +37,44 @@ REGISTRY = f"{REGION}-docker.pkg.dev/{PROJECT}/{REPO}"
 IMAGE = f"{REGISTRY}/{IMAGE_NAME}"
 
 
+# ── GCP Setup ─────────────────────────────────────────────────────────────────
+
+@task
+def setup_gcp(c):
+    """One-time GCP project setup: enable APIs, create Artifact Registry + GCS bucket."""
+    c.run(f"gcloud config set project {PROJECT}", echo=True)
+    c.run(
+        f"gcloud services enable"
+        f" run.googleapis.com"
+        f" artifactregistry.googleapis.com"
+        f" storage.googleapis.com"
+        f" iam.googleapis.com"
+        f" --project {PROJECT}",
+        echo=True,
+    )
+    c.run(
+        f"gcloud artifacts repositories create {REPO}"
+        f" --project={PROJECT}"
+        f" --repository-format=docker"
+        f" --location={REGION}"
+        f" --description='cBioPortal Revamp Docker images'"
+        f" || true",
+        echo=True,
+    )
+    c.run(f"gsutil mb -p {PROJECT} -l {REGION} gs://{GCS_BUCKET} || true", echo=True)
+    c.run(f"gcloud auth configure-docker {REGION}-docker.pkg.dev --quiet", echo=True)
+    print(f"\nGCP setup complete. Next steps:")
+    print(f"  inv sync-db    # Upload DuckDB to gs://{GCS_BUCKET}/")
+    print(f"  inv push       # Build + push Docker image")
+    print(f"  inv deploy     # Deploy to Cloud Run")
+
+
 # ── Docker ────────────────────────────────────────────────────────────────────
 
 @task(help={"tag": "Image tag (default: latest)"})
 def build(c, tag="latest"):
-    """Build the Docker image."""
-    c.run(f"docker build -t {IMAGE}:{tag} -t {IMAGE}:latest .", echo=True)
+    """Build the Docker image (linux/amd64 for Cloud Run)."""
+    c.run(f"docker build --platform linux/amd64 -t {IMAGE}:{tag} -t {IMAGE}:latest .", echo=True)
 
 
 @task(pre=[build], help={"tag": "Image tag to push (default: latest)"})
@@ -65,24 +97,18 @@ def push(c, tag="latest"):
 def deploy(c, tag="latest", sessions_db_url=None):
     """Build, push, and deploy to Cloud Run.
 
-    Memory: 8Gi  CPU: 2  Min: 0 (scale-to-zero)  Startup timeout: 300s
-    CBIO_GCS_DB_URI triggers GCS download of DuckDB on cold start.
+    DuckDB is mounted via GCS FUSE from gs://your-gcs-bucket/.
     """
-    sessions_url = sessions_db_url or os.environ.get("CBIO_SESSIONS_DB_URL")
-    if not sessions_url:
-        print(
-            "ERROR: Set CBIO_SESSIONS_DB_URL or pass --sessions-db-url.\n"
-            "Example: postgresql+psycopg2://user:pass@/dbname?host=/cloudsql/PROJECT:REGION:INSTANCE"
-        )
-        raise SystemExit(1)
-
-    gcs_db_uri = os.environ.get("CBIO_GCS_DB_URI", f"gs://{GCS_BUCKET}/cbioportal.duckdb")
+    sessions_url = sessions_db_url or os.environ.get(
+        "CBIO_SESSIONS_DB_URL", "sqlite:////tmp/sessions.db"
+    )
 
     cmd = (
         f"gcloud run deploy {SERVICE}"
         f" --image {IMAGE}:{tag}"
         f" --region {REGION}"
         f" --platform managed"
+        f" --execution-environment gen2"
         f" --memory 8Gi"
         f" --cpu 2"
         f" --min-instances 0"
@@ -90,10 +116,11 @@ def deploy(c, tag="latest", sessions_db_url=None):
         f" --port 8080"
         f" --timeout 300"
         f" --cpu-boost"
-        f" --set-env-vars CBIO_GCS_DB_URI={gcs_db_uri}"
+        f" --add-volume name=duckdb-vol,type=cloud-storage,bucket={GCS_BUCKET}"
+        f" --add-volume-mount volume=duckdb-vol,mount-path=/mnt/gcs"
+        f" --set-env-vars CBIO_DB_PATH=/mnt/gcs/cbioportal.duckdb"
         f" --set-env-vars CBIO_SESSIONS_DB_URL={sessions_url}"
         f" --set-env-vars CBIO_SECURE_COOKIES=1"
-        f" --set-env-vars CBIO_DB_PATH=/app/data/cbioportal.duckdb"
         f" --allow-unauthenticated"
         f" --project {PROJECT}"
     )
