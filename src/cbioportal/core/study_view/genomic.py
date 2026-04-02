@@ -1,27 +1,33 @@
-"""Genomic alteration queries: mutated genes, CNA genes, SV genes, and age histogram."""
+"""Genomic alteration queries: mutated genes, CNA genes, SV genes, and age histogram.
+
+Performance strategy: queries use pre-computed "{study_id}_genomic_event_derived" and
+"{study_id}_profiled_counts" tables created at load time by create_genomic_derived_tables().
+This mirrors cBioPortal's ClickHouse genomic_event_derived approach — all expensive
+panel-awareness joins are done once at load time, not per-request.
+"""
 from __future__ import annotations
 
 import logging
 
-from .filters import _build_filter_subquery, _get_mutation_sample_col, get_clinical_attributes
+from .filters import _build_filter_subquery, get_clinical_attributes
 
 logger = logging.getLogger(__name__)
 
 
-def _get_panel_availability(conn, study_id: str, panel_col: str = "mutations") -> bool:
-    """Return True if panel-aware freq calculation is possible for this study.
-
-    panel_col: column in {study_id}_gene_panel to check —
-               'mutations', 'structural_variants', or 'cna'.
-    """
+def _has_derived_table(conn, study_id: str) -> bool:
+    """Check if the pre-computed derived table exists for this study."""
     try:
-        cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_gene_panel"').fetchall()]
-        if panel_col not in cols:
-            return False
+        conn.execute(f'SELECT 1 FROM "{study_id}_genomic_event_derived" LIMIT 0')
+        return True
     except Exception:
         return False
+
+
+def _has_profiled_table(conn, study_id: str) -> bool:
+    """Check if the pre-computed profiled counts table exists."""
     try:
-        return conn.execute("SELECT COUNT(*) FROM gene_panel_definitions").fetchone()[0] > 0
+        conn.execute(f'SELECT 1 FROM "{study_id}_profiled_counts" LIMIT 0')
+        return True
     except Exception:
         return False
 
@@ -34,108 +40,62 @@ def get_mutated_genes(
 ) -> list[dict]:
     """Return [{gene, n_mut, n_samples, n_profiled, freq}] sorted by n_samples desc.
 
-    Biology:
-        The mutated genes chart shows, for each gene, how many samples carry at least
-        one somatic mutation and what fraction of the profiled cohort that represents.
-        "Profiled" means the gene was interrogated by the sequencing panel used for
-        that sample — it is not the same as total samples in the study.
-
-    Engineering:
-        Mirrors cBioPortal's ClickhouseAlterationMapper.xml getMutatedGenes query:
-          - Only excludes mutation_status = 'UNCALLED' (supporting reads, not called).
-          - All variant classifications (Silent, Intron, etc.) are counted by default;
-            optional VC filtering is only applied via explicit alterationFilter params
-            which this portal does not yet support.
-          - When gene_panel data is available, freq = n_samples / n_profiled_for_gene
-            (panel-aware). Falls back to n_samples / total_filtered_samples.
-          - Panel classification: WES/WXS/WGS samples are considered profiled for all
-            genes; targeted-panel samples are profiled only for genes on their panel.
-
-    Citation:
-        Legacy query: cbioportal/src/main/java/org/mskcc/cbio/portal/web_api/
-        GetMutationData.java (pre-Clickhouse), superseded by
-        ClickhouseAlterationMapper.xml getMutatedGenes (v5.x).
+    Uses the pre-computed genomic_event_derived table for fast aggregation.
+    Falls back to direct table scan if the derived table doesn't exist.
     """
-    # Match public cBioPortal behaviour: only exclude 'UNCALLED' mutation status.
-    vc_exclusion = "AND COALESCE(Mutation_Status, '') != 'UNCALLED'"
+    if not _has_derived_table(conn, study_id):
+        return _get_mutated_genes_legacy(conn, study_id, filter_json, limit)
 
-    table = f'"{study_id}_mutations"'
+    derived = f'"{study_id}_genomic_event_derived"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
-    mut_sample_col = _get_mutation_sample_col(conn, study_id)
+    has_profiled = _has_profiled_table(conn, study_id)
 
     try:
-        if _get_panel_availability(conn, study_id):
+        if has_profiled:
             sql = f"""
-                WITH filtered_samples AS (
-                    SELECT fs.SAMPLE_ID, CAST(gp.mutations AS VARCHAR) AS panel_id
-                    FROM ({filter_sql}) fs
-                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
+                WITH filtered AS (
+                    SELECT sample_id FROM ({filter_sql})
                 ),
-                sample_classification AS (
+                event_counts AS (
                     SELECT
-                        SAMPLE_ID, panel_id,
-                        CASE
-                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME')
-                            THEN 'wes'
-                            WHEN panel_id IS NOT NULL AND panel_id != 'NA'
-                            THEN 'targeted'
-                            ELSE 'unassigned'
-                        END AS panel_class
-                    FROM filtered_samples
-                ),
-                gene_profiled AS (
-                    SELECT gpd.hugo_gene_symbol AS Hugo_Symbol, sc.SAMPLE_ID
-                    FROM sample_classification sc
-                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
-                    WHERE sc.panel_class = 'targeted'
-                    UNION ALL
-                    SELECT m_genes.Hugo_Symbol, sc.SAMPLE_ID
-                    FROM sample_classification sc
-                    CROSS JOIN (SELECT DISTINCT Hugo_Symbol FROM {table} WHERE Hugo_Symbol IS NOT NULL) m_genes
-                    WHERE sc.panel_class = 'wes'
-                ),
-                profiled_counts AS (
-                    SELECT Hugo_Symbol, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
-                    FROM gene_profiled
-                    GROUP BY Hugo_Symbol
-                ),
-                mutated_counts AS (
-                    SELECT Hugo_Symbol, COUNT(*) AS n_mut, COUNT(DISTINCT {mut_sample_col}) AS n_samples
-                    FROM {table}
-                    WHERE {mut_sample_col} IN (SELECT SAMPLE_ID FROM filtered_samples)
-                    {vc_exclusion}
-                    GROUP BY Hugo_Symbol
+                        hugo_symbol,
+                        COUNT(*) AS n_mut,
+                        COUNT(DISTINCT sample_id) AS n_samples
+                    FROM {derived}
+                    WHERE variant_type = 'mutation'
+                    AND sample_id IN (SELECT sample_id FROM filtered)
+                    GROUP BY hugo_symbol
                 )
                 SELECT
-                    mc.Hugo_Symbol,
-                    mc.n_mut,
-                    mc.n_samples,
-                    COALESCE(pc.n_profiled, mc.n_samples) AS n_profiled,
-                    ROUND(100.0 * mc.n_samples / NULLIF(COALESCE(pc.n_profiled, mc.n_samples), 0), 1) AS freq
-                FROM mutated_counts mc
-                LEFT JOIN profiled_counts pc ON mc.Hugo_Symbol = pc.Hugo_Symbol
-                ORDER BY mc.n_samples DESC, mc.Hugo_Symbol ASC
+                    ec.hugo_symbol,
+                    ec.n_mut,
+                    ec.n_samples,
+                    COALESCE(pc.n_profiled, ec.n_samples) AS n_profiled,
+                    ROUND(100.0 * ec.n_samples / NULLIF(COALESCE(pc.n_profiled, ec.n_samples), 0), 1) AS freq
+                FROM event_counts ec
+                LEFT JOIN "{study_id}_profiled_counts" pc
+                    ON ec.hugo_symbol = pc.hugo_symbol AND pc.variant_type = 'mutation'
+                ORDER BY ec.n_samples DESC, ec.hugo_symbol ASC
                 LIMIT {limit}
             """
-            rows = conn.execute(sql, params).fetchall()
         else:
             total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
             total = conn.execute(total_sql, params).fetchone()[0] or 1
             sql = f"""
                 SELECT
-                    Hugo_Symbol,
+                    hugo_symbol,
                     COUNT(*) AS n_mut,
-                    COUNT(DISTINCT {mut_sample_col}) AS n_samples,
+                    COUNT(DISTINCT sample_id) AS n_samples,
                     {total} AS n_profiled,
-                    NULL as freq
-                FROM {table}
-                WHERE {mut_sample_col} IN ({filter_sql})
-                {vc_exclusion}
-                GROUP BY Hugo_Symbol
-                ORDER BY n_samples DESC, Hugo_Symbol ASC
+                    NULL AS freq
+                FROM {derived}
+                WHERE variant_type = 'mutation'
+                AND sample_id IN ({filter_sql})
+                GROUP BY hugo_symbol
+                ORDER BY n_samples DESC, hugo_symbol ASC
                 LIMIT {limit}
             """
-            rows = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
     except Exception:
         return []
 
@@ -157,72 +117,29 @@ def get_sv_genes(
     filter_json: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """Return [{gene, n_sv, n_samples, n_profiled, freq}] sorted by n_samples desc.
+    """Return [{gene, n_sv, n_samples, n_profiled, freq}] sorted by n_samples desc."""
+    if not _has_derived_table(conn, study_id):
+        return _get_sv_genes_legacy(conn, study_id, filter_json, limit)
 
-    When gene panel data is available, freq = n_samples / n_profiled_for_gene.
-    Falls back to freq = n_samples / total_filtered_samples otherwise.
-    """
-    table = f'"{study_id}_sv"'
+    derived = f'"{study_id}_genomic_event_derived"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    has_profiled = _has_profiled_table(conn, study_id)
 
     try:
-        col_names = [r[0] for r in conn.execute(f'DESCRIBE {table}').fetchall()]
-        if "Site1_Hugo_Symbol" in col_names:
-            gene_col = "Site1_Hugo_Symbol"
-            sample_col = "Sample_Id"
-        elif "Gene1" in col_names:
-            gene_col = "Gene1"
-            sample_col = "Sample_Id"
-        else:
-            return []
-
-        if _get_panel_availability(conn, study_id, "structural_variants"):
+        if has_profiled:
             sql = f"""
-                WITH filtered_samples AS (
-                    SELECT fs.SAMPLE_ID, CAST(gp.structural_variants AS VARCHAR) AS panel_id
-                    FROM ({filter_sql}) fs
-                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
-                ),
-                sample_classification AS (
-                    SELECT
-                        SAMPLE_ID, panel_id,
-                        CASE
-                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME')
-                            THEN 'wes'
-                            WHEN panel_id IS NOT NULL AND panel_id != 'NA'
-                            THEN 'targeted'
-                            ELSE 'unassigned'
-                        END AS panel_class
-                    FROM filtered_samples
-                ),
-                gene_profiled AS (
-                    SELECT gpd.hugo_gene_symbol AS gene, sc.SAMPLE_ID
-                    FROM sample_classification sc
-                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
-                    WHERE sc.panel_class = 'targeted'
-                    UNION ALL
-                    SELECT sv_genes.gene, sc.SAMPLE_ID
-                    FROM sample_classification sc
-                    CROSS JOIN (
-                        SELECT DISTINCT {gene_col} AS gene FROM {table}
-                        WHERE {gene_col} IS NOT NULL AND {gene_col} != ''
-                    ) sv_genes
-                    WHERE sc.panel_class = 'wes'
-                ),
-                profiled_counts AS (
-                    SELECT gene, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
-                    FROM gene_profiled
-                    GROUP BY gene
+                WITH filtered AS (
+                    SELECT sample_id FROM ({filter_sql})
                 ),
                 sv_counts AS (
                     SELECT
-                        {gene_col} AS gene,
+                        hugo_symbol AS gene,
                         COUNT(*) AS n_sv,
-                        COUNT(DISTINCT {sample_col}) AS n_samples
-                    FROM {table}
-                    WHERE {sample_col} IN (SELECT SAMPLE_ID FROM filtered_samples)
-                    AND {gene_col} IS NOT NULL AND {gene_col} != ''
-                    GROUP BY gene
+                        COUNT(DISTINCT sample_id) AS n_samples
+                    FROM {derived}
+                    WHERE variant_type = 'structural_variant'
+                    AND sample_id IN (SELECT sample_id FROM filtered)
+                    GROUP BY hugo_symbol
                 )
                 SELECT
                     sc.gene,
@@ -231,29 +148,29 @@ def get_sv_genes(
                     COALESCE(pc.n_profiled, sc.n_samples) AS n_profiled,
                     ROUND(100.0 * sc.n_samples / NULLIF(COALESCE(pc.n_profiled, sc.n_samples), 0), 1) AS freq
                 FROM sv_counts sc
-                LEFT JOIN profiled_counts pc ON sc.gene = pc.gene
+                LEFT JOIN "{study_id}_profiled_counts" pc
+                    ON sc.gene = pc.hugo_symbol AND pc.variant_type = 'structural_variant'
                 ORDER BY sc.n_sv DESC, sc.gene ASC
                 LIMIT {limit}
             """
-            rows = conn.execute(sql, params).fetchall()
         else:
             total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
             total = conn.execute(total_sql, params).fetchone()[0] or 1
             sql = f"""
                 SELECT
-                    {gene_col} AS gene,
+                    hugo_symbol AS gene,
                     COUNT(*) AS n_sv,
-                    COUNT(DISTINCT {sample_col}) AS n_samples,
+                    COUNT(DISTINCT sample_id) AS n_samples,
                     {total} AS n_profiled,
-                    ROUND(100.0 * COUNT(DISTINCT {sample_col}) / NULLIF({total}, 0), 1) AS freq
-                FROM {table}
-                WHERE {sample_col} IN ({filter_sql})
-                AND {gene_col} IS NOT NULL AND {gene_col} != ''
-                GROUP BY gene
+                    ROUND(100.0 * COUNT(DISTINCT sample_id) / NULLIF({total}, 0), 1) AS freq
+                FROM {derived}
+                WHERE variant_type = 'structural_variant'
+                AND sample_id IN ({filter_sql})
+                GROUP BY hugo_symbol
                 ORDER BY n_sv DESC, gene ASC
                 LIMIT {limit}
             """
-            rows = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
     except Exception:
         return []
 
@@ -275,66 +192,28 @@ def get_cna_genes(
     filter_json: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
-    """Return [{gene, cna_type, n_samples, n_profiled, freq}] (AMP=cna_value>=2, HOMDEL=cna_value<=-1.5).
+    """Return [{gene, cytoband, cna_type, n_samples, n_profiled, freq}]."""
+    if not _has_derived_table(conn, study_id):
+        return _get_cna_genes_legacy(conn, study_id, filter_json, limit)
 
-    The legacy portal treats cna_value <= -1.5 as HOMDEL (not just -2).
-    Some studies (e.g. msk_chord_2024) have cna_value = -1.5 representing
-    deep deletions that the portal groups with homozygous deletions.
-
-    When gene panel data is available, freq = n_samples / n_profiled_for_gene.
-    Falls back to freq = n_samples / total_filtered_samples otherwise.
-    """
-    table = f'"{study_id}_cna"'
+    derived = f'"{study_id}_genomic_event_derived"'
     filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    has_profiled = _has_profiled_table(conn, study_id)
 
     try:
-        if _get_panel_availability(conn, study_id, "cna"):
+        if has_profiled:
             sql = f"""
-                WITH filtered_samples AS (
-                    SELECT fs.SAMPLE_ID, CAST(gp.cna AS VARCHAR) AS panel_id
-                    FROM ({filter_sql}) fs
-                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
-                ),
-                sample_classification AS (
-                    SELECT
-                        SAMPLE_ID, panel_id,
-                        CASE
-                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME')
-                            THEN 'wes'
-                            WHEN panel_id IS NOT NULL AND panel_id != 'NA'
-                            THEN 'targeted'
-                            ELSE 'unassigned'
-                        END AS panel_class
-                    FROM filtered_samples
-                ),
-                gene_profiled AS (
-                    SELECT gpd.hugo_gene_symbol AS hugo_symbol, sc.SAMPLE_ID
-                    FROM sample_classification sc
-                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
-                    WHERE sc.panel_class = 'targeted'
-                    UNION ALL
-                    SELECT cna_genes.hugo_symbol, sc.SAMPLE_ID
-                    FROM sample_classification sc
-                    CROSS JOIN (
-                        SELECT DISTINCT hugo_symbol FROM {table} WHERE hugo_symbol IS NOT NULL
-                    ) cna_genes
-                    WHERE sc.panel_class = 'wes'
-                ),
-                profiled_counts AS (
-                    SELECT hugo_symbol, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
-                    FROM gene_profiled
-                    GROUP BY hugo_symbol
+                WITH filtered AS (
+                    SELECT sample_id FROM ({filter_sql})
                 ),
                 cna_counts AS (
                     SELECT
                         hugo_symbol,
-                        CASE WHEN cna_value >= 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                        cna_type,
                         COUNT(DISTINCT sample_id) AS n_samples
-                    FROM {table}
-                    WHERE (cna_value >= 2 OR cna_value <= -1.5)
-                    AND sample_id IN (SELECT SAMPLE_ID FROM filtered_samples)
-                    -- Skip isoforms to match portal counts for CDKN2A
-                    AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
+                    FROM {derived}
+                    WHERE variant_type = 'cna'
+                    AND sample_id IN (SELECT sample_id FROM filtered)
                     GROUP BY hugo_symbol, cna_type
                 )
                 SELECT
@@ -344,35 +223,33 @@ def get_cna_genes(
                     COALESCE(pc.n_profiled, cc.n_samples) AS n_profiled,
                     ROUND(100.0 * cc.n_samples / NULLIF(COALESCE(pc.n_profiled, cc.n_samples), 0), 1) AS freq
                 FROM cna_counts cc
-                LEFT JOIN profiled_counts pc ON cc.hugo_symbol = pc.hugo_symbol
+                LEFT JOIN "{study_id}_profiled_counts" pc
+                    ON cc.hugo_symbol = pc.hugo_symbol AND pc.variant_type = 'cna'
                 ORDER BY cc.n_samples DESC, cc.hugo_symbol ASC, cc.cna_type ASC
                 LIMIT {limit}
             """
-            rows = conn.execute(sql, params).fetchall()
         else:
             total_sql = f"SELECT COUNT(*) FROM ({filter_sql})"
             total = conn.execute(total_sql, params).fetchone()[0] or 1
             sql = f"""
                 SELECT
                     hugo_symbol,
-                    CASE WHEN cna_value >= 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                    cna_type,
                     COUNT(DISTINCT sample_id) AS n_samples,
                     {total} AS n_profiled,
                     ROUND(100.0 * COUNT(DISTINCT sample_id) / NULLIF({total}, 0), 1) AS freq
-                FROM {table}
-                WHERE (cna_value >= 2 OR cna_value <= -1.5)
+                FROM {derived}
+                WHERE variant_type = 'cna'
                 AND sample_id IN ({filter_sql})
-                -- Skip isoforms to match portal counts for CDKN2A
-                AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
                 GROUP BY hugo_symbol, cna_type
                 ORDER BY n_samples DESC, hugo_symbol ASC, cna_type ASC
                 LIMIT {limit}
             """
-            rows = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
     except Exception:
         return []
 
-    # Fetch cytoband from gene_reference (populated from HGNC location column)
+    # Fetch cytoband from gene_reference
     cytoband_map: dict[str, str] = {}
     try:
         cb_rows = conn.execute(
@@ -474,3 +351,159 @@ def get_age_histogram(
         return []
 
     return [{"x": r[0], "y": r[1]} for r in rows]
+
+
+# ── Legacy fallback functions (used when derived tables don't exist) ──────────
+
+def _get_mutation_sample_col(conn, study_id: str) -> str:
+    """Detect whether mutation table uses Tumor_Sample_Barcode or SAMPLE_ID."""
+    try:
+        cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_mutations"').fetchall()]
+        if "Tumor_Sample_Barcode" in cols:
+            return "Tumor_Sample_Barcode"
+        if "SAMPLE_ID" in cols:
+            return "SAMPLE_ID"
+    except Exception:
+        pass
+    return "Tumor_Sample_Barcode"
+
+
+def _get_panel_availability(conn, study_id: str, panel_col: str = "mutations") -> bool:
+    try:
+        cols = [r[0] for r in conn.execute(f'DESCRIBE "{study_id}_gene_panel"').fetchall()]
+        if panel_col not in cols:
+            return False
+    except Exception:
+        return False
+    try:
+        return conn.execute("SELECT COUNT(*) FROM gene_panel_definitions").fetchone()[0] > 0
+    except Exception:
+        return False
+
+
+def _get_mutated_genes_legacy(conn, study_id, filter_json, limit):
+    """Original query-time join implementation — used as fallback."""
+    from .filters import _get_mutation_sample_col
+    vc_exclusion = "AND COALESCE(Mutation_Status, '') != 'UNCALLED'"
+    table = f'"{study_id}_mutations"'
+    filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    mut_sample_col = _get_mutation_sample_col(conn, study_id)
+
+    try:
+        if _get_panel_availability(conn, study_id):
+            sql = f"""
+                WITH filtered_samples AS (
+                    SELECT fs.SAMPLE_ID, CAST(gp.mutations AS VARCHAR) AS panel_id
+                    FROM ({filter_sql}) fs
+                    LEFT JOIN "{study_id}_gene_panel" gp ON fs.SAMPLE_ID = gp.SAMPLE_ID
+                ),
+                sample_classification AS (
+                    SELECT SAMPLE_ID, panel_id,
+                        CASE
+                            WHEN UPPER(panel_id) IN ('WES','WXS','WGS','WHOLE_EXOME','WHOLE_GENOME') THEN 'wes'
+                            WHEN panel_id IS NOT NULL AND panel_id != 'NA' THEN 'targeted'
+                            ELSE 'unassigned'
+                        END AS panel_class
+                    FROM filtered_samples
+                ),
+                gene_profiled AS (
+                    SELECT gpd.hugo_gene_symbol AS Hugo_Symbol, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    JOIN gene_panel_definitions gpd ON sc.panel_id = gpd.panel_id
+                    WHERE sc.panel_class = 'targeted'
+                    UNION ALL
+                    SELECT m_genes.Hugo_Symbol, sc.SAMPLE_ID
+                    FROM sample_classification sc
+                    CROSS JOIN (SELECT DISTINCT Hugo_Symbol FROM {table} WHERE Hugo_Symbol IS NOT NULL) m_genes
+                    WHERE sc.panel_class = 'wes'
+                ),
+                profiled_counts AS (
+                    SELECT Hugo_Symbol, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
+                    FROM gene_profiled GROUP BY Hugo_Symbol
+                ),
+                mutated_counts AS (
+                    SELECT Hugo_Symbol, COUNT(*) AS n_mut, COUNT(DISTINCT {mut_sample_col}) AS n_samples
+                    FROM {table}
+                    WHERE {mut_sample_col} IN (SELECT SAMPLE_ID FROM filtered_samples)
+                    {vc_exclusion}
+                    GROUP BY Hugo_Symbol
+                )
+                SELECT mc.Hugo_Symbol, mc.n_mut, mc.n_samples,
+                    COALESCE(pc.n_profiled, mc.n_samples) AS n_profiled,
+                    ROUND(100.0 * mc.n_samples / NULLIF(COALESCE(pc.n_profiled, mc.n_samples), 0), 1) AS freq
+                FROM mutated_counts mc
+                LEFT JOIN profiled_counts pc ON mc.Hugo_Symbol = pc.Hugo_Symbol
+                ORDER BY mc.n_samples DESC, mc.Hugo_Symbol ASC
+                LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
+        else:
+            total = conn.execute(f"SELECT COUNT(*) FROM ({filter_sql})", params).fetchone()[0] or 1
+            sql = f"""
+                SELECT Hugo_Symbol, COUNT(*) AS n_mut, COUNT(DISTINCT {mut_sample_col}) AS n_samples,
+                    {total} AS n_profiled, NULL as freq
+                FROM {table}
+                WHERE {mut_sample_col} IN ({filter_sql}) {vc_exclusion}
+                GROUP BY Hugo_Symbol ORDER BY n_samples DESC, Hugo_Symbol ASC LIMIT {limit}
+            """
+            rows = conn.execute(sql, params).fetchall()
+    except Exception:
+        return []
+    return [{"gene": r[0], "n_mut": r[1], "n_samples": r[2], "n_profiled": r[3],
+             "freq": r[4] if r[4] is not None else round(r[2] / (r[3] or 1) * 100, 1)} for r in rows]
+
+
+def _get_sv_genes_legacy(conn, study_id, filter_json, limit):
+    """Original SV query — fallback when derived table doesn't exist."""
+    filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    table = f'"{study_id}_sv"'
+    try:
+        col_names = [r[0] for r in conn.execute(f'DESCRIBE {table}').fetchall()]
+        gene_col = "Site1_Hugo_Symbol" if "Site1_Hugo_Symbol" in col_names else "Gene1"
+        sample_col = "Sample_Id"
+        total = conn.execute(f"SELECT COUNT(*) FROM ({filter_sql})", params).fetchone()[0] or 1
+        sql = f"""
+            SELECT {gene_col} AS gene, COUNT(*) AS n_sv, COUNT(DISTINCT {sample_col}) AS n_samples,
+                {total} AS n_profiled,
+                ROUND(100.0 * COUNT(DISTINCT {sample_col}) / NULLIF({total}, 0), 1) AS freq
+            FROM {table}
+            WHERE {sample_col} IN ({filter_sql})
+            AND {gene_col} IS NOT NULL AND {gene_col} != ''
+            GROUP BY gene ORDER BY n_sv DESC, gene ASC LIMIT {limit}
+        """
+        rows = conn.execute(sql, params).fetchall()
+    except Exception:
+        return []
+    return [{"gene": r[0], "n_sv": r[1], "n_samples": r[2], "n_profiled": r[3],
+             "freq": r[4] if r[4] is not None else round(r[2] / (r[3] or 1) * 100, 1)} for r in rows]
+
+
+def _get_cna_genes_legacy(conn, study_id, filter_json, limit):
+    """Original CNA query — fallback when derived table doesn't exist."""
+    filter_sql, params = _build_filter_subquery(conn, study_id, filter_json)
+    table = f'"{study_id}_cna"'
+    try:
+        total = conn.execute(f"SELECT COUNT(*) FROM ({filter_sql})", params).fetchone()[0] or 1
+        sql = f"""
+            SELECT hugo_symbol, CASE WHEN cna_value >= 2 THEN 'AMP' ELSE 'HOMDEL' END AS cna_type,
+                COUNT(DISTINCT sample_id) AS n_samples, {total} AS n_profiled,
+                ROUND(100.0 * COUNT(DISTINCT sample_id) / NULLIF({total}, 0), 1) AS freq
+            FROM {table}
+            WHERE (cna_value >= 2 OR cna_value <= -1.5)
+            AND sample_id IN ({filter_sql})
+            AND hugo_symbol NOT IN ('CDKN2Ap14ARF', 'CDKN2Ap16INK4A')
+            GROUP BY hugo_symbol, cna_type ORDER BY n_samples DESC, hugo_symbol ASC, cna_type ASC LIMIT {limit}
+        """
+        rows = conn.execute(sql, params).fetchall()
+    except Exception:
+        return []
+    cytoband_map = {}
+    try:
+        cytoband_map = {r[0]: r[1] for r in conn.execute(
+            "SELECT hugo_gene_symbol, cytoband FROM gene_reference WHERE cytoband IS NOT NULL AND cytoband != ''"
+        ).fetchall()}
+    except Exception:
+        pass
+    return [{"gene": r[0], "cytoband": cytoband_map.get(r[0], ""), "cna_type": r[1],
+             "n_samples": r[2], "n_profiled": r[3],
+             "freq": r[4] if r[4] is not None else round(r[2] / (r[3] or 1) * 100, 1)} for r in rows]
