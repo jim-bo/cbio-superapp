@@ -1,0 +1,31 @@
+# CD: deploy Cloudflare Worker when .worker/** changes.
+#
+# Required GitHub Secrets:
+#   CLOUDFLARE_API_TOKEN  — API token with "Edit Cloudflare Workers" permissions
+#                           Create at: dash.cloudflare.com > My Profile > API Tokens
+
+name: Deploy Cloudflare Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.worker/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Worker via Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: .worker
