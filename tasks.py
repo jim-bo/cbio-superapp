@@ -15,7 +15,7 @@ Usage:
 Configuration — set via environment variables or override with -e:
     GCP_PROJECT      GCP project ID (required)
     GCP_REGION       Cloud Run region (default: us-central1)
-    CBIO_GCS_BUCKET  GCS bucket containing cbioportal.duckdb (default: your-gcs-bucket)
+    CBIO_GCS_BUCKET  GCS bucket containing cbioportal.duckdb (required)
     CBIO_DB_PATH     Local DuckDB path for sync-db / run-local (default: data/cbioportal.duckdb)
 
 Example with overrides:
@@ -97,7 +97,7 @@ def push(c, tag="latest"):
 def deploy(c, tag="latest", sessions_db_url=None):
     """Build, push, and deploy to Cloud Run.
 
-    DuckDB is mounted via GCS FUSE from gs://your-gcs-bucket/.
+    DuckDB is mounted via GCS FUSE from the configured GCS_BUCKET.
     """
     sessions_url = sessions_db_url or os.environ.get(
         "CBIO_SESSIONS_DB_URL", "sqlite:////tmp/sessions.db"
