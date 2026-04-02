@@ -1,0 +1,731 @@
+{
+  "metadata": {
+    "host": "https://cbio-revamp-53867827765.us-central1.run.app",
+    "study_id": "msk_chord_2024",
+    "iterations": 3,
+    "timestamp": "2026-04-02T15:00:42.391428+00:00",
+    "host_label": "cbio-revamp-53867827765_us-central1_run_app"
+  },
+  "summary": {
+    "unfiltered": [
+      {
+        "endpoint": "age (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.307,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.0912,
+        "min_s": 0.0812,
+        "max_s": 0.0987,
+        "p50_s": 0.0936,
+        "stdev_s": 0.009
+      },
+      {
+        "endpoint": "charts-meta (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.2822,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.081,
+        "min_s": 0.0751,
+        "max_s": 0.0878,
+        "p50_s": 0.08,
+        "stdev_s": 0.0064
+      },
+      {
+        "endpoint": "cna-genes (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.1416,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.0959,
+        "min_s": 0.0827,
+        "max_s": 0.1074,
+        "p50_s": 0.0977,
+        "stdev_s": 0.0124
+      },
+      {
+        "endpoint": "data-types (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.1868,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.09,
+        "min_s": 0.0844,
+        "max_s": 0.0962,
+        "p50_s": 0.0894,
+        "stdev_s": 0.0059
+      },
+      {
+        "endpoint": "km (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.2982,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.2005,
+        "min_s": 0.1629,
+        "max_s": 0.2573,
+        "p50_s": 0.1813,
+        "stdev_s": 0.05
+      },
+      {
+        "endpoint": "mutated-genes (U)",
+        "filter": "unfiltered",
+        "cold_s": 1.9998,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.1144,
+        "min_s": 0.113,
+        "max_s": 0.1167,
+        "p50_s": 0.1136,
+        "stdev_s": 0.002
+      },
+      {
+        "endpoint": "page (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.215,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.1118,
+        "min_s": 0.0894,
+        "max_s": 0.135,
+        "p50_s": 0.1111,
+        "stdev_s": 0.0228
+      },
+      {
+        "endpoint": "scatter (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.3351,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.2792,
+        "min_s": 0.2573,
+        "max_s": 0.3098,
+        "p50_s": 0.2705,
+        "stdev_s": 0.0273
+      },
+      {
+        "endpoint": "sv-genes (U)",
+        "filter": "unfiltered",
+        "cold_s": 0.0899,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.0847,
+        "min_s": 0.0676,
+        "max_s": 0.1059,
+        "p50_s": 0.0805,
+        "stdev_s": 0.0195
+      }
+    ],
+    "filtered": [
+      {
+        "endpoint": "age (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      },
+      {
+        "endpoint": "charts-meta (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.0879,
+        "min_s": 0.0798,
+        "max_s": 0.0979,
+        "p50_s": 0.0861,
+        "stdev_s": 0.0092
+      },
+      {
+        "endpoint": "cna-genes (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      },
+      {
+        "endpoint": "data-types (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      },
+      {
+        "endpoint": "km (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      },
+      {
+        "endpoint": "mutated-genes (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      },
+      {
+        "endpoint": "page (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": true,
+        "iterations": 3,
+        "avg_s": 0.0808,
+        "min_s": 0.0728,
+        "max_s": 0.0923,
+        "p50_s": 0.0774,
+        "stdev_s": 0.0102
+      },
+      {
+        "endpoint": "scatter (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      },
+      {
+        "endpoint": "sv-genes (F)",
+        "filter": "filtered",
+        "cold_s": null,
+        "all_ok": false,
+        "iterations": 3,
+        "avg_s": 0,
+        "min_s": 0,
+        "max_s": 0,
+        "p50_s": 0
+      }
+    ]
+  },
+  "memory": [],
+  "raw": [
+    {
+      "endpoint": "mutated-genes",
+      "status": 200,
+      "time_s": 1.9998,
+      "size_bytes": 2860,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 200,
+      "time_s": 0.1416,
+      "size_bytes": 3762,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 200,
+      "time_s": 0.0899,
+      "size_bytes": 2653,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "age",
+      "status": 200,
+      "time_s": 0.307,
+      "size_bytes": 292,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 200,
+      "time_s": 0.3351,
+      "size_bytes": 8064,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "km",
+      "status": 200,
+      "time_s": 0.2982,
+      "size_bytes": 82153,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 200,
+      "time_s": 0.1868,
+      "size_bytes": 272,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.2822,
+      "size_bytes": 7560,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.215,
+      "size_bytes": 90475,
+      "iteration": "warmup",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "mutated-genes",
+      "status": 200,
+      "time_s": 0.1167,
+      "size_bytes": 2860,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 200,
+      "time_s": 0.0827,
+      "size_bytes": 3762,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 200,
+      "time_s": 0.0805,
+      "size_bytes": 2653,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "age",
+      "status": 200,
+      "time_s": 0.0936,
+      "size_bytes": 292,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 200,
+      "time_s": 0.3098,
+      "size_bytes": 8064,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "km",
+      "status": 200,
+      "time_s": 0.1813,
+      "size_bytes": 82153,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 200,
+      "time_s": 0.0894,
+      "size_bytes": 272,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.08,
+      "size_bytes": 7560,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.135,
+      "size_bytes": 90511,
+      "iteration": "run_1",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "mutated-genes",
+      "status": 200,
+      "time_s": 0.1136,
+      "size_bytes": 2860,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 200,
+      "time_s": 0.1074,
+      "size_bytes": 3762,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 200,
+      "time_s": 0.1059,
+      "size_bytes": 2653,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "age",
+      "status": 200,
+      "time_s": 0.0987,
+      "size_bytes": 292,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 200,
+      "time_s": 0.2573,
+      "size_bytes": 8064,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "km",
+      "status": 200,
+      "time_s": 0.2573,
+      "size_bytes": 82153,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 200,
+      "time_s": 0.0962,
+      "size_bytes": 272,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.0878,
+      "size_bytes": 7560,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.1111,
+      "size_bytes": 90511,
+      "iteration": "run_2",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "mutated-genes",
+      "status": 200,
+      "time_s": 0.113,
+      "size_bytes": 2860,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 200,
+      "time_s": 0.0977,
+      "size_bytes": 3762,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 200,
+      "time_s": 0.0676,
+      "size_bytes": 2653,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "age",
+      "status": 200,
+      "time_s": 0.0812,
+      "size_bytes": 292,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 200,
+      "time_s": 0.2705,
+      "size_bytes": 8064,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "km",
+      "status": 200,
+      "time_s": 0.1629,
+      "size_bytes": 82153,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 200,
+      "time_s": 0.0844,
+      "size_bytes": 272,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.0751,
+      "size_bytes": 7560,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.0894,
+      "size_bytes": 90511,
+      "iteration": "run_3",
+      "filter": "unfiltered"
+    },
+    {
+      "endpoint": "mutated-genes",
+      "status": 400,
+      "time_s": 0.0533,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 400,
+      "time_s": 0.0719,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 400,
+      "time_s": 0.051,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "age",
+      "status": 400,
+      "time_s": 0.0509,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 400,
+      "time_s": 0.0526,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "km",
+      "status": 400,
+      "time_s": 0.0507,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 400,
+      "time_s": 0.0554,
+      "size_bytes": 561,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.0861,
+      "size_bytes": 7560,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.0774,
+      "size_bytes": 90511,
+      "iteration": "run_1",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "mutated-genes",
+      "status": 400,
+      "time_s": 0.0531,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 400,
+      "time_s": 0.0694,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 400,
+      "time_s": 0.0505,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "age",
+      "status": 400,
+      "time_s": 0.0734,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 400,
+      "time_s": 0.0516,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "km",
+      "status": 400,
+      "time_s": 0.0528,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 400,
+      "time_s": 0.051,
+      "size_bytes": 561,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.0979,
+      "size_bytes": 7560,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.0923,
+      "size_bytes": 90511,
+      "iteration": "run_2",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "mutated-genes",
+      "status": 400,
+      "time_s": 0.0539,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "cna-genes",
+      "status": 400,
+      "time_s": 0.056,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "sv-genes",
+      "status": 400,
+      "time_s": 0.0509,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "age",
+      "status": 400,
+      "time_s": 0.0496,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "scatter",
+      "status": 400,
+      "time_s": 0.0546,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "km",
+      "status": 400,
+      "time_s": 0.0525,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "data-types",
+      "status": 400,
+      "time_s": 0.0529,
+      "size_bytes": 561,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "charts-meta",
+      "status": 200,
+      "time_s": 0.0798,
+      "size_bytes": 7560,
+      "iteration": "run_3",
+      "filter": "filtered"
+    },
+    {
+      "endpoint": "page",
+      "status": 200,
+      "time_s": 0.0728,
+      "size_bytes": 90511,
+      "iteration": "run_3",
+      "filter": "filtered"
+    }
+  ]
+}
