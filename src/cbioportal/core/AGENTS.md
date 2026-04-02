@@ -21,9 +21,37 @@ counts across studies.
 - All core functions take a `conn` (DuckDB connection) as the first argument.
 - All functions must have unit tests in `tests/unit/` using an in-memory DuckDB.
 
+## DuckDB concurrency — do not regress these constraints
+
+The following rules were established through load testing (see `tests/load/` and `README.md`).
+Violating them causes either silent serialisation (all requests queue behind one thread) or
+crashes under concurrent load.
+
+**1. Never share a single DuckDB connection across threads.**
+DuckDB's Python binding is not thread-safe. Creating connections from multiple threads
+simultaneously corrupts internal C state. Connections are created sequentially at startup
+and handed out via `queue.Queue` in `database.py`.
+
+**2. Never call `duckdb.connect()` from a request thread.**
+Even though it looks safe, concurrent calls to `duckdb.connect()` trigger a C-level init
+race that causes `malloc(): double linked list corrupted`. Always borrow from the pool.
+
+**3. Never convert `get_db()` back to yielding a cursor (`conn.cursor()`).**
+DuckDB cursors share the underlying C++ connection object — they are also not safe for
+concurrent Python threads.
+
+**4. Do not increase `_POOL_SIZE` above 2 without re-running the load test.**
+Each connection caches aggressively. 8 connections (pool_size=4 × 2 workers) OOM-killed
+the container on the 23 GB database. Two per worker is the tested stable limit.
+
+**5. Do not remove `memory_limit` or `temp_directory` from `configure()`.**
+`memory_limit='6GB'` prevents one heavy aggregation from exhausting the host.
+`temp_directory='/tmp/duckdb_temp'` is required when the DB file is on a read-only mount
+(Cloud Run, local Docker `:ro` bind).
+
 ## Key files
 
-- `database.py` — DuckDB connection factory (`get_connection()`)
+- `database.py` — DuckDB connection pool (`configure()`, `get_db()`, `get_connection()`)
 - `session_repository.py` — SQLAlchemy sessions DB (SQLite dev / PostgreSQL prod); model, engine factory, CRUD
 - `fetcher.py` — Data download utilities (fetch study files from cBioPortal datahub)
 - `study_repository.py` — Homepage queries (study list, cancer type counts)

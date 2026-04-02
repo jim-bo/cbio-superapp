@@ -9,6 +9,19 @@ Chart endpoints accept the current filter state (as `filter_json`) and return th
 for one chart in the filtered cohort. Understanding the filter model is essential:
 see `web/schemas.py` → `DashboardFilters`.
 
+## Engineering context — threading rules (do not regress)
+
+**All route handlers must be plain `def`, not `async def`.**
+DuckDB queries are blocking. An `async def` handler runs on the asyncio event loop; any
+blocking call there freezes *all* in-flight requests until it returns. Plain `def` handlers
+run in FastAPI's anyio thread pool (default 40 threads), enabling true parallelism.
+This was validated under 100-concurrent-user load testing — see `README.md` and `tests/load/`.
+
+**All routes that touch DuckDB must use `conn=Depends(get_db)`.**
+`get_db()` borrows a connection from the pre-created `queue.Queue` pool in `database.py`.
+Never open a new DuckDB connection inside a route handler or call `duckdb.connect()` from
+a request thread — this triggers a C-level race that corrupts memory under concurrent load.
+
 ## Engineering context
 
 - All chart endpoints accept `POST` with form fields: `study_id`, `filter_json`.

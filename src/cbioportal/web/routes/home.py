@@ -1,8 +1,9 @@
 """Homepage route handlers."""
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from typing import Annotated
 
+from cbioportal.core.database import get_db
 from cbioportal.core.study_repository import (
     DATA_TYPE_OPTIONS,
     SPECIAL_COLLECTIONS,
@@ -48,7 +49,7 @@ def _build_context(conn, study_names, cancer_type="All", data_types=None):
 
     # cancer_types should be the sorted list of Organ Systems
     sorted_organ_systems = sorted(cancer_type_counts.keys())
-    
+
     total_studies = sum(cancer_type_counts.values()) + sum(special_counts.values())
     total_samples = sum(s["sample_count"] for s in studies)
 
@@ -74,8 +75,7 @@ def _build_context(conn, study_names, cancer_type="All", data_types=None):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    conn = request.app.state.db_conn
+def home(request: Request, conn=Depends(get_db)):
     study_names = request.app.state.study_names
     ctx = _build_context(conn, study_names)
     return request.app.state.templates.TemplateResponse(
@@ -84,12 +84,12 @@ async def home(request: Request):
 
 
 @router.post("/studies", response_class=HTMLResponse)
-async def filter_studies(
+def filter_studies(
     request: Request,
+    conn=Depends(get_db),
     cancer_type: Annotated[str, Form()] = "All",
     data_types: Annotated[list[str], Form()] = [],
 ):
-    conn = request.app.state.db_conn
     study_names = request.app.state.study_names
     ctx = _build_context(conn, study_names, cancer_type=cancer_type, data_types=data_types)
     return request.app.state.templates.TemplateResponse(
@@ -98,12 +98,12 @@ async def filter_studies(
 
 
 @router.get("/query", response_class=HTMLResponse)
-async def query_page(
+def query_page(
     request: Request,
+    conn=Depends(get_db),
     study_ids: str = "",
 ):
     """Render the query-by-gene form as a standalone page."""
-    conn = request.app.state.db_conn
     ids = [s.strip() for s in study_ids.split(",") if s.strip()]
     if not ids:
         return HTMLResponse("No studies selected. <a href='/'>Go back</a>", status_code=400)
@@ -114,11 +114,10 @@ async def query_page(
 
 
 @router.post("/validate-genes")
-async def validate_genes_endpoint(
-    request: Request,
+def validate_genes_endpoint(
     genes: Annotated[str, Form()] = "",
+    conn=Depends(get_db),
 ):
     """Validate gene symbols against the gene_reference table."""
-    conn = request.app.state.db_conn
     result = validate_genes(conn, genes)
     return JSONResponse(result)

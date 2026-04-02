@@ -144,13 +144,26 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
     Args:
         filter_zeros: If True, exclude rows where value == 0 (used for CNA to save space).
     """
-    _NON_SAMPLE = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband", "Composite.Element.REF"}
+    # ENTITY_STABLE_ID is used by methylation probe files (cg* probe IDs).
+    # In those files, NAME holds the Hugo symbol; DESCRIPTION and TRANSCRIPT_ID are metadata.
+    _NON_SAMPLE = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband", "Composite.Element.REF",
+                   "ENTITY_STABLE_ID", "NAME", "DESCRIPTION", "TRANSCRIPT_ID"}
     with open(filepath) as f:
         for line in f:
             if not line.startswith("#"):
                 header_cols = line.strip().split("\t")
                 break
-    hugo_col = header_cols.index("Hugo_Symbol") if "Hugo_Symbol" in header_cols else None
+    # Resolve which column holds the Hugo symbol.
+    # Methylation probe files (pan-cancer atlas) use NAME instead of Hugo_Symbol.
+    if "Hugo_Symbol" in header_cols:
+        hugo_col = header_cols.index("Hugo_Symbol")
+        hugo_col_name = "Hugo_Symbol"
+    elif "NAME" in header_cols:
+        hugo_col = header_cols.index("NAME")
+        hugo_col_name = "NAME"
+    else:
+        hugo_col = None
+        hugo_col_name = None
     composite_col = header_cols.index("Composite.Element.REF") if "Composite.Element.REF" in header_cols else None
     sample_cols = [c for c in header_cols if c not in _NON_SAMPLE]
     n_samples = len(sample_cols)
@@ -166,7 +179,7 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
         else:
             exclude_clause = None
         if hugo_col is not None:
-            hugo_select = "Hugo_Symbol as hugo_symbol,"
+            hugo_select = f'"{hugo_col_name}" as hugo_symbol,'
             join_clause = ""
         elif composite_col is not None:
             hugo_select = 'split_part("Composite.Element.REF", \'|\', 1) as hugo_symbol,'
@@ -427,11 +440,8 @@ def load_study(
                               f'"{raw_study_id}_protein"', "protein_value")
             normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
-        if load_expression and methylation_files:
-            _load_wide_matrix(conn, raw_study_id, methylation_files[0],
-                              f'"{raw_study_id}_methylation"', "methylation_value")
-            normalize_hugo_symbols(conn, raw_study_id)
-            loaded_any = True
+        # Methylation skipped — 22k probes × hundreds of samples produces hundreds of
+        # millions of rows across pan-cancer studies with no current web view consumer.
         if load_expression:
             # Load generic assay profiles (treatment response, etc.)
             # We load ALL meta_*.txt files with genetic_alteration_type=GENERIC_ASSAY
@@ -552,12 +562,23 @@ def load_all_studies(
     studies = all_studies[start:end]
     typer.echo(f"Found {len(all_studies)} total studies. Processing batch of {len(studies)}.")
     total_loaded = 0
+    failed_studies = []
     with typer.progressbar(studies, label="Loading studies") as progress:
         for study_path in progress:
-            load_study_metadata(conn, study_path)
-            if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression):
-                total_loaded += 1
-            conn.execute("CHECKPOINT")
+            try:
+                load_study_metadata(conn, study_path)
+                if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression):
+                    total_loaded += 1
+                conn.execute("CHECKPOINT")
+            except Exception as e:
+                failed_studies.append((study_path.name, str(e)))
+                typer.echo(f"\nSkipping {study_path.name}: {e}")
+                continue
+
+    if failed_studies:
+        typer.echo(f"\n{len(failed_studies)} studies failed:")
+        for name, err in failed_studies:
+            typer.echo(f"  {name}: {err}")
     create_global_views(conn)
     metrics = monitor.get_metrics()
     return total_loaded, metrics
