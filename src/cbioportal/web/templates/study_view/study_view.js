@@ -4,6 +4,19 @@
 */
 
 // ---------------------------------------------------------------------------
+// Shareable link — copies the current URL (which already has ?session_id=
+// set by the server-side restore or the first middleware save) to clipboard.
+// ---------------------------------------------------------------------------
+async function cbioShareLink(btn) {
+    try {
+        await navigator.clipboard.writeText(window.location.href);
+        const icon = btn.querySelector('i');
+        icon.className = 'fa fa-check';
+        setTimeout(() => { icon.className = 'fa fa-share-alt'; }, 1500);
+    } catch (_) {}
+}
+
+// ---------------------------------------------------------------------------
 // Table sorting state — { tableId: { col: 'freq', dir: 'desc' } }
 // ---------------------------------------------------------------------------
 const tableSortState = {};

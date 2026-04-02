@@ -1,11 +1,20 @@
 """Study View route handlers — /study/summary?id=..."""
 from __future__ import annotations
 
+import json
+import os
+import secrets
+
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from typing import Annotated
 
+from cbioportal.core.session_repository import fetch_settings, get_session
+
+_TOKEN_COOKIE = "cbio_session_token"
+_TOKEN_BYTES = 32
+_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2  # 2 years
 from cbioportal.core.study_view_repository import (
     get_study_metadata,
     get_clinical_counts,
@@ -94,15 +103,72 @@ async def charts_meta_endpoint(request: Request, id: str):
 
 
 @router.get("/study/summary", response_class=HTMLResponse)
-async def study_summary(request: Request, id: str):
-    """Render the Study View summary (dashboard) page."""
+async def study_summary(request: Request, id: str, session_id: str | None = None):
+    """Render the Study View summary (dashboard) page.
+
+    Restores saved filter state server-side so the page loads with the right
+    filters already applied — no client-side async fetch needed.
+
+    Also mints the session cookie if absent, so the middleware can start
+    auto-saving filter state on the first chart POST that follows.
+    """
     conn = request.app.state.db_conn
     meta = get_study_metadata(conn, id)
     if not meta:
         raise HTTPException(status_code=404, detail="Study not found")
-    return request.app.state.templates.TemplateResponse(
-        "study_view/page.html", {"request": request, "meta": meta, "active_tab": "summary"}
+
+    # Resolve or mint the session token.
+    raw_token = request.cookies.get(_TOKEN_COOKIE)
+    new_token: str | None = None
+    if not raw_token:
+        raw_token = secrets.token_hex(_TOKEN_BYTES)
+        new_token = raw_token  # will be set as a cookie on the response
+
+    restored_filters: dict = {}
+    resolved_session_id: str = session_id or ""
+
+    try:
+        db = request.app.state.session_factory()
+        try:
+            if session_id:
+                # Explicit session_id in URL — shared link or bookmark.
+                record = get_session(db, session_id)
+                if record and record.type == "settings":
+                    restored_filters = record.data.get("filters") or {}
+            elif raw_token:
+                # No explicit session — restore auto-saved settings for this study.
+                record = fetch_settings(db, "study_view", [id], raw_token)
+                if record:
+                    restored_filters = record.data.get("filters") or {}
+                    resolved_session_id = record.id
+        finally:
+            db.close()
+    except Exception:
+        # Session lookup must never break the page render.
+        pass
+
+    response = request.app.state.templates.TemplateResponse(
+        "study_view/page.html",
+        {
+            "request": request,
+            "meta": meta,
+            "active_tab": "summary",
+            "restored_filters": json.dumps(restored_filters),
+            "session_id": resolved_session_id,
+        },
     )
+
+    if new_token:
+        response.set_cookie(
+            key=_TOKEN_COOKIE,
+            value=new_token,
+            max_age=_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="lax",
+            secure=os.environ.get("CBIO_SECURE_COOKIES", "0") == "1",
+        )
+
+    return response
 
 
 @router.get("/study/clinicalData", response_class=HTMLResponse)
