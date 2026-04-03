@@ -35,7 +35,7 @@ def db():
             study_id VARCHAR,
             hugo_symbol VARCHAR,
             sample_id VARCHAR,
-            cna_value INTEGER
+            cna_value FLOAT
         )
     """)
     conn.execute(f"""

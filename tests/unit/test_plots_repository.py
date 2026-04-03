@@ -55,7 +55,7 @@ def conn():
     # -- CNA table
     c.execute("""
         CREATE TABLE "test_study_cna" (
-            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, cna_value DOUBLE
+            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, cna_value FLOAT
         )
     """)
     c.execute("""
@@ -113,7 +113,7 @@ def conn():
     # -- expression table (mRNA)
     c.execute("""
         CREATE TABLE "test_study_expression" (
-            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, expression_value DOUBLE
+            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, expression_value FLOAT
         )
     """)
     c.execute("""
@@ -130,7 +130,7 @@ def conn():
     # -- protein table
     c.execute("""
         CREATE TABLE "test_study_protein" (
-            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, protein_value DOUBLE
+            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, protein_value FLOAT
         )
     """)
     c.execute("""
@@ -143,7 +143,7 @@ def conn():
     # -- methylation table
     c.execute("""
         CREATE TABLE "test_study_methylation" (
-            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, methylation_value DOUBLE
+            study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, methylation_value FLOAT
         )
     """)
     c.execute("""

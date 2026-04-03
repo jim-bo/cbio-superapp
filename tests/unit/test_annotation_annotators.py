@@ -44,7 +44,7 @@ def study_db():
         CREATE TABLE "{STUDY}_cna" (
             hugo_symbol VARCHAR,
             sample_id VARCHAR,
-            cna_value DOUBLE
+            cna_value FLOAT
         )
     """)
     conn.execute(f"""

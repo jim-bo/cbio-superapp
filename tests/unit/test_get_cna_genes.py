@@ -22,7 +22,7 @@ def db():
         CREATE TABLE "{STUDY}_cna" (
             sample_id VARCHAR,
             hugo_symbol VARCHAR,
-            cna_value DOUBLE
+            cna_value FLOAT
         )
     """)
     conn.execute("""
