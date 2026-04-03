@@ -5,12 +5,27 @@ const LOADING_HTML = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="refresh" content="5">
   <title>rm -rf cancer — warming up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --card-border: #dde3ed;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --text-faint: #94a3b8;
+      --accent: #1d4ed8;
+      --done: #16a34a;
+      --progress-track: #e2e8f0;
+    }
+
     body {
-      background: #0a0a0a;
-      color: #00ff41;
-      font-family: 'Courier New', Courier, monospace;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -19,47 +34,164 @@ const LOADING_HTML = `<!DOCTYPE html>
       padding: 2rem;
       overflow: hidden;
     }
+
+    /* subtle dot-grid lab-notebook texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #c8d3e8 1px, transparent 1px);
+      background-size: 26px 26px;
+      opacity: 0.55;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     canvas {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 0;
+      z-index: 1;
       pointer-events: none;
     }
-    .terminal {
+
+    /* macOS-style window card */
+    .card {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       width: 100%;
-      max-width: 640px;
-      background: rgba(10, 10, 10, 0.75);
-      backdrop-filter: blur(2px);
-      border: 1px solid #003a10;
-      border-radius: 4px;
-      padding: 1.5rem;
+      max-width: 600px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.04),
+        0 4px 12px rgba(0,0,0,0.06),
+        0 16px 40px rgba(0,0,0,0.05);
     }
-    .prompt-line { margin-bottom: 0.4rem; opacity: 0; transition: opacity 0.2s ease; white-space: pre; }
+
+    .card-chrome {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--card-border);
+      background: #f8fafc;
+      border-radius: 10px 10px 0 0;
+    }
+    .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .dot-close  { background: #ff6058; }
+    .dot-min    { background: #ffbd2e; }
+    .dot-expand { background: #29cc41; }
+    .chrome-title {
+      margin-left: 6px;
+      font-size: 0.68rem;
+      color: var(--text-faint);
+      letter-spacing: 0.06em;
+    }
+
+    .card-body { padding: 1.5rem 1.75rem; }
+
+    .prompt-line {
+      margin-bottom: 0.45rem;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+    }
     .prompt-line.visible { opacity: 1; }
-    .cursor-line { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.8rem; }
+    .ps { color: var(--accent); font-weight: 500; flex-shrink: 0; }
+    .pc { color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .pd { color: var(--done); font-size: 0.72rem; flex-shrink: 0; }
+
+    .cursor-line {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.85rem;
+      font-size: 0.8rem;
+    }
+    .cs { color: var(--accent); font-weight: 500; }
+    .cc { color: var(--text); }
+
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-    .cursor { animation: blink 1s step-end infinite; }
-    .progress-track { margin-top: 2rem; width: 100%; height: 2px; background: #1a1a1a; border-radius: 1px; overflow: hidden; }
+    .cursor {
+      display: inline-block;
+      width: 7px; height: 15px;
+      background: var(--accent);
+      border-radius: 1px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+
+    .progress-section {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--progress-track);
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .progress-label { font-size: 0.66rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.07em; }
+    .progress-pct   { font-size: 0.68rem; color: var(--accent); font-weight: 500; }
+
+    .progress-track {
+      width: 100%;
+      height: 3px;
+      background: var(--progress-track);
+      border-radius: 2px;
+      overflow: hidden;
+    }
     @keyframes fill { from { width: 0%; } to { width: 100%; } }
-    .progress-bar { height: 100%; background: #00ff41; animation: fill 5s linear forwards; }
-    .footer-note { margin-top: 1.5rem; font-size: 0.75rem; color: #006b1a; text-align: center; }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #1d4ed8);
+      animation: fill 5s linear forwards;
+      border-radius: 2px;
+    }
+
+    .footer-note {
+      margin-top: 1rem;
+      font-size: 0.67rem;
+      color: var(--text-faint);
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
   </style>
 </head>
 <body>
   <canvas id="dna-rain"></canvas>
-  <div class="terminal" aria-live="polite">
-    <div id="lines"></div>
-    <div class="cursor-line">
-      <span>$</span><span id="active-cmd"></span><span class="cursor">_</span>
+  <div class="card">
+    <div class="card-chrome">
+      <span class="dot dot-close"></span>
+      <span class="dot dot-min"></span>
+      <span class="dot dot-expand"></span>
+      <span class="chrome-title">rm-rf-cancer &mdash; initializing</span>
     </div>
-    <div class="progress-track"><div class="progress-bar"></div></div>
-    <p class="footer-note">page refreshes automatically &mdash; no action needed</p>
+    <div class="card-body" aria-live="polite">
+      <div id="lines"></div>
+      <div class="cursor-line">
+        <span class="cs">$</span><span class="cc" id="active-cmd"></span><span class="cursor"></span>
+      </div>
+      <div class="progress-section">
+        <div class="progress-meta">
+          <span class="progress-label">service warmup</span>
+          <span class="progress-pct" id="pct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-bar"></div></div>
+        <p class="footer-note">page refreshes automatically &mdash; no action needed</p>
+      </div>
+    </div>
   </div>
   <script>
-    // --- DNA matrix rain ---
+    // --- DNA matrix rain (light theme) ---
     (function () {
       const canvas = document.getElementById('dna-rain');
       const ctx = canvas.getContext('2d');
@@ -77,22 +209,22 @@ const LOADING_HTML = `<!DOCTYPE html>
       }
 
       function draw() {
-        // fade trail — slightly transparent black overlay each frame
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.12)';
+        // fade trail — light overlay so characters dissolve gently
+        ctx.fillStyle = 'rgba(244, 246, 249, 0.18)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.font = FONT_SIZE + 'px "Courier New", monospace';
+        ctx.font = FONT_SIZE + 'px "IBM Plex Mono", "Courier New", monospace';
 
         for (let c = 0; c < cols; c++) {
           const y = drops[c] * FONT_SIZE;
 
-          // head character: bright white-green flash
-          ctx.fillStyle = '#c8ffc8';
+          // head character: vivid blue
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
           ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], c * FONT_SIZE, y);
 
-          // one step behind: full green
+          // one step behind: faint blue trail
           if (drops[c] > 1) {
-            ctx.fillStyle = '#00ff41';
+            ctx.fillStyle = 'rgba(99, 155, 230, 0.18)';
             ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], c * FONT_SIZE, y - FONT_SIZE);
           }
 
@@ -116,11 +248,24 @@ const LOADING_HTML = `<!DOCTYPE html>
     ];
     const linesEl = document.getElementById('lines');
     const activeEl = document.getElementById('active-cmd');
+    const pctEl   = document.getElementById('pct');
     let i = 0;
+
+    // animated percentage counter
+    const t0 = Date.now();
+    const pctTimer = setInterval(() => {
+      const pct = Math.min(99, Math.round((Date.now() - t0) / 5000 * 100));
+      pctEl.textContent = pct + '%';
+      if (pct >= 99) clearInterval(pctTimer);
+    }, 80);
+
     function addLine(text) {
       const el = document.createElement('div');
       el.className = 'prompt-line';
-      el.textContent = '$ ' + text + '  [done]';
+      el.innerHTML =
+        '<span class="ps">$</span>' +
+        '<span class="pc">' + text + '</span>' +
+        '<span class="pd">&#10003; done</span>';
       linesEl.appendChild(el);
       requestAnimationFrame(() => el.classList.add('visible'));
     }
