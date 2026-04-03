@@ -3,7 +3,7 @@ const LOADING_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="5">
+  <meta http-equiv="refresh" content="10">
   <title>rm -rf cancer — warming up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -153,7 +153,7 @@ const LOADING_HTML = `<!DOCTYPE html>
     .progress-bar {
       height: 100%;
       background: linear-gradient(90deg, #60a5fa, #1d4ed8);
-      animation: fill 5s linear forwards;
+      animation: fill 10s linear forwards;
       border-radius: 2px;
     }
 
@@ -242,7 +242,11 @@ const LOADING_HTML = `<!DOCTYPE html>
     const steps = [
       'initializing cancer genome database',
       'mounting genomic study index',
-      'loading mutation profiles',
+      'loading somatic mutation profiles',
+      'indexing copy number alteration profiles',
+      'resolving structural variant breakpoints',
+      'annotating variants against oncokb',
+      'cross-referencing clinical trial cohorts',
       'preparing clinical data engine',
       'warming up compute workers',
     ];
@@ -254,7 +258,7 @@ const LOADING_HTML = `<!DOCTYPE html>
     // animated percentage counter
     const t0 = Date.now();
     const pctTimer = setInterval(() => {
-      const pct = Math.min(99, Math.round((Date.now() - t0) / 5000 * 100));
+      const pct = Math.min(99, Math.round((Date.now() - t0) / 10000 * 100));
       pctEl.textContent = pct + '%';
       if (pct >= 99) clearInterval(pctTimer);
     }, 80);
@@ -274,9 +278,9 @@ const LOADING_HTML = `<!DOCTYPE html>
       if (i < steps.length) { activeEl.textContent = ' ' + steps[i]; i++; }
       else { activeEl.textContent = ' waiting for service...'; clearInterval(timer); }
     }
-    const timer = setInterval(tick, 900);
+    const timer = setInterval(tick, 1100);
     tick();
-    setTimeout(() => location.replace(location.href), 4800);
+    setTimeout(() => location.replace(location.href), 9800);
   </script>
 </body>
 </html>`;
