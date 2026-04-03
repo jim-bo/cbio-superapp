@@ -13,6 +13,7 @@ Internal modules:
     gene_reference — ensure_gene_reference(), load_gene_*, sync_oncotree()
     schema       — create_global_views(), categorize_study(), load_study_metadata()
     molecular_profiles — load_molecular_profiles() (meta_*.txt → molecular_profiles table)
+    timing       — LoadTimer for phase-level instrumentation
 """
 import os
 import time
@@ -20,6 +21,8 @@ from pathlib import Path
 
 import psutil
 import typer
+
+from .timing import LoadTimer
 
 from .discovery import discover_studies, find_study_path, get_source_path, parse_meta_file
 from .clinical import parse_clinical_headers, _upsert_clinical_attribute_meta
@@ -53,6 +56,8 @@ __all__ = [
     "create_global_views", "categorize_study", "load_study_metadata",
     # Top-level loaders
     "Monitor", "load_study", "load_all_studies",
+    # Instrumentation
+    "LoadTimer",
 ]
 
 
@@ -268,8 +273,16 @@ def load_study(
     load_sv: bool = False,
     load_timeline: bool = False,
     load_expression: bool = False,
+    timer: "LoadTimer | None" = None,
 ):
-    """Load clinical and genomic data for a study."""
+    """Load clinical and genomic data for a study.
+
+    Pass a LoadTimer instance to get per-phase timing. If None, a no-op
+    context manager is used so the code path is identical.
+    """
+    from contextlib import nullcontext
+    _t = timer if timer is not None else type("_NT", (), {"phase": lambda self, n: nullcontext()})()
+
     raw_study_id = study_path.name
     patient_file = study_path / "data_clinical_patient.txt"
     sample_file = study_path / "data_clinical_sample.txt"
@@ -295,36 +308,42 @@ def load_study(
         loaded_any = False
         fga_injected = False
         if patient_file.exists():
-            table_name = f'"{raw_study_id}_patient"'
-            conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{patient_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
+            with _t.phase("clinical_patient"):
+                table_name = f'"{raw_study_id}_patient"'
+                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{patient_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
             loaded_any = True
         if sample_file.exists():
-            table_name = f'"{raw_study_id}_sample"'
-            conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{sample_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
-            fga_injected = _inject_fga_from_seg(conn, table_name, study_path)
+            with _t.phase("clinical_sample"):
+                table_name = f'"{raw_study_id}_sample"'
+                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{sample_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
+            with _t.phase("fga_from_seg"):
+                fga_injected = _inject_fga_from_seg(conn, table_name, study_path)
             loaded_any = True
         if load_mutations and mutation_file.exists():
-            table_name = f'"{raw_study_id}_mutations"'
-            conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            _vc_list = ", ".join(f"'{v.replace(chr(39), chr(39)*2)}'" for v in sorted(_EXCLUDED_VCS))
-            conn.execute(f"""
-                CREATE TABLE {table_name} AS
-                SELECT '{raw_study_id}' as study_id, *
-                FROM read_csv('{mutation_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)
-                WHERE COALESCE(Variant_Classification, '') NOT IN ({_vc_list})
-                   -- cBioPortal keeps TERT 5'Flank (promoter mutations) but NOT 5'UTR or others.
-                   -- Using a broad OR Hugo_Symbol='TERT' would include TERT 5'UTR rows, overcounting by ~1.
-                   -- Ref: cBioPortal File-Formats.md "promoter mutations of the TERT gene"
-                   OR (Hugo_Symbol = 'TERT' AND Variant_Classification = '5''Flank')
-            """)
-            normalize_hugo_symbols(conn, raw_study_id)
+            with _t.phase("mutations_read_csv"):
+                table_name = f'"{raw_study_id}_mutations"'
+                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                _vc_list = ", ".join(f"'{v.replace(chr(39), chr(39)*2)}'" for v in sorted(_EXCLUDED_VCS))
+                conn.execute(f"""
+                    CREATE TABLE {table_name} AS
+                    SELECT '{raw_study_id}' as study_id, *
+                    FROM read_csv('{mutation_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)
+                    WHERE COALESCE(Variant_Classification, '') NOT IN ({_vc_list})
+                       -- cBioPortal keeps TERT 5'Flank (promoter mutations) but NOT 5'UTR or others.
+                       -- Using a broad OR Hugo_Symbol='TERT' would include TERT 5'UTR rows, overcounting by ~1.
+                       -- Ref: cBioPortal File-Formats.md "promoter mutations of the TERT gene"
+                       OR (Hugo_Symbol = 'TERT' AND Variant_Classification = '5''Flank')
+                """)
+            with _t.phase("hugo_normalize_mutations"):
+                normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
         if load_sv and sv_file.exists():
-            table_name = f'"{raw_study_id}_sv"'
-            conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{sv_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
+            with _t.phase("sv_read_csv"):
+                table_name = f'"{raw_study_id}_sv"'
+                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{sv_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
             loaded_any = True
         if load_cna and cna_file.exists():
             table_name = f'"{raw_study_id}_cna"'
@@ -344,6 +363,7 @@ def load_study(
             _entrez_col = _header_cols.index("Entrez_Gene_Id") if "Entrez_Gene_Id" in _header_cols else None
             _sample_cols = [c for c in _header_cols if c not in _NON_SAMPLE_COLS]
             _n_samples = len(_sample_cols)
+            typer.echo(f"    CNA: {_n_samples} sample columns, {'fast UNPIVOT' if _n_samples <= 5_000 else 'slow Python'} path")
 
             if _n_samples <= 5_000:
                 # Fast path: DuckDB UNPIVOT — handles all header variants dynamically.
@@ -361,22 +381,23 @@ def load_study(
                     _hugo_select = "gr.hugo_gene_symbol as hugo_symbol,"
                     _join_clause = f"JOIN gene_reference gr ON TRY_CAST(unpivoted.Entrez_Gene_Id AS INTEGER) = gr.entrez_gene_id"
                 _on_clause = f"ON COLUMNS(* EXCLUDE {_exclude_clause})" if _exclude_clause else "ON COLUMNS(*)"
-                conn.execute(f"""
-                    CREATE TABLE {table_name} AS
-                    SELECT * FROM (
-                        SELECT
-                            '{raw_study_id}' as study_id,
-                            {_hugo_select}
-                            sample_id,
-                            TRY_CAST(cna_value AS DOUBLE) as cna_value
-                        FROM (
-                            UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
-                            {_on_clause}
-                            INTO NAME sample_id VALUE cna_value
-                        ) unpivoted
-                        {_join_clause}
-                    ) WHERE cna_value IS NOT NULL AND cna_value != 0
-                """)
+                with _t.phase("cna_unpivot"):
+                    conn.execute(f"""
+                        CREATE TABLE {table_name} AS
+                        SELECT * FROM (
+                            SELECT
+                                '{raw_study_id}' as study_id,
+                                {_hugo_select}
+                                sample_id,
+                                TRY_CAST(cna_value AS DOUBLE) as cna_value
+                            FROM (
+                                UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
+                                {_on_clause}
+                                INTO NAME sample_id VALUE cna_value
+                            ) unpivoted
+                            {_join_clause}
+                        ) WHERE cna_value IS NOT NULL AND cna_value != 0
+                    """)
             else:
                 # Slow path: Python row-by-row — O(1) memory for 50k+ sample columns.
                 conn.execute(f"""
@@ -396,49 +417,55 @@ def load_study(
                         if r[1]
                     }
                 _batch: list[tuple] = []
-                with open(cna_file) as _f:
-                    for _line in _f:
-                        if _line.startswith("#"):
-                            continue
-                        _parts = _line.rstrip("\n").split("\t")
-                        if _parts[0] == (_header_cols[0]):
-                            continue  # skip header row
-                        if _hugo_col is not None:
-                            _hugo = _parts[_hugo_col]
-                        elif _entrez_col is not None:
-                            try:
-                                _hugo = _entrez_to_hugo.get(int(_parts[_entrez_col]), "")
-                            except (ValueError, IndexError):
+                with _t.phase("cna_python_loop"):
+                    with open(cna_file) as _f:
+                        for _line in _f:
+                            if _line.startswith("#"):
+                                continue
+                            _parts = _line.rstrip("\n").split("\t")
+                            if _parts[0] == (_header_cols[0]):
+                                continue  # skip header row
+                            if _hugo_col is not None:
+                                _hugo = _parts[_hugo_col]
+                            elif _entrez_col is not None:
+                                try:
+                                    _hugo = _entrez_to_hugo.get(int(_parts[_entrez_col]), "")
+                                except (ValueError, IndexError):
+                                    _hugo = ""
+                            else:
                                 _hugo = ""
-                        else:
-                            _hugo = ""
-                        for _idx, _sample_id in _sample_indices:
-                            try:
-                                _raw = _parts[_idx].strip()
-                                if _raw in ("", "NA", "null", "NULL"):
+                            for _idx, _sample_id in _sample_indices:
+                                try:
+                                    _raw = _parts[_idx].strip()
+                                    if _raw in ("", "NA", "null", "NULL"):
+                                        continue
+                                    _val = float(_raw)
+                                except (ValueError, IndexError):
                                     continue
-                                _val = float(_raw)
-                            except (ValueError, IndexError):
-                                continue
-                            if _val == 0:
-                                continue
-                            _batch.append((raw_study_id, _hugo, _sample_id, _val))
-                        if len(_batch) >= 10_000:
-                            conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
-                            _batch.clear()
-                if _batch:
-                    conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
-            normalize_hugo_symbols(conn, raw_study_id)
+                                if _val == 0:
+                                    continue
+                                _batch.append((raw_study_id, _hugo, _sample_id, _val))
+                            if len(_batch) >= 10_000:
+                                conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
+                                _batch.clear()
+                    if _batch:
+                        conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
+            with _t.phase("hugo_normalize_cna"):
+                normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
         if load_expression and expression_files:
-            _load_wide_matrix(conn, raw_study_id, expression_files[0],
-                              f'"{raw_study_id}_expression"', "expression_value")
-            normalize_hugo_symbols(conn, raw_study_id)
+            with _t.phase("expression_wide_matrix"):
+                _load_wide_matrix(conn, raw_study_id, expression_files[0],
+                                  f'"{raw_study_id}_expression"', "expression_value")
+            with _t.phase("hugo_normalize_expression"):
+                normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
         if load_expression and protein_files:
-            _load_wide_matrix(conn, raw_study_id, protein_files[0],
-                              f'"{raw_study_id}_protein"', "protein_value")
-            normalize_hugo_symbols(conn, raw_study_id)
+            with _t.phase("protein_wide_matrix"):
+                _load_wide_matrix(conn, raw_study_id, protein_files[0],
+                                  f'"{raw_study_id}_protein"', "protein_value")
+            with _t.phase("hugo_normalize_protein"):
+                normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
         # Methylation skipped — 22k probes × hundreds of samples produces hundreds of
         # millions of rows across pan-cancer studies with no current web view consumer.
@@ -458,50 +485,56 @@ def load_study(
                     continue
                 raw_props = meta.get("generic_entity_meta_properties", "")
                 meta_props = {p.strip() for p in raw_props.split(",") if p.strip()} if raw_props else set()
-                _load_generic_assay(conn, raw_study_id, data_file, stable_id, meta_props)
+                with _t.phase("generic_assay"):
+                    _load_generic_assay(conn, raw_study_id, data_file, stable_id, meta_props)
                 loaded_any = True
         if load_timeline and timeline_files:
-            for timeline_file in timeline_files:
-                # Extract suffix from filename, e.g., 'treatment' from 'data_timeline_treatment.txt'
-                suffix = timeline_file.stem.replace("data_timeline_", "")
-                table_name = f'"{raw_study_id}_timeline_{suffix}"'
-                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-                conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{timeline_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
+            with _t.phase("timeline"):
+                for timeline_file in timeline_files:
+                    # Extract suffix from filename, e.g., 'treatment' from 'data_timeline_treatment.txt'
+                    suffix = timeline_file.stem.replace("data_timeline_", "")
+                    table_name = f'"{raw_study_id}_timeline_{suffix}"'
+                    conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{timeline_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
             loaded_any = True
         # Always load treatment and specimen timeline files if present (needed for treatment charts)
         for timeline_name in ("treatment", "specimen"):
             tfile = study_path / f"data_timeline_{timeline_name}.txt"
             if tfile.exists() and not (load_timeline and tfile in timeline_files):
-                table_name = f'"{raw_study_id}_timeline_{timeline_name}"'
-                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-                conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{tfile}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
+                with _t.phase(f"timeline_{timeline_name}"):
+                    table_name = f'"{raw_study_id}_timeline_{timeline_name}"'
+                    conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{tfile}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
                 loaded_any = True
         if gene_panel_file.exists():
-            table_name = f'"{raw_study_id}_gene_panel"'
-            conn.execute(f"DROP TABLE IF EXISTS {table_name}")
-            conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{gene_panel_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
+            with _t.phase("gene_panel_matrix"):
+                table_name = f'"{raw_study_id}_gene_panel"'
+                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                conn.execute(f"CREATE TABLE {table_name} AS SELECT '{raw_study_id}' as study_id, * FROM read_csv('{gene_panel_file}', delim='\t', header=True, comment='#', null_padding=True, ignore_errors=True)")
             loaded_any = True
         # Parse and store clinical attribute metadata from file headers
-        all_attrs: list[dict] = []
-        if patient_file.exists():
-            all_attrs += parse_clinical_headers(patient_file, patient_attribute=True)
-        if sample_file.exists():
-            all_attrs += parse_clinical_headers(sample_file, patient_attribute=False)
-        if fga_injected:
-            all_attrs.append({
-                "attr_id": "FRACTION_GENOME_ALTERED",
-                "display_name": "Fraction Genome Altered",
-                "description": "Fraction of genome with copy number alterations (|seg.mean| >= 0.2)",
-                "datatype": "NUMBER",
-                "patient_attribute": False,
-                "priority": 200,
-            })
-        if all_attrs:
-            _upsert_clinical_attribute_meta(conn, raw_study_id, all_attrs)
+        with _t.phase("clinical_attr_meta"):
+            all_attrs: list[dict] = []
+            if patient_file.exists():
+                all_attrs += parse_clinical_headers(patient_file, patient_attribute=True)
+            if sample_file.exists():
+                all_attrs += parse_clinical_headers(sample_file, patient_attribute=False)
+            if fga_injected:
+                all_attrs.append({
+                    "attr_id": "FRACTION_GENOME_ALTERED",
+                    "display_name": "Fraction Genome Altered",
+                    "description": "Fraction of genome with copy number alterations (|seg.mean| >= 0.2)",
+                    "datatype": "NUMBER",
+                    "patient_attribute": False,
+                    "priority": 200,
+                })
+            if all_attrs:
+                _upsert_clinical_attribute_meta(conn, raw_study_id, all_attrs)
 
         # Parse meta_*.txt files for molecular profile metadata (profile names, etc.)
-        from .molecular_profiles import load_molecular_profiles
-        load_molecular_profiles(conn, raw_study_id, study_path)
+        with _t.phase("molecular_profiles"):
+            from .molecular_profiles import load_molecular_profiles
+            load_molecular_profiles(conn, raw_study_id, study_path)
 
         return loaded_any
     except Exception as e:
@@ -543,9 +576,15 @@ def load_all_studies(
     load_sv: bool = False,
     load_timeline: bool = False,
     load_expression: bool = False,
+    instrument: bool = False,
 ):
-    """Iterate through studies and load them incrementally."""
+    """Iterate through studies and load them incrementally.
+
+    Pass instrument=True to collect per-phase timing and print a summary report
+    after the batch completes.
+    """
     monitor = Monitor()
+    timer = LoadTimer() if instrument else None
 
     # Cap working memory and enable disk spill for large UNPIVOT operations
     # (e.g. msk_impact_50k_2026 CNA matrix exhausts RAM without this).
@@ -567,7 +606,7 @@ def load_all_studies(
         for study_path in progress:
             try:
                 load_study_metadata(conn, study_path)
-                if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression):
+                if load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression, timer=timer):
                     total_loaded += 1
                 conn.execute("CHECKPOINT")
             except Exception as e:
@@ -579,6 +618,9 @@ def load_all_studies(
         typer.echo(f"\n{len(failed_studies)} studies failed:")
         for name, err in failed_studies:
             typer.echo(f"  {name}: {err}")
-    create_global_views(conn)
+    with timer.phase("create_global_views") if timer else __import__("contextlib").nullcontext():
+        create_global_views(conn, timer=timer)
     metrics = monitor.get_metrics()
+    if timer:
+        timer.report()
     return total_loaded, metrics
