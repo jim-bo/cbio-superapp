@@ -1,0 +1,11 @@
+name = "cbio-revamp-proxy"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+
+[[routes]]
+pattern = "rmrfcancer.sh/*"
+zone_name = "rmrfcancer.sh"
+
+[vars]
+CLOUD_RUN_URL = "https://cbio-revamp-7vd2hab3va-uc.a.run.app"
