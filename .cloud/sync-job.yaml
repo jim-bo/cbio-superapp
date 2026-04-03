@@ -1,0 +1,56 @@
+# Cloud Run Job: sync all studies from cBioPortal.org to GCS staging.
+#
+# The job mounts the GCS bucket via FUSE so that fetcher.download_study()
+# writes directly to gs://${GCS_BUCKET}/staging/ without an explicit upload step.
+#
+# Deploy:
+#   gcloud run jobs replace .cloud/sync-job.yaml \
+#     --region us-central1 \
+#     --project ${GCP_PROJECT}
+#
+# Execute:
+#   gcloud run jobs execute cbio-sync --region us-central1 --wait
+#
+# Execute (single study):
+#   gcloud run jobs execute cbio-sync --region us-central1 --wait \
+#     --update-env-vars CBIO_SYNC_STUDY_IDS=acc_tcga
+
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: cbio-sync
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+            - image: us-central1-docker.pkg.dev/${GCP_PROJECT}/cbio/cbio-revamp:latest
+              command: ["cbio"]
+              # Override with --study-id flags via CBIO_SYNC_STUDY_IDS env var
+              # (parsed by the entrypoint wrapper below; see --args at execute time)
+              args:
+                - beta
+                - cloud
+                - sync
+              env:
+                - name: CBIO_GCS_BUCKET
+                  value: ${GCS_BUCKET}
+                - name: CBIO_DOWNLOADS
+                  value: /mnt/gcs/staging
+              resources:
+                limits:
+                  cpu: "2"
+                  memory: 4Gi
+              volumeMounts:
+                - name: gcs-vol
+                  mountPath: /mnt/gcs
+          volumes:
+            - name: gcs-vol
+              csi:
+                driver: gcsfuse.run.googleapis.com
+                volumeAttributes:
+                  bucketName: ${GCS_BUCKET}
+          serviceAccountName: ${JOB_SA_EMAIL}
+          timeoutSeconds: 14400   # 4 h — large studies + LFS resolution
+          maxRetries: 1

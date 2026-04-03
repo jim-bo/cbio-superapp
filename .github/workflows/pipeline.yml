@@ -1,0 +1,134 @@
+# Manually triggered pipeline for cloud DB management.
+#
+# Required GitHub Variables:
+#   CBIO_GCS_BUCKET      — GCS bucket name
+#
+# Required GitHub Secrets:
+#   WIF_PROVIDER         — WIF provider resource name (same as deploy.yml)
+#   WIF_SERVICE_ACCOUNT  — GCP service account email
+#   GCP_PROJECT          — GCP project ID
+
+name: cBioPortal Cloud Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Which pipeline step to run"
+        required: true
+        type: choice
+        options:
+          - sync
+          - build-study
+          - build-all
+          - merge
+          - inject-study
+      study_id:
+        description: "Study ID (required for build-study and inject-study)"
+        required: false
+        type: string
+
+env:
+  GCP_REGION: us-central1
+  GCS_BUCKET: ${{ vars.CBIO_GCS_BUCKET }}
+
+jobs:
+  pipeline:
+    name: "${{ inputs.job }}${{ inputs.study_id && format(' ({0})', inputs.study_id) || '' }}"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # --- sync -----------------------------------------------------------
+      - name: Sync all studies to GCS staging
+        if: inputs.job == 'sync'
+        run: |
+          gcloud run jobs execute cbio-sync \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT }} \
+            --wait
+
+      # --- build-study ----------------------------------------------------
+      - name: Build single study
+        if: inputs.job == 'build-study'
+        run: |
+          if [ -z "${{ inputs.study_id }}" ]; then
+            echo "::error::study_id is required for build-study"
+            exit 1
+          fi
+          gcloud run jobs execute cbio-build \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT }} \
+            --update-env-vars STUDY_ID=${{ inputs.study_id }} \
+            --wait
+
+      # --- build-all (parallel fan-out) -----------------------------------
+      - name: List staged studies
+        if: inputs.job == 'build-all'
+        id: list-studies
+        run: |
+          STUDY_IDS=$(
+            gcloud storage ls gs://${{ env.GCS_BUCKET }}/staging/ \
+              | grep '/$' \
+              | sed 's|.*/\([^/]*\)/$|\1|' \
+              | tr '\n' ' '
+          )
+          echo "ids=${STUDY_IDS}" >> "$GITHUB_OUTPUT"
+
+      - name: Fan-out build jobs
+        if: inputs.job == 'build-all'
+        run: |
+          PIDS=()
+          for sid in ${{ steps.list-studies.outputs.ids }}; do
+            gcloud run jobs execute cbio-build \
+              --region ${{ env.GCP_REGION }} \
+              --project ${{ secrets.GCP_PROJECT }} \
+              --update-env-vars STUDY_ID=${sid} \
+              --async &
+            PIDS+=($!)
+          done
+          # Wait for all background gcloud calls to submit (not for jobs to finish).
+          for pid in "${PIDS[@]}"; do wait "$pid"; done
+          echo "All build jobs submitted. Monitor at Cloud Run console."
+
+      # --- merge ----------------------------------------------------------
+      - name: Merge all per-study DBs into master
+        if: inputs.job == 'merge'
+        run: |
+          gcloud run jobs execute cbio-merge \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT }} \
+            --wait
+
+      # --- inject-study ---------------------------------------------------
+      - name: Build updated per-study DB
+        if: inputs.job == 'inject-study'
+        run: |
+          if [ -z "${{ inputs.study_id }}" ]; then
+            echo "::error::study_id is required for inject-study"
+            exit 1
+          fi
+          gcloud run jobs execute cbio-build \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT }} \
+            --update-env-vars STUDY_ID=${{ inputs.study_id }} \
+            --wait
+
+      - name: Inject updated study into master
+        if: inputs.job == 'inject-study'
+        run: |
+          gcloud run jobs execute cbio-inject \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT }} \
+            --update-env-vars STUDY_ID=${{ inputs.study_id }} \
+            --wait
