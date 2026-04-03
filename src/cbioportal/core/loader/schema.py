@@ -74,8 +74,10 @@ def load_study_metadata(conn, study_path: Path):
     return True
 
 
-def create_global_views(conn):
+def create_global_views(conn, timer=None):
     """Refresh unified views across all loaded study tables."""
+    from contextlib import nullcontext
+    _t = timer if timer is not None else type("_NT", (), {"phase": lambda self, n: nullcontext()})()
     tables_res = conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_type = 'BASE TABLE'").fetchall()
     tables = [t[0] for t in tables_res]
 
@@ -99,28 +101,29 @@ def create_global_views(conn):
             if f"timeline_{suffix}" not in suffixes:
                 suffixes[f"timeline_{suffix}"] = f"timeline_{suffix}"
 
-    for suffix_key, view_name in suffixes.items():
-        # Handle timeline keys which might already have the 'timeline_' prefix
-        suffix = suffix_key if suffix_key.startswith("timeline_") else f"_{suffix_key}"
-        study_tables = [f'"{t}"' for t in tables if t.endswith(suffix) or (suffix_key == t.split("_")[-1] and not suffix_key.startswith("timeline_"))]
+    with _t.phase("union_views"):
+        for suffix_key, view_name in suffixes.items():
+            # Handle timeline keys which might already have the 'timeline_' prefix
+            suffix = suffix_key if suffix_key.startswith("timeline_") else f"_{suffix_key}"
+            study_tables = [f'"{t}"' for t in tables if t.endswith(suffix) or (suffix_key == t.split("_")[-1] and not suffix_key.startswith("timeline_"))]
 
-        # Refined logic for matching suffixes to avoid overlaps
-        if not suffix_key.startswith("timeline_"):
-            study_tables = [f'"{t}"' for t in tables if t.endswith(f"_{suffix_key}")]
-        else:
-            actual_suffix = suffix_key.replace("timeline_", "")
-            study_tables = [f'"{t}"' for t in tables if t.endswith(f"_timeline_{actual_suffix}")]
+            # Refined logic for matching suffixes to avoid overlaps
+            if not suffix_key.startswith("timeline_"):
+                study_tables = [f'"{t}"' for t in tables if t.endswith(f"_{suffix_key}")]
+            else:
+                actual_suffix = suffix_key.replace("timeline_", "")
+                study_tables = [f'"{t}"' for t in tables if t.endswith(f"_timeline_{actual_suffix}")]
 
-        conn.execute(f'DROP VIEW IF EXISTS "{view_name}"')
-        if study_tables:
-            union_sql = " UNION ALL BY NAME ".join([f"SELECT * FROM {t}" for t in study_tables])
-            conn.execute(f'CREATE VIEW "{view_name}" AS {union_sql}')
+            conn.execute(f'DROP VIEW IF EXISTS "{view_name}"')
+            if study_tables:
+                union_sql = " UNION ALL BY NAME ".join([f"SELECT * FROM {t}" for t in study_tables])
+                conn.execute(f'CREATE VIEW "{view_name}" AS {union_sql}')
 
     # Build pre-aggregated genomic event tables for fast study view queries.
-    create_genomic_derived_tables(conn, tables)
+    create_genomic_derived_tables(conn, tables, timer=_t)
 
 
-def create_genomic_derived_tables(conn, tables: list[str] | None = None):
+def create_genomic_derived_tables(conn, tables: list[str] | None = None, timer=None):
     """Pre-compute per-study genomic event tables with panel profiling baked in.
 
     Mirrors cBioPortal's ClickHouse `genomic_event_derived` strategy: at load time,
@@ -133,18 +136,32 @@ def create_genomic_derived_tables(conn, tables: list[str] | None = None):
     The is_profiled flag pre-computes whether the sample's panel covers that gene,
     so the query-time profiled count is just SUM(is_profiled) grouped by gene.
     """
+    from contextlib import nullcontext
+    _t = timer if timer is not None else type("_NT", (), {"phase": lambda self, n: nullcontext()})()
+
     if tables is None:
         tables = [t[0] for t in conn.execute(
             "SELECT table_name FROM information_schema.tables "
             "WHERE table_schema = 'main' AND table_type = 'BASE TABLE'"
         ).fetchall()]
 
+    # Only process study IDs that are registered in the studies table.
+    # Tables like "{study_id}_ga_armlevel_cna" end with "_cna" and would
+    # otherwise produce a spurious study ID ("..._ga_armlevel") whose
+    # synthetic CNA table has different columns (no cna_value).
+    try:
+        known_studies = {r[0] for r in conn.execute("SELECT study_id FROM studies").fetchall()}
+    except Exception:
+        known_studies = None  # studies table absent — fall back to all candidates
+
     # Find which studies have genomic data
     study_ids = set()
     for t in tables:
         for suffix in ("_mutations", "_cna", "_sv"):
             if t.endswith(suffix):
-                study_ids.add(t[: -len(suffix)])
+                candidate = t[: -len(suffix)]
+                if known_studies is None or candidate in known_studies:
+                    study_ids.add(candidate)
     if not study_ids:
         return
 
@@ -319,7 +336,8 @@ def create_genomic_derived_tables(conn, tables: list[str] | None = None):
             continue
 
         union_sql = " UNION ALL ".join(parts)
-        conn.execute(f"CREATE TABLE {derived_table} AS {union_sql}")
+        with _t.phase("genomic_event_derived"):
+            conn.execute(f"CREATE TABLE {derived_table} AS {union_sql}")
 
         # Build a profiled-sample-count table: for each (gene, variant_type),
         # how many filtered samples are profiled. This is the denominator for freq.
@@ -360,9 +378,10 @@ def create_genomic_derived_tables(conn, tables: list[str] | None = None):
 
         if profiled_parts:
             profiled_union = " UNION ALL ".join(profiled_parts)
-            conn.execute(f"""
-                CREATE TABLE {profiled_table} AS
-                SELECT hugo_symbol, variant_type, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
-                FROM ({profiled_union})
-                GROUP BY hugo_symbol, variant_type
-            """)
+            with _t.phase("profiled_counts"):
+                conn.execute(f"""
+                    CREATE TABLE {profiled_table} AS
+                    SELECT hugo_symbol, variant_type, COUNT(DISTINCT SAMPLE_ID) AS n_profiled
+                    FROM ({profiled_union})
+                    GROUP BY hugo_symbol, variant_type
+                """)

@@ -1,16 +1,17 @@
-"""Unit tests for CNA loading — both UNPIVOT and Python row-by-row strategies.
+"""Unit tests for CNA loading — UNPIVOT, Python row-by-row, and NumPy strategies.
 
 Verifies that:
 - Integer values (-2, -1, 1, 2) are preserved as exact floats
 - Fractional values (-1.5, 1.5) are preserved without rounding
 - NA / empty cells are excluded
 - Zero values are excluded
-- Both strategies produce identical output
+- All three strategies produce identical output
 """
 import tempfile
 import os
 from pathlib import Path
 
+import numpy as np
 import duckdb
 import pytest
 
@@ -140,6 +141,140 @@ def _load_python(conn: duckdb.DuckDBPyConnection, cna_file: Path, study_id: str)
     ).fetchall()
 
 
+def _load_numpy(conn: duckdb.DuckDBPyConnection, cna_file: Path, study_id: str) -> list[tuple]:
+    """Run the NumPy vectorised strategy and return sorted (hugo_symbol, sample_id, cna_value) rows.
+
+    Reads gene rows in chunks of CHUNK_GENES. Per chunk:
+      1. Build a 2D string array (n_genes × n_samples).
+      2. Replace NA-like tokens with '0' (vectorised).
+      3. astype(float64) in C — ~100x faster than calling float() per cell.
+      4. np.nonzero() to locate non-zero cells without a Python inner loop.
+
+    NA tokens ('', 'NA', 'null', 'NULL') and true zeros are both absent from the
+    output, which is identical to the Python and UNPIVOT strategies.
+    """
+    _NON_SAMPLE_COLS = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband"}
+    _NA_TOKENS = {'', 'NA', 'null', 'NULL'}
+    CHUNK_GENES = 500
+    BATCH_SIZE = 50_000
+
+    table_name = f'"{study_id}_cna"'
+    conn.execute(f"""
+        CREATE TABLE {table_name} (
+            study_id    VARCHAR NOT NULL,
+            hugo_symbol VARCHAR,
+            sample_id   VARCHAR NOT NULL,
+            cna_value   DOUBLE NOT NULL
+        )
+    """)
+
+    with open(cna_file) as fh:
+        for raw in fh:
+            if not raw.startswith("#"):
+                header = raw.rstrip("\n").split("\t")
+                break
+
+    hugo_col = header.index("Hugo_Symbol") if "Hugo_Symbol" in header else None
+    entrez_col = header.index("Entrez_Gene_Id") if "Entrez_Gene_Id" in header else None
+    sample_indices = [(i, col) for i, col in enumerate(header) if col not in _NON_SAMPLE_COLS]
+    sample_idxs = np.array([i for i, _ in sample_indices], dtype=np.intp)
+    sample_names = np.array([c for _, c in sample_indices])
+
+    entrez_to_hugo: dict[int, str] = {}
+    if hugo_col is None and entrez_col is not None:
+        rows = conn.execute("SELECT entrez_gene_id, hugo_gene_symbol FROM gene_reference").fetchall()
+        entrez_to_hugo = {r[0]: r[1] for r in rows if r[1]}
+
+    batch: list[tuple] = []
+
+    def _flush(hugo_buf: list[str], parts_buf: list[list[str]]) -> None:
+        if not parts_buf:
+            return
+        # Build a 2D fixed-width unicode array (U32) so astype(float64) uses
+        # C-level strtod rather than Python float() per cell.
+        rows = []
+        for parts in parts_buf:
+            if len(parts) <= int(sample_idxs[-1]):
+                parts = parts + [''] * (int(sample_idxs[-1]) + 1 - len(parts))
+            rows.append(np.array(parts, dtype='U32')[sample_idxs])
+        raw = np.vstack(rows)  # shape (n_genes, n_samples), dtype U32
+
+        # Replace NA tokens with '0' — both NA and 0 are absent from the output,
+        # so this produces identical results to the Python strategy's NA skip.
+        na_mask = np.isin(raw, list(_NA_TOKENS))
+        raw[na_mask] = '0'
+
+        try:
+            vals = raw.astype(np.float64)
+        except (ValueError, UnicodeError):
+            # Rare: unexpected non-numeric string not in the NA set.
+            # Fall back to per-cell Python conversion for this chunk only.
+            for hugo, parts in zip(hugo_buf, parts_buf):
+                for idx, sample_id in sample_indices:
+                    try:
+                        v_str = parts[idx].strip() if idx < len(parts) else ''
+                        if v_str in _NA_TOKENS:
+                            continue
+                        v = float(v_str)
+                    except (ValueError, IndexError):
+                        continue
+                    if v != 0:
+                        batch.append((study_id, hugo, sample_id, v))
+            return
+
+        gene_idx, samp_idx = np.nonzero(vals)
+        if len(gene_idx) == 0:
+            return
+
+        chunk_rows = list(zip(
+            [study_id] * len(gene_idx),
+            [hugo_buf[g] for g in gene_idx],
+            sample_names[samp_idx].tolist(),
+            vals[gene_idx, samp_idx].tolist(),
+        ))
+        batch.extend(chunk_rows)
+        if len(batch) >= BATCH_SIZE:
+            conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", batch)
+            batch.clear()
+
+    hugo_buf: list[str] = []
+    parts_buf: list[list[str]] = []
+
+    with open(cna_file) as fh:
+        for raw in fh:
+            if raw.startswith("#"):
+                continue
+            parts = raw.rstrip("\n").split("\t")
+            if parts[0] == header[0]:
+                continue  # header row
+
+            if hugo_col is not None:
+                hugo = parts[hugo_col] if hugo_col < len(parts) else ""
+            elif entrez_col is not None:
+                try:
+                    hugo = entrez_to_hugo.get(int(parts[entrez_col]), "")
+                except (ValueError, IndexError):
+                    hugo = ""
+            else:
+                hugo = ""
+
+            hugo_buf.append(hugo)
+            parts_buf.append(parts)
+
+            if len(parts_buf) >= CHUNK_GENES:
+                _flush(hugo_buf, parts_buf)
+                hugo_buf, parts_buf = [], []
+
+    _flush(hugo_buf, parts_buf)
+
+    if batch:
+        conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", batch)
+
+    return conn.execute(
+        f'SELECT hugo_symbol, sample_id, cna_value FROM {table_name} ORDER BY hugo_symbol, sample_id'
+    ).fetchall()
+
+
 # ---------------------------------------------------------------------------
 # Tests: integer CNA values are preserved as exact floats
 # ---------------------------------------------------------------------------
@@ -151,7 +286,7 @@ CNA_INTEGER = [
 ]
 
 
-@pytest.mark.parametrize("loader", [_load_unpivot, _load_python])
+@pytest.mark.parametrize("loader", [_load_unpivot, _load_python, _load_numpy])
 def test_integer_values_preserved(loader):
     """Integer CNA values (-2, -1, 1, 2) are stored as exact floats, zeros excluded."""
     cna_file = _write_cna(CNA_INTEGER)
@@ -182,7 +317,7 @@ CNA_FRACTIONAL = [
 ]
 
 
-@pytest.mark.parametrize("loader", [_load_unpivot, _load_python])
+@pytest.mark.parametrize("loader", [_load_unpivot, _load_python, _load_numpy])
 def test_fractional_values_preserved(loader):
     """-1.5 and 1.5 are stored as-is, not rounded to -2 or 2."""
     cna_file = _write_cna(CNA_FRACTIONAL)
@@ -215,7 +350,7 @@ CNA_WITH_NA = [
 ]
 
 
-@pytest.mark.parametrize("loader", [_load_unpivot, _load_python])
+@pytest.mark.parametrize("loader", [_load_unpivot, _load_python, _load_numpy])
 def test_na_cells_excluded(loader):
     """NA and empty cells produce no rows."""
     cna_file = _write_cna(CNA_WITH_NA)
@@ -245,7 +380,7 @@ CNA_ENTREZ_ONLY = [
 ]
 
 
-@pytest.mark.parametrize("loader", [_load_unpivot, _load_python])
+@pytest.mark.parametrize("loader", [_load_unpivot, _load_python, _load_numpy])
 def test_entrez_only_file(loader):
     """Files with only Entrez_Gene_Id resolve hugo_symbol via gene_reference."""
     cna_file = _write_cna(CNA_ENTREZ_ONLY)
@@ -275,13 +410,17 @@ CNA_MIXED = [
 
 
 def test_strategies_identical_output():
-    """UNPIVOT and Python produce the same rows for a file with both Hugo and Entrez columns."""
+    """UNPIVOT, Python, and NumPy all produce the same rows for a file with both Hugo and Entrez columns."""
     cna_file = _write_cna(CNA_MIXED)
     try:
         rows_u = _load_unpivot(_base_conn(), cna_file, "test")
         rows_p = _load_python(_base_conn(), cna_file, "test")
+        rows_n = _load_numpy(_base_conn(), cna_file, "test")
         assert rows_u == rows_p, (
-            f"Strategies differ.\n  unpivot: {rows_u}\n  python:  {rows_p}"
+            f"UNPIVOT vs Python differ.\n  unpivot: {rows_u}\n  python:  {rows_p}"
+        )
+        assert rows_u == rows_n, (
+            f"UNPIVOT vs NumPy differ.\n  unpivot: {rows_u}\n  numpy:   {rows_n}"
         )
     finally:
         os.unlink(cna_file)

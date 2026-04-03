@@ -14,6 +14,7 @@ def load_all(
     sv: Optional[bool] = typer.Option(None, help="Load SV data (default: True when no flags given)"),
     timeline: Optional[bool] = typer.Option(None, help="Load timeline data (default: True when no flags given)"),
     expression: Optional[bool] = typer.Option(None, help="Load expression data (default: True when no flags given)"),
+    instrument: bool = typer.Option(False, "--instrument", help="Print per-phase timing report after load"),
 ):
     """Load studies from the source directory into DuckDB."""
     source_path = loader.get_source_path()
@@ -33,7 +34,7 @@ def load_all(
     typer.echo(f"Searching for studies in {source_path}...")
 
     loaded_count, metrics = loader.load_all_studies(
-        conn, source_path, limit=limit, offset=offset, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression
+        conn, source_path, limit=limit, offset=offset, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression, instrument=instrument
     )
     
     conn.close()
@@ -111,6 +112,7 @@ def add(
     sv: Optional[bool] = typer.Option(None, help="Load SV data (default: True when no flags given)"),
     timeline: Optional[bool] = typer.Option(None, help="Load timeline data (default: True when no flags given)"),
     expression: Optional[bool] = typer.Option(None, help="Load expression data (default: True when no flags given)"),
+    instrument: bool = typer.Option(False, "--instrument", help="Print per-phase timing report after load"),
 ):
     """Add or update a single study by ID."""
     load_all_types = all(x is None for x in [mutations, cna, sv, timeline, expression])
@@ -128,19 +130,24 @@ def add(
     conn = database.get_connection()
     typer.echo(f"Loading study from {study_path}...")
 
+    timer = loader.LoadTimer() if instrument else None
+
     loader.ensure_gene_reference(conn)
 
     # 1. Metadata
     loader.load_study_metadata(conn, study_path)
 
     # 2. Data
-    success = loader.load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression)
-    
+    success = loader.load_study(conn, study_path, load_mutations=load_mutations, load_cna=load_cna, load_sv=load_sv, load_timeline=load_timeline, load_expression=load_expression, timer=timer)
+
     # 3. Refresh Views
-    loader.create_global_views(conn)
-    
+    loader.create_global_views(conn, timer=timer)
+
     conn.close()
-    
+
+    if timer:
+        timer.report(study_id)
+
     if success:
         typer.echo(f"Successfully loaded study: {study_id}")
     else:
