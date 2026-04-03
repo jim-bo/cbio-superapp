@@ -145,12 +145,23 @@ def create_genomic_derived_tables(conn, tables: list[str] | None = None, timer=N
             "WHERE table_schema = 'main' AND table_type = 'BASE TABLE'"
         ).fetchall()]
 
+    # Only process study IDs that are registered in the studies table.
+    # Tables like "{study_id}_ga_armlevel_cna" end with "_cna" and would
+    # otherwise produce a spurious study ID ("..._ga_armlevel") whose
+    # synthetic CNA table has different columns (no cna_value).
+    try:
+        known_studies = {r[0] for r in conn.execute("SELECT study_id FROM studies").fetchall()}
+    except Exception:
+        known_studies = None  # studies table absent — fall back to all candidates
+
     # Find which studies have genomic data
     study_ids = set()
     for t in tables:
         for suffix in ("_mutations", "_cna", "_sv"):
             if t.endswith(suffix):
-                study_ids.add(t[: -len(suffix)])
+                candidate = t[: -len(suffix)]
+                if known_studies is None or candidate in known_studies:
+                    study_ids.add(candidate)
     if not study_ids:
         return
 
