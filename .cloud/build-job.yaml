@@ -1,0 +1,57 @@
+# Cloud Run Job: build a per-study DuckDB from GCS staging.
+#
+# Deploy:
+#   gcloud run jobs replace .cloud/build-job.yaml \
+#     --region us-central1 \
+#     --project ${GCP_PROJECT}
+#
+# Execute (single study):
+#   gcloud run jobs execute cbio-build --region us-central1 --wait \
+#     --update-env-vars STUDY_ID=acc_tcga
+#
+# Execute (parallel fan-out via GitHub Actions pipeline.yml):
+#   Uses --tasks N --parallelism N with CLOUD_RUN_TASK_INDEX to pick study_id.
+
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: cbio-build
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+            - image: us-central1-docker.pkg.dev/${GCP_PROJECT}/cbio/cbio-revamp:latest
+              command: ["cbio"]
+              args:
+                - beta
+                - cloud
+                - build
+                - "--study-id"
+                - "$(STUDY_ID)"
+              env:
+                - name: CBIO_GCS_BUCKET
+                  value: ${GCS_BUCKET}
+                # Staging read via FUSE; per-study DB upload via GCS Python client.
+                - name: CBIO_DOWNLOADS
+                  value: /mnt/gcs/staging
+                - name: STUDY_ID
+                  value: ""   # overridden at execute time
+              resources:
+                limits:
+                  cpu: "4"
+                  memory: 16Gi
+                  ephemeral-storage: 20Gi
+              volumeMounts:
+                - name: gcs-staging
+                  mountPath: /mnt/gcs
+          volumes:
+            - name: gcs-staging
+              csi:
+                driver: gcsfuse.run.googleapis.com
+                volumeAttributes:
+                  bucketName: ${GCS_BUCKET}
+          serviceAccountName: ${JOB_SA_EMAIL}
+          timeoutSeconds: 3600    # 1 h per study
+          maxRetries: 2

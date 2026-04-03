@@ -19,6 +19,9 @@ app = typer.Typer(help="[Beta] Local DuckDB server and sync commands")
 app.add_typer(db.app, name="db")
 app.add_typer(fetch.app, name="fetch")
 
+from cbioportal.cli.commands import cloud as cloud_cmd  # noqa: E402
+app.add_typer(cloud_cmd.app, name="cloud")
+
 console = Console()
 
 
