@@ -210,7 +210,7 @@ def test_cna_normalization():
     study_id = "s6"
 
     conn.execute(f'CREATE TABLE "{study_id}_cna" ('
-                 'study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, cna_value INTEGER)')
+                 'study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, cna_value FLOAT)')
     conn.execute(f"INSERT INTO \"{study_id}_cna\" VALUES "
                  f"('{study_id}', 'CDKN2AP16INK4A', 'S1', -2), "
                  f"('{study_id}', 'CDKN2AP16INK4A', 'S2', -2)")
@@ -238,7 +238,7 @@ def test_cna_normalization_via_mutations_bridge():
     conn.execute(f'INSERT INTO "{study_id}_mutations" VALUES (\'MLL2\', \'8085\', \'S1\', \'SOMATIC\')')
 
     conn.execute(f'CREATE TABLE "{study_id}_cna" ('
-                 'study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, cna_value INTEGER)')
+                 'study_id VARCHAR, hugo_symbol VARCHAR, sample_id VARCHAR, cna_value FLOAT)')
     conn.execute(f"INSERT INTO \"{study_id}_cna\" VALUES ('{study_id}', 'MLL2', 'S1', -2)")
 
     _setup_gene_reference(conn, [(8085, "KMT2D")])
