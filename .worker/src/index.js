@@ -17,8 +17,26 @@ const LOADING_HTML = `<!DOCTYPE html>
       align-items: center;
       justify-content: center;
       padding: 2rem;
+      overflow: hidden;
     }
-    .terminal { width: 100%; max-width: 640px; }
+    canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .terminal {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 640px;
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(2px);
+      border: 1px solid #003a10;
+      border-radius: 4px;
+      padding: 1.5rem;
+    }
     .prompt-line { margin-bottom: 0.4rem; opacity: 0; transition: opacity 0.2s ease; white-space: pre; }
     .prompt-line.visible { opacity: 1; }
     .cursor-line { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.8rem; }
@@ -31,6 +49,7 @@ const LOADING_HTML = `<!DOCTYPE html>
   </style>
 </head>
 <body>
+  <canvas id="dna-rain"></canvas>
   <div class="terminal" aria-live="polite">
     <div id="lines"></div>
     <div class="cursor-line">
@@ -40,6 +59,54 @@ const LOADING_HTML = `<!DOCTYPE html>
     <p class="footer-note">page refreshes automatically &mdash; no action needed</p>
   </div>
   <script>
+    // --- DNA matrix rain ---
+    (function () {
+      const canvas = document.getElementById('dna-rain');
+      const ctx = canvas.getContext('2d');
+      const CHARS = 'AATTTGGCC'.split(''); // weight toward bases
+      const FONT_SIZE = 14;
+      let cols, drops;
+
+      function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const rows = Math.ceil(canvas.height / FONT_SIZE);
+        cols  = Math.floor(canvas.width / FONT_SIZE);
+        // start spread across the screen so rain is visible immediately
+        drops = Array.from({ length: cols }, () => Math.random() * rows);
+      }
+
+      function draw() {
+        // fade trail — slightly transparent black overlay each frame
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.12)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = FONT_SIZE + 'px "Courier New", monospace';
+
+        for (let c = 0; c < cols; c++) {
+          const y = drops[c] * FONT_SIZE;
+
+          // head character: bright white-green flash
+          ctx.fillStyle = '#c8ffc8';
+          ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], c * FONT_SIZE, y);
+
+          // one step behind: full green
+          if (drops[c] > 1) {
+            ctx.fillStyle = '#00ff41';
+            ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], c * FONT_SIZE, y - FONT_SIZE);
+          }
+
+          if (y > canvas.height && Math.random() > 0.97) drops[c] = 0;
+          drops[c] += 0.6;
+        }
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      setInterval(draw, 40); // 25fps
+    })();
+
+    // --- terminal typewriter ---
     const steps = [
       'initializing cancer genome database',
       'mounting genomic study index',
@@ -64,7 +131,6 @@ const LOADING_HTML = `<!DOCTYPE html>
     }
     const timer = setInterval(tick, 900);
     tick();
-    // replace() avoids adding the loading page to browser history
     setTimeout(() => location.replace(location.href), 4800);
   </script>
 </body>
