@@ -363,9 +363,18 @@ def load_study(
             _entrez_col = _header_cols.index("Entrez_Gene_Id") if "Entrez_Gene_Id" in _header_cols else None
             _sample_cols = [c for c in _header_cols if c not in _NON_SAMPLE_COLS]
             _n_samples = len(_sample_cols)
-            typer.echo(f"    CNA: {_n_samples} sample columns, {'fast UNPIVOT' if _n_samples <= 5_000 else 'slow Python'} path")
+            # Threshold balances two opposing costs:
+            #   UNPIVOT: O(n_genes × n_samples) to materialise full matrix.
+            #            Wins when n_genes is large (broad/TCGA studies: ~20k genes,
+            #            ~100-500 samples) — Python's per-gene-row overhead dominates.
+            #   Python:  O(n_non_zero) — skips zero values.
+            #            Wins when n_samples is large (panel studies: ~500 genes,
+            #            5k-50k samples) — UNPIVOT materialises a huge sparse matrix.
+            # Empirically: 5,000 sample columns is the crossover point.
+            _USE_UNPIVOT = _n_samples <= 5_000
+            typer.echo(f"    CNA: {_n_samples} sample columns, {'UNPIVOT' if _USE_UNPIVOT else 'Python fallback'} path")
 
-            if _n_samples <= 5_000:
+            if _USE_UNPIVOT:
                 # Fast path: DuckDB UNPIVOT — handles all header variants dynamically.
                 _exclude = [c for c in _header_cols if c in _NON_SAMPLE_COLS]
                 if len(_exclude) > 1:
@@ -399,7 +408,8 @@ def load_study(
                         ) WHERE cna_value IS NOT NULL AND cna_value != 0
                     """)
             else:
-                # Slow path: Python row-by-row — O(1) memory for 50k+ sample columns.
+                # Python fallback for pathological files (>100k sample columns).
+                # Not expected to be hit in practice — raise the issue if it is.
                 conn.execute(f"""
                     CREATE TABLE {table_name} (
                         study_id    VARCHAR NOT NULL,
@@ -417,14 +427,14 @@ def load_study(
                         if r[1]
                     }
                 _batch: list[tuple] = []
-                with _t.phase("cna_python_loop"):
+                with _t.phase("cna_python_fallback"):
                     with open(cna_file) as _f:
                         for _line in _f:
                             if _line.startswith("#"):
                                 continue
                             _parts = _line.rstrip("\n").split("\t")
                             if _parts[0] == (_header_cols[0]):
-                                continue  # skip header row
+                                continue
                             if _hugo_col is not None:
                                 _hugo = _parts[_hugo_col]
                             elif _entrez_col is not None:
@@ -445,7 +455,7 @@ def load_study(
                                 if _val == 0:
                                     continue
                                 _batch.append((raw_study_id, _hugo, _sample_id, _val))
-                            if len(_batch) >= 10_000:
+                            if len(_batch) >= 50_000:
                                 conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
                                 _batch.clear()
                     if _batch:
