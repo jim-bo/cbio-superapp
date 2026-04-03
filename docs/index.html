@@ -2,15 +2,133 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=https://cbio-revamp-7vd2hab3va-uc.a.run.app">
-  <title>cBio Superapp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rm -rf cancer — warming up</title>
   <style>
-    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f4f6f9; color: #1e293b; }
-    a { color: #1d4ed8; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #00ff41;
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .terminal {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 640px;
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(2px);
+      border: 1px solid #003a10;
+      border-radius: 4px;
+      padding: 1.5rem;
+    }
+    .prompt-line { margin-bottom: 0.4rem; opacity: 0; transition: opacity 0.2s ease; white-space: pre; }
+    .prompt-line.visible { opacity: 1; }
+    .cursor-line { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.8rem; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .cursor { animation: blink 1s step-end infinite; }
+    .progress-track { margin-top: 2rem; width: 100%; height: 2px; background: #1a1a1a; border-radius: 1px; overflow: hidden; }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .progress-bar { height: 100%; width: 40%; background: #00ff41; animation: pulse 1.5s ease-in-out infinite; }
+    .footer-note { margin-top: 1.5rem; font-size: 0.75rem; color: #006b1a; text-align: center; }
   </style>
 </head>
 <body>
-  <p>Redirecting… <a href="https://cbio-revamp-7vd2hab3va-uc.a.run.app">click here if not redirected</a></p>
-  <script>window.location.replace("https://cbio-revamp-7vd2hab3va-uc.a.run.app")</script>
+  <canvas id="dna-rain"></canvas>
+  <div class="terminal" aria-live="polite">
+    <div id="lines"></div>
+    <div class="cursor-line">
+      <span>$</span><span id="active-cmd"></span><span class="cursor">_</span>
+    </div>
+    <div class="progress-track"><div class="progress-bar"></div></div>
+    <p class="footer-note">connecting to server &mdash; redirecting automatically</p>
+  </div>
+  <script>
+    // --- DNA matrix rain ---
+    (function () {
+      const canvas = document.getElementById('dna-rain');
+      const ctx = canvas.getContext('2d');
+      const CHARS = 'AATTTGGCC'.split('');
+      const FONT_SIZE = 14;
+      let cols, drops;
+      function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const rows = Math.ceil(canvas.height / FONT_SIZE);
+        cols  = Math.floor(canvas.width / FONT_SIZE);
+        drops = Array.from({ length: cols }, () => Math.random() * rows);
+      }
+      function draw() {
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.12)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = FONT_SIZE + 'px "Courier New", monospace';
+        for (let c = 0; c < cols; c++) {
+          const y = drops[c] * FONT_SIZE;
+          ctx.fillStyle = '#c8ffc8';
+          ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], c * FONT_SIZE, y);
+          if (drops[c] > 1) {
+            ctx.fillStyle = '#00ff41';
+            ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], c * FONT_SIZE, y - FONT_SIZE);
+          }
+          if (y > canvas.height && Math.random() > 0.97) drops[c] = 0;
+          drops[c] += 0.6;
+        }
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      setInterval(draw, 40);
+    })();
+
+    // --- terminal typewriter ---
+    const steps = [
+      'initializing cancer genome database',
+      'mounting genomic study index',
+      'loading mutation profiles',
+      'preparing clinical data engine',
+      'warming up compute workers',
+    ];
+    const linesEl = document.getElementById('lines');
+    const activeEl = document.getElementById('active-cmd');
+    let i = 0;
+    function addLine(text) {
+      const el = document.createElement('div');
+      el.className = 'prompt-line';
+      el.textContent = '$ ' + text + '  [done]';
+      linesEl.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('visible'));
+    }
+    function tick() {
+      if (i > 0) addLine(steps[i - 1]);
+      if (i < steps.length) { activeEl.textContent = ' ' + steps[i]; i++; }
+      else { activeEl.textContent = ' waiting for service...'; clearInterval(timer); }
+    }
+    const timer = setInterval(tick, 900);
+    tick();
+
+    // --- poll Cloud Run, redirect when warm ---
+    const DEST = 'https://cbio-revamp-7vd2hab3va-uc.a.run.app/';
+    function poll() {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 5000);
+      fetch(DEST, { mode: 'no-cors', signal: ctrl.signal })
+        .then(() => { clearTimeout(tid); window.location.replace(DEST); })
+        .catch(() => { clearTimeout(tid); setTimeout(poll, 3000); });
+    }
+    poll();
+  </script>
 </body>
 </html>
