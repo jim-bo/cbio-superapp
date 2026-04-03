@@ -149,11 +149,11 @@
       border-radius: 2px;
       overflow: hidden;
     }
-    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes fill { from { width: 0%; } to { width: 90%; } }
     .progress-bar {
       height: 100%;
       background: linear-gradient(90deg, #60a5fa, #1d4ed8);
-      animation: pulse 2s ease-in-out infinite;
+      animation: fill 180s cubic-bezier(0.1, 0.0, 0.3, 1.0) forwards;
       border-radius: 2px;
     }
 
@@ -186,7 +186,13 @@
           <span class="progress-pct" id="pct">0%</span>
         </div>
         <div class="progress-track"><div class="progress-bar"></div></div>
-        <p class="footer-note">connecting to server &mdash; redirecting automatically</p>
+        <p class="footer-note">you will be redirected automatically &mdash; no action needed</p>
+      <p class="footer-note" style="margin-top:0.6rem; color: var(--text-muted); font-size: 0.7rem; line-height:1.5; text-align:left;">
+        <strong>Note:</strong> This is a demo app hosted on serverless infrastructure.
+        To minimise cost, the server shuts down when not in use. It is currently
+        loading up — please be patient, it can take <strong>2&ndash;3 minutes</strong>
+        on a cold start.
+      </p>
       </div>
     </div>
   </div>
@@ -258,7 +264,7 @@
     // animated percentage counter
     const t0 = Date.now();
     const pctTimer = setInterval(() => {
-      const pct = Math.min(99, Math.round((Date.now() - t0) / 10000 * 100));
+      const pct = Math.min(90, Math.round((Date.now() - t0) / 180000 * 90));
       pctEl.textContent = pct + '%';
       if (pct >= 99) clearInterval(pctTimer);
     }, 80);
@@ -278,19 +284,22 @@
       if (i < steps.length) { activeEl.textContent = ' ' + steps[i]; i++; }
       else { activeEl.textContent = ' waiting for service...'; clearInterval(timer); }
     }
-    const timer = setInterval(tick, 1100);
+    const timer = setInterval(tick, 18000);
     tick();
   </script>
+  <script>
     // --- poll Cloud Run, redirect when warm ---
+    // Timeout is 3 min to ride out a cold start; retry every 15s if it somehow fails.
     const DEST = 'https://cbio-revamp-7vd2hab3va-uc.a.run.app/';
     function poll() {
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const tid = setTimeout(() => ctrl.abort(), 180000);
       fetch(DEST, { mode: 'no-cors', signal: ctrl.signal })
         .then(() => { clearTimeout(tid); window.location.replace(DEST); })
-        .catch(() => { clearTimeout(tid); setTimeout(poll, 3000); });
+        .catch(() => { clearTimeout(tid); setTimeout(poll, 15000); });
     }
     poll();
+  </script>
 </body>
 </html>`;
 
