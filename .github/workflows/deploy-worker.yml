@@ -1,8 +1,10 @@
 # CD: deploy Cloudflare Worker when .worker/** changes.
 #
 # Required GitHub Secrets:
-#   CLOUDFLARE_API_TOKEN  — API token with "Edit Cloudflare Workers" permissions
-#                           Create at: dash.cloudflare.com > My Profile > API Tokens
+#   CLOUDFLARE_API_TOKEN   — API token with "Edit Cloudflare Workers" permissions
+#                            Create at: dash.cloudflare.com > My Profile > API Tokens
+#   CLOUDFLARE_ACCOUNT_ID  — Account ID (not secret, but kept out of repo)
+#                            Find at: dash.cloudflare.com > Workers & Pages (right sidebar)
 
 name: Deploy Cloudflare Worker
 
@@ -28,4 +30,5 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: .worker
