@@ -145,7 +145,7 @@ def _load_cna_unpivot(conn: duckdb.DuckDBPyConnection) -> None:
                 '{raw_study_id}' as study_id,
                 {_hugo_select}
                 sample_id,
-                TRY_CAST(cna_value AS DOUBLE) as cna_value
+                TRY_CAST(cna_value AS FLOAT) as cna_value
             FROM (
                 UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
                 ON COLUMNS(* EXCLUDE {_exclude_clause})
@@ -177,7 +177,7 @@ def _load_cna_python(conn: duckdb.DuckDBPyConnection) -> None:
             study_id  VARCHAR NOT NULL,
             hugo_symbol VARCHAR,
             sample_id VARCHAR NOT NULL,
-            cna_value DOUBLE NOT NULL
+            cna_value FLOAT NOT NULL
         )
     """)
 
@@ -371,7 +371,7 @@ def _load_cna_unpivot_for(cna_file: Path, study_id: str, conn: duckdb.DuckDBPyCo
                 '{study_id}' as study_id,
                 {_hugo_select}
                 sample_id,
-                TRY_CAST(cna_value AS DOUBLE) as cna_value
+                TRY_CAST(cna_value AS FLOAT) as cna_value
             FROM (
                 UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
                 ON COLUMNS(* EXCLUDE {_exclude_clause})
@@ -518,7 +518,7 @@ def _load_cna_python_for(cna_file: Path, study_id: str, conn: duckdb.DuckDBPyCon
             study_id  VARCHAR NOT NULL,
             hugo_symbol VARCHAR,
             sample_id VARCHAR NOT NULL,
-            cna_value DOUBLE NOT NULL
+            cna_value FLOAT NOT NULL
         )
     """)
     _NON_SAMPLE_COLS = {"Hugo_Symbol", "Entrez_Gene_Id", "Cytoband"}

@@ -201,7 +201,7 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
                     '{study_id}' as study_id,
                     {hugo_select}
                     sample_id,
-                    TRY_CAST({value_col} AS DOUBLE) as {value_col}
+                    TRY_CAST({value_col} AS FLOAT) as {value_col}
                 FROM (
                     UNPIVOT (SELECT * FROM read_csv('{filepath}', delim='\\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
                     {on_clause}
@@ -216,7 +216,7 @@ def _load_wide_matrix(conn, study_id: str, filepath: Path, table_name: str, valu
                 study_id    VARCHAR NOT NULL,
                 hugo_symbol VARCHAR,
                 sample_id   VARCHAR NOT NULL,
-                {value_col} DOUBLE NOT NULL
+                {value_col} FLOAT NOT NULL
             )
         """)
         entrez_col = header_cols.index("Entrez_Gene_Id") if "Entrez_Gene_Id" in header_cols else None
@@ -398,7 +398,7 @@ def load_study(
                                 '{raw_study_id}' as study_id,
                                 {_hugo_select}
                                 sample_id,
-                                TRY_CAST(cna_value AS DOUBLE) as cna_value
+                                TRY_CAST(cna_value AS FLOAT) as cna_value
                             FROM (
                                 UNPIVOT (SELECT * FROM read_csv('{cna_file}', delim='\\t', header=True, all_varchar=True, ignore_errors=True, null_padding=True))
                                 {_on_clause}
@@ -415,7 +415,7 @@ def load_study(
                         study_id    VARCHAR NOT NULL,
                         hugo_symbol VARCHAR,
                         sample_id   VARCHAR NOT NULL,
-                        cna_value   DOUBLE NOT NULL
+                        cna_value   FLOAT NOT NULL
                     )
                 """)
                 _sample_indices = [(i, c) for i, c in enumerate(_header_cols) if c not in _NON_SAMPLE_COLS]

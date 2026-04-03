@@ -99,7 +99,7 @@ def db_with_cna():
         ("S2", "P2"),
         ("S3", "P3"),
     ])
-    conn.execute(f'CREATE TABLE "{STUDY}_cna" (sample_id VARCHAR, hugo_symbol VARCHAR, cna_value INTEGER)')
+    conn.execute(f'CREATE TABLE "{STUDY}_cna" (sample_id VARCHAR, hugo_symbol VARCHAR, cna_value FLOAT)')
     conn.executemany(f'INSERT INTO "{STUDY}_cna" VALUES (?, ?, ?)', [
         ("S1", "ERBB2", 2),
         ("S2", "MYC", 2),
