@@ -1,0 +1,44 @@
+# Cloud Run Job: inject one study's updated tables into the existing master DB.
+#
+# Run AFTER cbio-build has produced a fresh per-study DB for the study.
+#
+# Deploy:
+#   gcloud run jobs replace .cloud/inject-job.yaml \
+#     --region us-central1 \
+#     --project ${GCP_PROJECT}
+#
+# Execute:
+#   gcloud run jobs execute cbio-inject --region us-central1 --wait \
+#     --update-env-vars STUDY_ID=acc_tcga
+
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: cbio-inject
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+            - image: us-central1-docker.pkg.dev/${GCP_PROJECT}/cbio/cbio-revamp:latest
+              command: ["cbio"]
+              args:
+                - beta
+                - cloud
+                - inject
+                - "--study-id"
+                - "$(STUDY_ID)"
+              env:
+                - name: CBIO_GCS_BUCKET
+                  value: ${GCS_BUCKET}
+                - name: STUDY_ID
+                  value: ""   # overridden at execute time
+              resources:
+                limits:
+                  cpu: "2"
+                  memory: 16Gi
+                  ephemeral-storage: 32Gi   # master + per-study DB + rebuilt master
+          serviceAccountName: ${JOB_SA_EMAIL}
+          timeoutSeconds: 7200    # 2 h
+          maxRetries: 0           # Not safe to retry mid-inject; investigate first

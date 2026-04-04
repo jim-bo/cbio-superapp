@@ -426,7 +426,32 @@ def load_study(
                         for r in conn.execute("SELECT entrez_gene_id, hugo_gene_symbol FROM gene_reference").fetchall()
                         if r[1]
                     }
-                _batch: list[tuple] = []
+                import csv as _csv
+                import tempfile as _tempfile
+                # Chunked CSV import: write up to _CNA_CHUNK rows per temp file then
+                # bulk-load via read_csv().  Keeps disk usage bounded (~30 MB/chunk)
+                # while avoiding executemany heap corruption in DuckDB 1.5.
+                _CNA_CHUNK = 500_000
+                _cna_chunk: list = []
+                _cna_chunk_hdr = ["study_id", "hugo_symbol", "sample_id", "cna_value"]
+
+                def _flush_cna_chunk(rows: list) -> None:
+                    with _tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".csv", delete=False, newline=""
+                    ) as _tf:
+                        _p = _tf.name
+                        _w = _csv.writer(_tf, quoting=_csv.QUOTE_MINIMAL)
+                        _w.writerow(_cna_chunk_hdr)
+                        _w.writerows(rows)
+                    try:
+                        conn.execute(
+                            f'INSERT INTO {table_name} '
+                            f'SELECT study_id, hugo_symbol, sample_id, CAST(cna_value AS DOUBLE) '
+                            f"FROM read_csv('{_p}', header=true)"
+                        )
+                    finally:
+                        os.unlink(_p)
+
                 with _t.phase("cna_python_fallback"):
                     with open(cna_file) as _f:
                         for _line in _f:
@@ -454,12 +479,13 @@ def load_study(
                                     continue
                                 if _val == 0:
                                     continue
-                                _batch.append((raw_study_id, _hugo, _sample_id, _val))
-                            if len(_batch) >= 50_000:
-                                conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
-                                _batch.clear()
-                    if _batch:
-                        conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
+                                _cna_chunk.append([raw_study_id, _hugo, _sample_id, _val])
+                            if len(_cna_chunk) >= _CNA_CHUNK:
+                                _flush_cna_chunk(_cna_chunk)
+                                _cna_chunk.clear()
+                    if _cna_chunk:
+                        _flush_cna_chunk(_cna_chunk)
+                        _cna_chunk.clear()
             with _t.phase("hugo_normalize_cna"):
                 normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True

@@ -94,7 +94,7 @@ jobs:
             --port 8080 \
             --timeout 300 \
             --cpu-boost \
-            --add-volume "name=duckdb-vol,type=cloud-storage,bucket=${{ env.GCS_BUCKET }}" \
+            --add-volume "name=duckdb-vol,type=cloud-storage,bucket=${{ env.GCS_BUCKET }},mount-options=only-dir=master" \
             --add-volume-mount "volume=duckdb-vol,mount-path=/mnt/gcs" \
             --set-env-vars "CBIO_DB_PATH=/mnt/gcs/cbioportal.duckdb" \
             --set-env-vars "CBIO_SESSIONS_DB_URL=sqlite:////tmp/sessions.db" \
