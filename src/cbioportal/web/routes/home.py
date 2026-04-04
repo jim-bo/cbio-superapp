@@ -3,11 +3,12 @@ from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from typing import Annotated
 
-from cbioportal.core.database import get_db
+from cbioportal.core.database import get_db, get_catalog_db
 from cbioportal.core.study_repository import (
     DATA_TYPE_OPTIONS,
     SPECIAL_COLLECTIONS,
     get_study_catalog,
+    get_study_catalog_from_catalog,
     get_cancer_type_counts,
     get_query_form_context,
     validate_genes,
@@ -21,12 +22,23 @@ def _build_context(conn, study_names, cancer_type="All", data_types=None):
     if data_types is None:
         data_types = []
 
-    studies = get_study_catalog(
-        conn,
-        study_names,
-        cancer_type=cancer_type if cancer_type != "All" else None,
-        data_types=data_types if data_types else None,
-    )
+    # Use the catalog-optimized query (pre-aggregated sample counts) when the
+    # catalog_sample_counts table is present; fall back to the full-DB query
+    # (which scans clinical_sample) when running without a catalog DB.
+    try:
+        studies = get_study_catalog_from_catalog(
+            conn,
+            study_names,
+            cancer_type=cancer_type if cancer_type != "All" else None,
+            data_types=data_types if data_types else None,
+        )
+    except Exception:
+        studies = get_study_catalog(
+            conn,
+            study_names,
+            cancer_type=cancer_type if cancer_type != "All" else None,
+            data_types=data_types if data_types else None,
+        )
 
     cancer_type_counts, special_counts = get_cancer_type_counts(
         conn,
@@ -75,7 +87,7 @@ def _build_context(conn, study_names, cancer_type="All", data_types=None):
 
 
 @router.get("/", response_class=HTMLResponse)
-def home(request: Request, conn=Depends(get_db)):
+def home(request: Request, conn=Depends(get_catalog_db)):
     study_names = request.app.state.study_names
     ctx = _build_context(conn, study_names)
     return request.app.state.templates.TemplateResponse(
@@ -86,7 +98,7 @@ def home(request: Request, conn=Depends(get_db)):
 @router.post("/studies", response_class=HTMLResponse)
 def filter_studies(
     request: Request,
-    conn=Depends(get_db),
+    conn=Depends(get_catalog_db),
     cancer_type: Annotated[str, Form()] = "All",
     data_types: Annotated[list[str], Form()] = [],
 ):
@@ -104,6 +116,14 @@ def query_page(
     study_ids: str = "",
 ):
     """Render the query-by-gene form as a standalone page."""
+    if not request.app.state.full_db_ready.is_set():
+        return request.app.state.templates.TemplateResponse(
+            "shared/warming.html",
+            {"request": request},
+            status_code=503,
+            headers={"Retry-After": "20"},
+        )
+
     ids = [s.strip() for s in study_ids.split(",") if s.strip()]
     if not ids:
         return HTMLResponse("No studies selected. <a href='/'>Go back</a>", status_code=400)
