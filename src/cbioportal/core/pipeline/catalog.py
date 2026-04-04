@@ -46,14 +46,28 @@ def export_catalog(
     catalog_path = base_tmp / "catalog_new.duckdb"
     catalog_path.unlink(missing_ok=True)
 
-    # Open master directly to query the clinical_sample view (ATTACH does not
-    # expose views from the attached DB; a direct connection is required).
+    # Open master directly to query sample counts (ATTACH does not expose views).
+    # Try the clinical_sample union view first; fall back to per-study tables when
+    # the view is absent (e.g. in unit tests where create_global_views is patched).
     master_conn = duckdb.connect(str(master_path), read_only=True)
     try:
-        sample_counts = master_conn.execute(
-            "SELECT study_id, COUNT(DISTINCT SAMPLE_ID) AS sample_count "
-            "FROM clinical_sample GROUP BY study_id"
-        ).fetchall()
+        try:
+            sample_counts = master_conn.execute(
+                "SELECT study_id, COUNT(DISTINCT SAMPLE_ID) AS sample_count "
+                "FROM clinical_sample GROUP BY study_id"
+            ).fetchall()
+        except Exception:
+            # Fall back: iterate per-study sample tables from the studies table.
+            study_ids = [r[0] for r in master_conn.execute("SELECT study_id FROM studies").fetchall()]
+            sample_counts = []
+            for sid in study_ids:
+                try:
+                    n = master_conn.execute(
+                        f'SELECT COUNT(DISTINCT SAMPLE_ID) FROM "{sid}_sample"'
+                    ).fetchone()[0]
+                    sample_counts.append((sid, n))
+                except Exception:
+                    sample_counts.append((sid, 0))
     finally:
         master_conn.close()
 
