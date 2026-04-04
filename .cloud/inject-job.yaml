@@ -27,8 +27,6 @@ spec:
                 - beta
                 - cloud
                 - inject
-                - "--study-id"
-                - "$(STUDY_ID)"
               env:
                 - name: CBIO_GCS_BUCKET
                   value: ${GCS_BUCKET}

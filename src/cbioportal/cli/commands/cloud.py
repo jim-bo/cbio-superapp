@@ -41,7 +41,7 @@ def sync(
 
 @app.command()
 def build(
-    study_id: str = typer.Option(..., "--study-id", help="Study ID to build"),
+    study_id: str = typer.Option(..., "--study-id", envvar="STUDY_ID", help="Study ID to build"),
     mutations: bool = typer.Option(True, help="Include mutation data"),
     cna: bool = typer.Option(True, help="Include CNA data"),
     sv: bool = typer.Option(True, help="Include SV data"),
@@ -164,7 +164,7 @@ def merge(
 
 @app.command()
 def inject(
-    study_id: str = typer.Option(..., "--study-id", help="Study ID to inject into master"),
+    study_id: str = typer.Option(..., "--study-id", envvar="STUDY_ID", help="Study ID to inject into master"),
     no_backup: bool = typer.Option(False, "--no-backup", help="Skip writing backup"),
 ):
     """Replace one study's tables in the existing master DB."""
