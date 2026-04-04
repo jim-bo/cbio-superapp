@@ -426,7 +426,14 @@ def load_study(
                         for r in conn.execute("SELECT entrez_gene_id, hugo_gene_symbol FROM gene_reference").fetchall()
                         if r[1]
                     }
-                _batch: list[tuple] = []
+                import csv as _csv
+                import tempfile as _tempfile
+                _tmp_cna = _tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".csv", delete=False, newline=""
+                )
+                _cna_tmp_path = _tmp_cna.name
+                _cna_writer = _csv.writer(_tmp_cna, quoting=_csv.QUOTE_MINIMAL)
+                _cna_writer.writerow(["study_id", "hugo_symbol", "sample_id", "cna_value"])
                 with _t.phase("cna_python_fallback"):
                     with open(cna_file) as _f:
                         for _line in _f:
@@ -454,12 +461,14 @@ def load_study(
                                     continue
                                 if _val == 0:
                                     continue
-                                _batch.append((raw_study_id, _hugo, _sample_id, _val))
-                            if len(_batch) >= 50_000:
-                                conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
-                                _batch.clear()
-                    if _batch:
-                        conn.executemany(f"INSERT INTO {table_name} VALUES (?, ?, ?, ?)", _batch)
+                                _cna_writer.writerow([raw_study_id, _hugo, _sample_id, _val])
+                    _tmp_cna.close()
+                    conn.execute(
+                        f'INSERT INTO {table_name} '
+                        f'SELECT study_id, hugo_symbol, sample_id, CAST(cna_value AS DOUBLE) '
+                        f"FROM read_csv('{_cna_tmp_path}', header=true)"
+                    )
+                    os.unlink(_cna_tmp_path)
             with _t.phase("hugo_normalize_cna"):
                 normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
