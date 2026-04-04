@@ -98,15 +98,20 @@ async def lifespan(app: FastAPI):
     full_db_ready = threading.Event()
     app.state.full_db_ready = full_db_ready
 
-    # Warm the OS page cache in a background thread. This scans the heaviest
-    # tables so GCS FUSE data lands in Linux's page cache. The lifespan yields
-    # immediately so uvicorn can accept connections and pass health checks.
-    warmup_thread = threading.Thread(
-        target=_warm_page_cache,
-        args=(db_path, list(app.state.study_names), full_db_ready),
-        daemon=True,
-    )
-    warmup_thread.start()
+    # CBIO_SKIP_WARMUP=1 keeps the event permanently unset so the warming gate
+    # fires on every study view request.  Useful for local testing.
+    if os.environ.get("CBIO_SKIP_WARMUP") == "1":
+        logger.warning("CBIO_SKIP_WARMUP=1 — full DB warming gate will always fire")
+    else:
+        # Warm the OS page cache in a background thread. This scans the heaviest
+        # tables so GCS FUSE data lands in Linux's page cache. The lifespan yields
+        # immediately so uvicorn can accept connections and pass health checks.
+        warmup_thread = threading.Thread(
+            target=_warm_page_cache,
+            args=(db_path, list(app.state.study_names), full_db_ready),
+            daemon=True,
+        )
+        warmup_thread.start()
 
     # Sessions DB (SQLAlchemy — SQLite for dev, PostgreSQL/AlloyDB for prod).
     # Base.metadata.create_all is a no-op when the table already exists.
