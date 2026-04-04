@@ -428,12 +428,30 @@ def load_study(
                     }
                 import csv as _csv
                 import tempfile as _tempfile
-                _tmp_cna = _tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".csv", delete=False, newline=""
-                )
-                _cna_tmp_path = _tmp_cna.name
-                _cna_writer = _csv.writer(_tmp_cna, quoting=_csv.QUOTE_MINIMAL)
-                _cna_writer.writerow(["study_id", "hugo_symbol", "sample_id", "cna_value"])
+                # Chunked CSV import: write up to _CNA_CHUNK rows per temp file then
+                # bulk-load via read_csv().  Keeps disk usage bounded (~30 MB/chunk)
+                # while avoiding executemany heap corruption in DuckDB 1.5.
+                _CNA_CHUNK = 500_000
+                _cna_chunk: list = []
+                _cna_chunk_hdr = ["study_id", "hugo_symbol", "sample_id", "cna_value"]
+
+                def _flush_cna_chunk(rows: list) -> None:
+                    with _tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".csv", delete=False, newline=""
+                    ) as _tf:
+                        _p = _tf.name
+                        _w = _csv.writer(_tf, quoting=_csv.QUOTE_MINIMAL)
+                        _w.writerow(_cna_chunk_hdr)
+                        _w.writerows(rows)
+                    try:
+                        conn.execute(
+                            f'INSERT INTO {table_name} '
+                            f'SELECT study_id, hugo_symbol, sample_id, CAST(cna_value AS DOUBLE) '
+                            f"FROM read_csv('{_p}', header=true)"
+                        )
+                    finally:
+                        os.unlink(_p)
+
                 with _t.phase("cna_python_fallback"):
                     with open(cna_file) as _f:
                         for _line in _f:
@@ -461,14 +479,13 @@ def load_study(
                                     continue
                                 if _val == 0:
                                     continue
-                                _cna_writer.writerow([raw_study_id, _hugo, _sample_id, _val])
-                    _tmp_cna.close()
-                    conn.execute(
-                        f'INSERT INTO {table_name} '
-                        f'SELECT study_id, hugo_symbol, sample_id, CAST(cna_value AS DOUBLE) '
-                        f"FROM read_csv('{_cna_tmp_path}', header=true)"
-                    )
-                    os.unlink(_cna_tmp_path)
+                                _cna_chunk.append([raw_study_id, _hugo, _sample_id, _val])
+                            if len(_cna_chunk) >= _CNA_CHUNK:
+                                _flush_cna_chunk(_cna_chunk)
+                                _cna_chunk.clear()
+                    if _cna_chunk:
+                        _flush_cna_chunk(_cna_chunk)
+                        _cna_chunk.clear()
             with _t.phase("hugo_normalize_cna"):
                 normalize_hugo_symbols(conn, raw_study_id)
             loaded_any = True
