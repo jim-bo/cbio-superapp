@@ -20,6 +20,7 @@ import typer
 
 from cbioportal.core.gcs import StorageBackend
 from cbioportal.core.loader import ensure_gene_reference, create_global_views
+from cbioportal.core.pipeline.catalog import export_catalog
 
 _PER_STUDY_PREFIX = "per-study-dbs"
 _MASTER_KEY = "master/cbioportal.duckdb"
@@ -200,6 +201,10 @@ def merge_all_studies(
 
     typer.echo("Uploading new master...")
     storage.upload_file(master_path, _MASTER_KEY)
+
+    typer.echo("Exporting catalog DB...")
+    export_catalog(master_path, storage, tmp_dir=base_tmp)
+
     master_path.unlink(missing_ok=True)
     typer.echo("Merge complete.")
 

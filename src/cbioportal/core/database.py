@@ -13,6 +13,11 @@ DEFAULT_DB_PATH = Path("data/cbioportal.duckdb")
 _pool: "queue.Queue[duckdb.DuckDBPyConnection] | None" = None
 _POOL_SIZE = 2  # 2 per worker process; DuckDB parallelises internally per query
 
+# Catalog DB pool — tiny DB for homepage queries (studies, sample counts).
+# One connection is sufficient; it serves fast metadata-only queries.
+_catalog_pool: "queue.Queue[duckdb.DuckDBPyConnection] | None" = None
+_CATALOG_POOL_SIZE = 1
+
 
 def get_db_path() -> Path:
     """Get the database path from environment or default."""
@@ -35,6 +40,37 @@ def configure(db_path: Path, pool_size: int = _POOL_SIZE) -> None:
         # Cap per-connection memory so the pool doesn't exhaust container RAM.
         conn.execute("SET memory_limit='6GB'")
         _pool.put(conn)
+
+
+def configure_catalog(db_path: Path) -> None:
+    """Configure a read-only connection pool for the catalog DB.
+
+    The catalog DB is small (~1-5 MB) and powers homepage queries without
+    touching the heavy per-study tables. One connection is sufficient.
+    """
+    global _catalog_pool
+    _catalog_pool = queue.Queue(maxsize=_CATALOG_POOL_SIZE)
+    for _ in range(_CATALOG_POOL_SIZE):
+        conn = duckdb.connect(str(db_path), read_only=True)
+        conn.execute("SET temp_directory='/tmp/duckdb_temp'")
+        conn.execute("SET memory_limit='512MB'")
+        _catalog_pool.put(conn)
+
+
+def get_catalog_db() -> Generator[duckdb.DuckDBPyConnection, None, None]:
+    """FastAPI dependency: borrows a catalog connection for one request.
+
+    Falls back to the full DB pool if the catalog was not configured
+    (e.g. first deploy before catalog.duckdb has been built by the pipeline).
+    """
+    if _catalog_pool is None:
+        yield from get_db()
+        return
+    conn = _catalog_pool.get()
+    try:
+        yield conn
+    finally:
+        _catalog_pool.put(conn)
 
 
 def get_db() -> Generator[duckdb.DuckDBPyConnection, None, None]:

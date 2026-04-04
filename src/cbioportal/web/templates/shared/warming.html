@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Loading — cBioPortal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .warming-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .warming-icon {
+    font-size: 48px;
+    color: #2986e2;
+    margin-bottom: 24px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .warming-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+  }
+  .warming-subtitle {
+    font-size: 15px;
+    color: #666;
+    max-width: 420px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .warming-progress {
+    width: 280px;
+    height: 4px;
+    background: #e8e8e8;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .warming-progress-bar {
+    height: 100%;
+    background: #2986e2;
+    border-radius: 2px;
+    animation: progress-slide 2.5s ease-in-out infinite;
+  }
+  @keyframes progress-slide {
+    0% { width: 0%; margin-left: 0%; }
+    50% { width: 60%; margin-left: 20%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+  .warming-retry {
+    font-size: 13px;
+    color: #999;
+  }
+  .warming-retry a {
+    color: #2986e2;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .warming-retry a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="warming-container">
+  <div class="warming-icon">
+    <i class="fa-solid fa-dna"></i>
+  </div>
+  <div class="warming-title">Loading study data&hellip;</div>
+  <div class="warming-subtitle">
+    The server is initializing genomic data for this study.
+    The homepage is available while this completes.
+  </div>
+  <div class="warming-progress">
+    <div class="warming-progress-bar"></div>
+  </div>
+  <div class="warming-retry">
+    This page will refresh automatically &mdash; or <a id="retry-link" href="#">try now</a>.
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Auto-refresh after 20 seconds
+  var countdown = 20;
+  setTimeout(function () { window.location.reload(); }, countdown * 1000);
+
+  document.getElementById("retry-link").addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location.reload();
+  });
+</script>
+{% endblock %}

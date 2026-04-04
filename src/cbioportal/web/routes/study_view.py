@@ -112,6 +112,16 @@ def study_summary(request: Request, id: str, conn=Depends(get_db), session_id: s
     Also mints the session cookie if absent, so the middleware can start
     auto-saving filter state on the first chart POST that follows.
     """
+    # On cold start the full DB is still warming in the OS page cache.
+    # Return a graceful "warming" page rather than a slow or broken response.
+    if not request.app.state.full_db_ready.is_set():
+        return request.app.state.templates.TemplateResponse(
+            "shared/warming.html",
+            {"request": request},
+            status_code=503,
+            headers={"Retry-After": "20"},
+        )
+
     meta = get_study_metadata(conn, id)
     if not meta:
         raise HTTPException(status_code=404, detail="Study not found")

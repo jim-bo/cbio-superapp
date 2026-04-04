@@ -82,6 +82,64 @@ def get_study_catalog(
         for study_id, cat, sample_count, dtypes, description, pmid in rows
     ]
 
+def get_study_catalog_from_catalog(
+    conn,
+    study_names: dict[str, str],
+    cancer_type: str | None = None,
+    data_types: list[str] | None = None,
+) -> list[dict]:
+    """Like get_study_catalog() but uses the pre-aggregated catalog_sample_counts table.
+
+    Use this when connected to catalog.duckdb. Avoids scanning the clinical_sample
+    union view, which spans all per-study sample tables in the full DB.
+    """
+    where_clauses = []
+    params: list = []
+
+    if cancer_type and cancer_type != "All":
+        where_clauses.append("s.category = ?")
+        params.append(cancer_type)
+
+    if data_types:
+        placeholders = ", ".join("?" * len(data_types))
+        where_clauses.append(
+            f"s.study_id IN (SELECT study_id FROM study_data_types WHERE data_type IN ({placeholders}))"
+        )
+        params.extend(data_types)
+
+    where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+    sql = f"""
+        SELECT
+            s.study_id,
+            s.category,
+            COALESCE(c.sample_count, 0) AS sample_count,
+            list(DISTINCT sdt.data_type) AS data_types,
+            s.description,
+            s.pmid
+        FROM studies s
+        LEFT JOIN catalog_sample_counts c ON s.study_id = c.study_id
+        LEFT JOIN study_data_types sdt ON s.study_id = sdt.study_id
+        {where_sql}
+        GROUP BY s.study_id, s.category, c.sample_count, s.description, s.pmid
+        ORDER BY s.study_id
+    """
+
+    rows = conn.execute(sql, params).fetchall()
+    return [
+        {
+            "id": study_id,
+            "name": study_names.get(study_id, study_id),
+            "cancer_type": cat,
+            "sample_count": sample_count,
+            "data_types": dtypes or [],
+            "description": description,
+            "pmid": pmid,
+        }
+        for study_id, cat, sample_count, dtypes, description, pmid in rows
+    ]
+
+
 def get_cancer_type_counts(
     conn,
     data_types: list[str] | None = None,
