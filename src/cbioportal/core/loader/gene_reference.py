@@ -480,6 +480,8 @@ def ensure_gene_reference(conn):
             load_gene_symbol_updates(conn)
         if "gene_alias" not in existing:
             load_gene_aliases(conn)
+        if "cancer_types" not in existing:
+            sync_oncotree(conn)
         # Populate cytoband if gene_reference exists but cytoband is empty
         try:
             has_cytoband = conn.execute(
