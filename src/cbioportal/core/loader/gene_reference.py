@@ -110,7 +110,10 @@ def get_oncotree_root(conn, type_of_cancer_id: str):
         return "Other"
     current_id = type_of_cancer_id.lower()
     for _ in range(10):
-        res = conn.execute("SELECT name, parent FROM cancer_types WHERE type_of_cancer_id = ?", (current_id,)).fetchone()
+        try:
+            res = conn.execute("SELECT name, parent FROM cancer_types WHERE type_of_cancer_id = ?", (current_id,)).fetchone()
+        except Exception:
+            return current_id.capitalize()
         if not res:
             return current_id.capitalize()
         name, parent = res
