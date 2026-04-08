@@ -1,6 +1,7 @@
 """cbio beta — local DuckDB server and sync commands (wraps existing CLI)."""
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 
@@ -210,4 +211,26 @@ def serve(
     workers: int = typer.Option(1, help="Number of uvicorn worker processes (>1 enables parallel DuckDB connections)"),
 ) -> None:
     """Launch the FastAPI/HTMX webserver."""
+    # M8: hard refuse to launch the terminal tray on a non-localhost
+    # bind unless the operator explicitly acknowledges the risk. The
+    # tray gives any reachable browser a shell-like channel into the
+    # server process — it must never be exposed to the open internet
+    # without a real auth layer in front (none yet exists).
+    if os.environ.get("CBIO_TERMINAL_ENABLED", "").lower() in ("1", "true", "yes"):
+        non_local = host not in ("127.0.0.1", "localhost", "::1")
+        override = os.environ.get("CBIO_TERMINAL_ALLOW_PUBLIC_BIND", "").lower() in ("1", "true", "yes")
+        if non_local and not override:
+            console.print(
+                "[bold red]REFUSED:[/bold red] CBIO_TERMINAL_ENABLED=1 with "
+                f"host={host!r}.\nThe /terminal route MUST be bound to "
+                "localhost. Set CBIO_TERMINAL_ALLOW_PUBLIC_BIND=1 to override "
+                "(only after putting real authentication in front)."
+            )
+            raise typer.Exit(code=2)
+        if non_local and override:
+            console.print(
+                "[bold yellow]WARNING:[/bold yellow] /terminal route enabled "
+                f"with public bind ({host}) via override flag. Ensure "
+                "authentication is enforced upstream."
+            )
     server.run(port=port, host=host, workers=workers)

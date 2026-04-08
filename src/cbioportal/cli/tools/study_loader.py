@@ -13,6 +13,8 @@ from pathlib import Path
 from cli_textual.tools.base import ToolResult
 
 from cbioportal.cli.tools._db import open_conn
+from cbioportal.cli.tools._paths import PathNotAllowed, resolve_safe_path
+from cbioportal.cli.tools._scrub import scrub_tool_output
 from cbioportal.core import loader
 from cbioportal.core.loader.discovery import discover_studies, parse_meta_file
 
@@ -53,10 +55,11 @@ def _read_tsv_header(path: Path) -> list[str] | None:
 
 
 def _validate_study_sync(path_str: str) -> ToolResult:
-    study_path = Path(path_str).expanduser().resolve()
-    if not study_path.exists():
+    try:
+        study_path = resolve_safe_path(path_str, must_exist=True)
+    except PathNotAllowed as exc:
         return ToolResult(
-            output=f"Path does not exist: {study_path}",
+            output=f"Refused: {exc}",
             is_error=True,
             exit_code=1,
         )
@@ -204,8 +207,11 @@ def _validate_study_sync(path_str: str) -> ToolResult:
                 if f["hint"]:
                     lines.append(f"  - _Hint:_ {f['hint']}")
             lines.append("")
+    # M7: the findings include file names and hint text that may
+    # contain attacker-controlled content from meta_*.txt. Scrub
+    # before handing back to the LLM.
     return ToolResult(
-        output="\n".join(lines),
+        output=scrub_tool_output("\n".join(lines)),
         is_error=n_err > 0,
         exit_code=1 if n_err > 0 else 0,
     )
@@ -231,10 +237,17 @@ def _load_study_sync(
     load_cna: bool,
     load_sv: bool,
 ) -> ToolResult:
-    study_path = Path(path_str).expanduser().resolve()
-    if not study_path.exists() or not study_path.is_dir():
+    try:
+        study_path = resolve_safe_path(path_str, must_exist=True)
+    except PathNotAllowed as exc:
         return ToolResult(
-            output=f"Study folder does not exist: {study_path}",
+            output=f"Refused: {exc}",
+            is_error=True,
+            exit_code=1,
+        )
+    if not study_path.is_dir():
+        return ToolResult(
+            output=f"Study folder is not a directory: {study_path}",
             is_error=True,
             exit_code=1,
         )

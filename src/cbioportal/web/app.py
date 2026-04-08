@@ -23,6 +23,8 @@ from cbioportal.web.routes import study_view as study_view_router
 from cbioportal.web.routes import results_view as results_view_router
 from cbioportal.web.routes import session as session_router
 from cbioportal.web.routes import metrics as metrics_router
+from cbioportal.web.routes import terminal as terminal_router
+from cbioportal.web import llm_proxy
 from cbioportal.web.middleware.session_sync import SessionSyncMiddleware
 
 logger = logging.getLogger(__name__)
@@ -161,5 +163,24 @@ def create_app():
     app.include_router(results_view_router.router)
     app.include_router(session_router.router)
     app.include_router(metrics_router.router)
+    app.include_router(terminal_router.router)
+    app.include_router(llm_proxy.router)
+    if terminal_router.terminal_enabled():
+        web_key = os.environ.get("CBIO_WEB_OPENROUTER_API_KEY")
+        if not web_key:
+            logger.warning(
+                "CBIO_TERMINAL_ENABLED=1 but CBIO_WEB_OPENROUTER_API_KEY is not set; "
+                "the /terminal route will fail until a dedicated key is provided."
+            )
+        else:
+            # Hand the real key to the proxy in-memory — it never re-enters env.
+            llm_proxy.set_upstream_key(web_key)
+            # Scrub from the server's own env so accidental leakage (e.g. an
+            # unrelated subprocess spawn) can't reach it either.
+            os.environ.pop("CBIO_WEB_OPENROUTER_API_KEY", None)
+        logger.warning(
+            "CBIO_TERMINAL_ENABLED=1 — /terminal route active. "
+            "Ensure the server is bound to localhost only."
+        )
 
     return app
