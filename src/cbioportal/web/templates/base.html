@@ -17,6 +17,10 @@
 
     {% block content %}{% endblock %}
 
+    {% if terminal_enabled() %}
+    {% include "shared/terminal_tray.html" %}
+    {% endif %}
+
     {% block footer %}
     {% include "shared/footer.html" %}
     {% endblock %}

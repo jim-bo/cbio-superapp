@@ -39,3 +39,4 @@ tests/visual/screenshots/
 .playwright-cli/
 .deepeval/
 .pytest_cache/
+.cbio/

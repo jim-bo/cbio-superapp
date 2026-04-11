@@ -192,3 +192,58 @@ them to be silently swallowed by the generic handler.
 Use `poolclass=StaticPool` when creating the test engine. Without it, each new
 SQLAlchemy connection gets a fresh SQLite in-memory database (empty, no schema).
 `StaticPool` forces all connections to share the same in-memory DB instance.
+
+## Web terminal tray (`/terminal`) — deployment caveats
+
+The web terminal tray embeds the `cbio` Textual TUI in the browser via
+`textual-serve`. It is **disabled by default** and must NEVER be
+exposed publicly without the safeguards below. The app-layer
+mitigations (M1–M8) live in:
+
+- `src/cbioportal/web/routes/terminal.py` — feature flag, origin check, CSRF cookie, env scrubbing, scratch cwd
+- `src/cbioportal/web/llm_proxy.py` — local reverse proxy so the subprocess never holds the real OpenRouter key
+- `src/cbioportal/web/session_limiter.py` — per-IP + global caps, idle reaping
+- `src/cbioportal/cli/tools/_paths.py` — path allowlist for all filesystem-touching tools
+- `src/cbioportal/cli/tools/_scrub.py` — prompt-injection dampening for tool output
+
+### Env vars
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CBIO_TERMINAL_ENABLED` | `0` | Feature flag. `/terminal` returns 404 unless set to `1`. |
+| `CBIO_WEB_OPENROUTER_API_KEY` | _(unset)_ | Dedicated, spend-capped OpenRouter key for web sessions. Held in Python memory only — never passed as env to the subprocess. |
+| `CBIO_TERMINAL_ALLOWED_ORIGINS` | _(empty)_ | Comma-separated extra origins permitted by the CSRF origin check. Same-origin is always allowed. |
+| `CBIO_STUDIES_DIR` | `./studies:./data` | Colon-separated allowlist roots for path-taking tools (`validate_study_folder`, `load_study_into_db`). |
+| `CBIO_TERMINAL_MAX_PER_IP` | `2` | Per-client concurrent session cap (429 past the limit). |
+| `CBIO_TERMINAL_MAX_TOTAL` | `10` | Global concurrent session cap (503 past the limit). |
+| `CBIO_TERMINAL_IDLE_SECONDS` | `900` | Idle session timeout; reaper kills the subprocess. |
+| `CBIO_TERMINAL_ALLOW_PUBLIC_BIND` | `0` | Explicit override to let `cbio beta serve` start with `--host 0.0.0.0` while the terminal is enabled. Only set after putting real auth upstream. |
+| `CBIO_SECURE_COOKIES` | `0` | Set to `1` for HTTPS deployments so the CSRF cookie gets `Secure`. |
+
+### Required before enabling on a shared deployment
+
+1. **Dedicated OpenRouter key** with a hard daily cap at the provider.
+2. **Authentication in front of the webapp.** The current mitigation
+   plan does NOT include per-user auth; `CBIO_TERMINAL_ENABLED=1` on a
+   public host is a remote-shell footgun.
+3. **Non-root subprocess user + network policy** at the deployment
+   layer (container UID, read-only FS outside the scratch dir, egress
+   limited to the proxy upstream).
+4. **Bind to localhost** (`--host 127.0.0.1`). `cbio beta serve` will
+   refuse to start with the terminal enabled on any other bind unless
+   `CBIO_TERMINAL_ALLOW_PUBLIC_BIND=1` is set as an explicit
+   acknowledgement.
+
+### Local dev usage
+
+```bash
+CBIO_TERMINAL_ENABLED=1 \
+CBIO_WEB_OPENROUTER_API_KEY=sk-or-... \
+uv run cbio beta serve --port 8002
+```
+
+The `/terminal` route becomes reachable on `127.0.0.1:8002` and the
+LLM proxy mounts at `/llm-proxy`. The real OpenRouter key is consumed
+from env at startup and immediately cleared from `os.environ` — it
+lives only in Python memory in the parent process. Subprocess env
+contains a one-shot session token bound to the localhost proxy.

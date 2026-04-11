@@ -23,6 +23,8 @@ from cbioportal.web.routes import study_view as study_view_router
 from cbioportal.web.routes import results_view as results_view_router
 from cbioportal.web.routes import session as session_router
 from cbioportal.web.routes import metrics as metrics_router
+from cbioportal.web.routes import terminal as terminal_router
+from cbioportal.web import llm_proxy
 from cbioportal.web.middleware.session_sync import SessionSyncMiddleware
 
 logger = logging.getLogger(__name__)
@@ -126,8 +128,17 @@ async def lifespan(app: FastAPI):
         bind=engine, autoflush=False, autocommit=False
     )
 
+    # Start the terminal idle reaper if the feature is enabled.
+    reaper_task = None
+    if terminal_router.terminal_enabled():
+        from cbioportal.web.terminal_service import idle_reaper
+
+        reaper_task = asyncio.create_task(idle_reaper())
+
     yield
 
+    if reaper_task is not None:
+        reaper_task.cancel()
     engine.dispose()
 
 
@@ -146,6 +157,10 @@ def create_app():
             return value
     templates.env.filters["comma_number"] = comma_number
 
+    # Expose the terminal feature flag to every template so base.html can
+    # conditionally include the tray partial without per-route plumbing.
+    templates.env.globals["terminal_enabled"] = terminal_router.terminal_enabled
+
     app.state.templates = templates
 
     # Static files
@@ -155,11 +170,43 @@ def create_app():
     # Middleware (add before routes so it wraps all requests)
     app.add_middleware(SessionSyncMiddleware)
 
+    # Serve textual-serve's static assets (xterm.js, fonts, css) when
+    # the terminal feature is enabled.  Mount BEFORE the terminal router
+    # so /terminal/static/... is matched by StaticFiles, not the router.
+    if terminal_router.terminal_enabled():
+        import textual_serve
+
+        ts_static = Path(textual_serve.__file__).parent / "static"
+        app.mount(
+            "/terminal/static",
+            StaticFiles(directory=str(ts_static)),
+            name="terminal-static",
+        )
+
     # Routes
     app.include_router(home_router.router)
     app.include_router(study_view_router.router)
     app.include_router(results_view_router.router)
     app.include_router(session_router.router)
     app.include_router(metrics_router.router)
+    app.include_router(terminal_router.router)
+    app.include_router(llm_proxy.router)
+    if terminal_router.terminal_enabled():
+        web_key = os.environ.get("CBIO_WEB_OPENROUTER_API_KEY")
+        if not web_key:
+            logger.warning(
+                "CBIO_TERMINAL_ENABLED=1 but CBIO_WEB_OPENROUTER_API_KEY is not set; "
+                "the /terminal route will fail until a dedicated key is provided."
+            )
+        else:
+            # Hand the real key to the proxy in-memory — it never re-enters env.
+            llm_proxy.set_upstream_key(web_key)
+            # Scrub from the server's own env so accidental leakage (e.g. an
+            # unrelated subprocess spawn) can't reach it either.
+            os.environ.pop("CBIO_WEB_OPENROUTER_API_KEY", None)
+        logger.warning(
+            "CBIO_TERMINAL_ENABLED=1 — /terminal route active. "
+            "Ensure the server is bound to localhost only."
+        )
 
     return app

@@ -31,6 +31,7 @@ dependencies = [
     "psycopg2-binary>=2.9",
     "invoke>=2.2",
     "google-cloud-storage>=2.17",
+    "cli-textual @ file:///Users/jlindsay/Code/cbioportal/cbio-revamp/cbio-explore/tmp/cli-textual-demo",
 ]
 
 [project.scripts]
@@ -39,6 +40,9 @@ cbio = "cbioportal.cli.main:app"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cbioportal"]
