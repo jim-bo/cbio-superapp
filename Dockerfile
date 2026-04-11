@@ -3,6 +3,9 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
 
+# git is required by uv to fetch git+https:// dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
 # Copy dependency manifests first for layer-cache efficiency
 COPY pyproject.toml uv.lock README.md ./
 
