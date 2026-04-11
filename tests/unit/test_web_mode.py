@@ -76,3 +76,60 @@ def test_open_conn_read_only_default_preserved(monkeypatch):
         with _db.open_conn():
             pass
         mock_conn.assert_called_once_with(read_only=True)
+
+
+# ---------------------------------------------------------------------------
+# CbioApp command-manager pruning in web mode
+# ---------------------------------------------------------------------------
+
+
+def test_cbio_app_web_mode_prunes_command_manager(monkeypatch):
+    """CBIO_WEB_MODE=1 should restrict commands to CBIO_WEB_ALLOWED_COMMANDS."""
+    monkeypatch.setenv("CBIO_WEB_MODE", "1")
+
+    from cbioportal.cli.tui_app import CbioApp, CBIO_WEB_ALLOWED_COMMANDS
+
+    app = CbioApp(
+        tools=[],
+        command_packages=["cbioportal.cli.slash_commands"],
+        safe_mode=True,
+    )
+
+    registered = set(app.command_manager.commands.keys())
+
+    # Must be a subset of the allowlist
+    assert registered <= CBIO_WEB_ALLOWED_COMMANDS, (
+        f"Extra commands found: {registered - CBIO_WEB_ALLOWED_COMMANDS}"
+    )
+
+    # Required commands must be present
+    assert "/help" in registered
+    assert "/studies" in registered
+
+    # Dangerous commands must be absent
+    assert "/study-load" not in registered
+    assert "/cbio-config" not in registered
+    assert "/mode" not in registered
+
+
+def test_cbio_app_local_mode_keeps_all_commands(monkeypatch):
+    """Without CBIO_WEB_MODE, all registered commands are kept."""
+    monkeypatch.delenv("CBIO_WEB_MODE", raising=False)
+
+    from cbioportal.cli.tui_app import CbioApp
+
+    app = CbioApp(
+        tools=[],
+        command_packages=["cbioportal.cli.slash_commands"],
+        safe_mode=True,
+    )
+
+    registered = set(app.command_manager.commands.keys())
+
+    # All expected local-mode commands must be present
+    for cmd in ("/studies", "/study-load", "/cbio-config", "/help"):
+        assert cmd in registered, f"Expected {cmd!r} in local mode commands"
+
+    # /mode is a built-in from cli_textual — only assert if it was auto-registered
+    # (not all builds include it; skip if absent rather than fail)
+    # assert "/mode" in registered  # optional — uncomment if cli_textual includes it

@@ -90,13 +90,16 @@ def test_launch_chat_app_disables_logging_under_web_mode(monkeypatch):
         def run(self):
             pass
 
-    # Patch cli_textual.app.ChatApp before _launch_chat_app imports it.
-    import cli_textual.app as cli_app_mod
-    monkeypatch.setattr(cli_app_mod, "ChatApp", FakeChatApp)
-
     # Stub out the pydantic-ai model construction so we don't need keys.
     monkeypatch.setenv("OPENROUTER_BASE_URL", "http://127.0.0.1:9/llm-proxy")
     monkeypatch.setenv("OPENROUTER_API_KEY", "session-token-abc")
+
+    # _launch_chat_app imports CbioApp from cbioportal.cli.tui_app inside its
+    # function body. Pre-import tui_app so the real CbioApp class is defined
+    # against the real ChatApp (avoiding MRO pollution), then swap the name
+    # in the module namespace with our fake.
+    import cbioportal.cli.tui_app as tui_mod
+    monkeypatch.setattr(tui_mod, "CbioApp", FakeChatApp)
 
     from cbioportal.cli.main import _launch_chat_app
 
@@ -117,8 +120,8 @@ def test_launch_chat_app_respects_log_flag_outside_web_mode(monkeypatch, tmp_pat
         def run(self):
             pass
 
-    import cli_textual.app as cli_app_mod
-    monkeypatch.setattr(cli_app_mod, "ChatApp", FakeChatApp)
+    import cbioportal.cli.tui_app as tui_mod
+    monkeypatch.setattr(tui_mod, "CbioApp", FakeChatApp)
 
     from cbioportal.cli.main import _launch_chat_app
 

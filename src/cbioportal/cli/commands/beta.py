@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import typer
 from dotenv import load_dotenv
@@ -16,6 +17,23 @@ from cbioportal.core import database
 load_dotenv()
 
 app = typer.Typer(help="[Beta] Local DuckDB server and sync commands")
+
+
+@app.callback()
+def _beta_callback(
+    db_path: Path = typer.Option(
+        None,
+        "--db-path",
+        help=(
+            "Path to the cbioportal DuckDB file. Overrides $CBIO_DB_PATH for "
+            "this invocation. Defaults to data/cbioportal.duckdb relative to cwd."
+        ),
+    ),
+) -> None:
+    """Shared options for all ``cbio beta`` subcommands."""
+    if db_path is not None:
+        os.environ["CBIO_DB_PATH"] = str(db_path.resolve())
+
 
 app.add_typer(db.app, name="db")
 app.add_typer(fetch.app, name="fetch")

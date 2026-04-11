@@ -31,7 +31,7 @@ dependencies = [
     "psycopg2-binary>=2.9",
     "invoke>=2.2",
     "google-cloud-storage>=2.17",
-    "cli-textual @ git+https://github.com/jim-bo/cli-textual-demo.git@ef6e06424dd5eb5c53cdb96c5c29dd217a4d7a24",
+    "cli-textual @ git+https://github.com/jim-bo/cli-textual-demo.git@c4ba2e7fbaf814eda5beb8401beae3cacccafcb3",
 ]
 
 [project.scripts]

@@ -421,7 +421,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
-    { name = "cli-textual", git = "https://github.com/jim-bo/cli-textual-demo.git?rev=ef6e06424dd5eb5c53cdb96c5c29dd217a4d7a24" },
+    { name = "cli-textual", git = "https://github.com/jim-bo/cli-textual-demo.git?rev=c4ba2e7fbaf814eda5beb8401beae3cacccafcb3" },
     { name = "duckdb" },
     { name = "fastapi" },
     { name = "google-cloud-storage", specifier = ">=2.17" },
@@ -583,7 +583,7 @@ wheels = [
 [[package]]
 name = "cli-textual"
 version = "0.1.0"
-source = { git = "https://github.com/jim-bo/cli-textual-demo.git?rev=ef6e06424dd5eb5c53cdb96c5c29dd217a4d7a24#ef6e06424dd5eb5c53cdb96c5c29dd217a4d7a24" }
+source = { git = "https://github.com/jim-bo/cli-textual-demo.git?rev=c4ba2e7fbaf814eda5beb8401beae3cacccafcb3#c4ba2e7fbaf814eda5beb8401beae3cacccafcb3" }
 dependencies = [
     { name = "langfuse" },
     { name = "openai" },
