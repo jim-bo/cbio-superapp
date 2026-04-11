@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>cbio terminal</title>
+    <link rel="stylesheet" href="/terminal/static/css/xterm.css" />
+    <script src="/terminal/static/js/textual.js"></script>
+    <style>
+      @font-face {
+        font-family: "Roboto Mono";
+        src: url("/terminal/static/fonts/RobotoMono-VariableFont_wght.ttf")
+          format("truetype");
+        font-weight: 100 700;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Roboto Mono";
+        src: url("/terminal/static/fonts/RobotoMono-Italic-VariableFont_wght.ttf")
+          format("truetype");
+        font-weight: 100 700;
+        font-style: italic;
+      }
+
+      body {
+        margin: 0;
+        background: #0c181f;
+      }
+
+      .dialog-container {
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+      .shade {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: #0c181f;
+      }
+      .intro {
+        width: 480px;
+        height: 180px;
+        font-size: 16px;
+        z-index: 20;
+        font-family: "Roboto Mono", menlo, monospace;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.95);
+        background-color: #12232d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      body.-first-byte .intro-dialog,
+      body.-first-byte .intro-dialog .shade {
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+        display: none;
+      }
+
+      body .textual-terminal {
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+      }
+
+      body.-first-byte .textual-terminal {
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+      }
+
+      .closed-dialog {
+        opacity: 0;
+        display: none;
+      }
+
+      body.-closed .closed-dialog {
+        opacity: 1;
+        display: flex;
+      }
+
+      .closed-dialog button,
+      .intro button {
+        padding: 12px 24px;
+        background-color: #5e0ba7;
+        color: rgba(255, 255, 255, 0.95);
+        border: none;
+        font-family: "Roboto Mono", menlo, monospace;
+        cursor: pointer;
+      }
+      .closed-dialog button:hover,
+      .intro button:hover {
+        background: #ac5af4;
+      }
+
+      .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top-color: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <script>
+      function refresh() {
+        window.location.reload();
+      }
+    </script>
+  </head>
+  <body>
+    <div class="dialog-container intro-dialog">
+      <div class="shade"></div>
+      <div class="intro">
+        <div class="spinner"></div>
+        <div>Connecting to cbio...</div>
+      </div>
+    </div>
+
+    <div class="dialog-container closed-dialog">
+      <div class="shade"></div>
+      <div class="intro">
+        <div>Session ended.</div>
+        <button type="button" onclick="refresh()">Restart</button>
+      </div>
+    </div>
+
+    <div
+      id="terminal"
+      class="textual-terminal"
+      data-session-websocket-url="{{ ws_url }}"
+      data-font-size="{{ font_size }}"
+    ></div>
+  </body>
+</html>

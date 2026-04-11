@@ -128,8 +128,17 @@ async def lifespan(app: FastAPI):
         bind=engine, autoflush=False, autocommit=False
     )
 
+    # Start the terminal idle reaper if the feature is enabled.
+    reaper_task = None
+    if terminal_router.terminal_enabled():
+        from cbioportal.web.terminal_service import idle_reaper
+
+        reaper_task = asyncio.create_task(idle_reaper())
+
     yield
 
+    if reaper_task is not None:
+        reaper_task.cancel()
     engine.dispose()
 
 
@@ -156,6 +165,19 @@ def create_app():
 
     # Middleware (add before routes so it wraps all requests)
     app.add_middleware(SessionSyncMiddleware)
+
+    # Serve textual-serve's static assets (xterm.js, fonts, css) when
+    # the terminal feature is enabled.  Mount BEFORE the terminal router
+    # so /terminal/static/... is matched by StaticFiles, not the router.
+    if terminal_router.terminal_enabled():
+        import textual_serve
+
+        ts_static = Path(textual_serve.__file__).parent / "static"
+        app.mount(
+            "/terminal/static",
+            StaticFiles(directory=str(ts_static)),
+            name="terminal-static",
+        )
 
     # Routes
     app.include_router(home_router.router)

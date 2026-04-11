@@ -1,6 +1,9 @@
 """Tests for M2: origin allowlist + CSRF double-submit on /terminal."""
+from pathlib import Path
+
 import pytest
 from fastapi import FastAPI, HTTPException
+from fastapi.templating import Jinja2Templates
 from fastapi.testclient import TestClient
 
 from cbioportal.web.routes import terminal as terminal_router
@@ -10,11 +13,14 @@ from cbioportal.web.routes.terminal import (
     issue_csrf_cookie,
 )
 
+_TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "src" / "cbioportal" / "web" / "templates"
+
 
 @pytest.fixture
 def app(monkeypatch):
     monkeypatch.setenv("CBIO_TERMINAL_ENABLED", "1")
     a = FastAPI()
+    a.state.templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
     a.include_router(terminal_router.router)
 
     # A dummy WS-upgrade-like POST endpoint that applies the M2 checks,
@@ -54,7 +60,7 @@ def client(app):
 def test_get_terminal_accepts_same_origin(client):
     r = client.get("/terminal")
     assert r.status_code == 200
-    assert r.json()["status"] == "scaffolding"
+    assert "text/html" in r.headers.get("content-type", "")
     # CSRF cookie was set
     assert "cbio_terminal_csrf" in r.cookies
 
@@ -134,6 +140,7 @@ def test_upgrade_with_mismatched_token_rejected(client):
 def test_feature_flag_off_returns_404(monkeypatch):
     monkeypatch.delenv("CBIO_TERMINAL_ENABLED", raising=False)
     a = FastAPI()
+    a.state.templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
     a.include_router(terminal_router.router)
     c = TestClient(a)
     r = c.get("/terminal")

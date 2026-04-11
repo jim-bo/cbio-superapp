@@ -115,7 +115,11 @@ def main(
     ctx.ensure_object(dict)
     ctx.obj["interactive"] = not no_interactive and sys.stdout.isatty()
     log_enabled = log or os.getenv("CBIO_LOG", "").lower() in ("1", "true", "yes")
-    if ctx.invoked_subcommand is None and sys.stdout.isatty():
+    # In web mode (CBIO_WEB_MODE=1) the subprocess has piped stdout so
+    # isatty() is False, but the Textual web driver doesn't need a real
+    # tty — it writes binary packets to the pipe.
+    is_interactive = sys.stdout.isatty() or os.environ.get("CBIO_WEB_MODE") == "1"
+    if ctx.invoked_subcommand is None and is_interactive:
         _launch_chat_app(log=log_enabled)
 
 
