@@ -192,8 +192,21 @@ def _write(p: Path, text: str) -> None:
     p.write_text(text)
 
 
-def test_validate_clean_minimal_study(tmp_path):
-    study = tmp_path / "tiny"
+@pytest.fixture
+def sandbox(tmp_path, monkeypatch):
+    """``tmp_path`` registered with the M3 path allowlist.
+
+    ``validate_study_folder`` routes through ``resolve_safe_path``, which
+    rejects anything outside ``CBIO_STUDIES_DIR`` (default ``./studies:./data``).
+    Pytest's ``tmp_path`` lives under ``/tmp``, so we widen the allowlist
+    for the duration of the test.
+    """
+    monkeypatch.setenv("CBIO_STUDIES_DIR", str(tmp_path))
+    return tmp_path
+
+
+def test_validate_clean_minimal_study(sandbox):
+    study = sandbox / "tiny"
     _write(
         study / "meta_study.txt",
         "type_of_cancer: lung\n"
@@ -214,16 +227,16 @@ def test_validate_clean_minimal_study(tmp_path):
     assert "0 error" in result.output
 
 
-def test_validate_missing_meta_study(tmp_path):
-    study = tmp_path / "broken"
+def test_validate_missing_meta_study(sandbox):
+    study = sandbox / "broken"
     study.mkdir()
     result = _run(validate_study_folder(str(study)))
     assert result.is_error
     assert "meta_study.txt" in result.output
 
 
-def test_validate_meta_missing_required_keys(tmp_path):
-    study = tmp_path / "halfmeta"
+def test_validate_meta_missing_required_keys(sandbox):
+    study = sandbox / "halfmeta"
     _write(
         study / "meta_study.txt",
         "type_of_cancer: lung\nname: Half\n",  # missing identifier + description
@@ -234,8 +247,8 @@ def test_validate_meta_missing_required_keys(tmp_path):
     assert "description" in result.output
 
 
-def test_validate_data_file_missing_required_column(tmp_path):
-    study = tmp_path / "badmaf"
+def test_validate_data_file_missing_required_column(sandbox):
+    study = sandbox / "badmaf"
     _write(
         study / "meta_study.txt",
         "type_of_cancer: lung\n"
@@ -253,7 +266,7 @@ def test_validate_data_file_missing_required_column(tmp_path):
     assert "Variant_Classification" in result.output
 
 
-def test_validate_path_does_not_exist(tmp_path):
-    result = _run(validate_study_folder(str(tmp_path / "nope")))
+def test_validate_path_does_not_exist(sandbox):
+    result = _run(validate_study_folder(str(sandbox / "nope")))
     assert result.is_error
     assert "does not exist" in result.output
