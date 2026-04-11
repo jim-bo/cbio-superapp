@@ -38,6 +38,8 @@
         right: 0;
         bottom: 0;
         height: 60vh;
+        min-height: 150px;
+        max-height: 95vh;
         z-index: 9999;
         background: #0c181f;
         border-top: 1px solid #2a3a47;
@@ -49,6 +51,48 @@
     }
     #cbio-terminal-tray.open {
         transform: translateY(0);
+    }
+    #cbio-terminal-tray.dragging {
+        transition: none;
+        user-select: none;
+    }
+    #cbio-terminal-tray .resize-handle {
+        position: absolute;
+        top: -4px;
+        left: 0;
+        right: 0;
+        height: 8px;
+        cursor: ns-resize;
+        z-index: 1;
+    }
+    #cbio-terminal-tray .resize-handle::before {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 3px;
+        border-radius: 2px;
+        background: #2a3a47;
+        transition: background 120ms ease;
+    }
+    #cbio-terminal-tray .resize-handle:hover::before,
+    #cbio-terminal-tray.dragging .resize-handle::before {
+        background: #4a6070;
+    }
+    /* Transparent overlay that swallows mouse events during drag so the
+       iframe doesn't steal mousemove/mouseup. */
+    #cbio-terminal-drag-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10001;
+        cursor: ns-resize;
+        display: none;
+    }
+    #cbio-terminal-tray.dragging ~ #cbio-terminal-drag-overlay,
+    #cbio-terminal-drag-overlay.active {
+        display: block;
     }
     #cbio-terminal-tray .tray-header {
         height: 32px;
@@ -95,6 +139,7 @@
 </button>
 
 <div id="cbio-terminal-tray" role="dialog" aria-label="cbio terminal" aria-hidden="true">
+    <div class="resize-handle" id="cbio-terminal-resize" aria-label="Resize terminal" role="separator"></div>
     <div class="tray-header">
         <span class="title">
             <i class="fa fa-terminal" aria-hidden="true"></i>
@@ -106,6 +151,7 @@
     </div>
     <iframe id="cbio-terminal-iframe" title="cbio terminal" data-src="/terminal"></iframe>
 </div>
+<div id="cbio-terminal-drag-overlay"></div>
 
 <script>
     (function () {
@@ -113,12 +159,33 @@
         var launcher = document.getElementById("cbio-terminal-launcher");
         var closeBtn = document.getElementById("cbio-terminal-close");
         var iframe = document.getElementById("cbio-terminal-iframe");
+        var resizeHandle = document.getElementById("cbio-terminal-resize");
+        var overlay = document.getElementById("cbio-terminal-drag-overlay");
         var loaded = false;
+
+        // --- Height persistence --------------------------------------------
+        var STORAGE_KEY = "cbio-terminal-tray-height";
+        var MIN_PX = 150;
+        function maxPx() {
+            return Math.max(MIN_PX, Math.floor(window.innerHeight * 0.95));
+        }
+        function clampHeight(px) {
+            return Math.min(Math.max(px, MIN_PX), maxPx());
+        }
+        function applyStoredHeight() {
+            try {
+                var saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+                if (saved && !isNaN(saved)) {
+                    tray.style.height = clampHeight(saved) + "px";
+                }
+            } catch (e) { /* localStorage unavailable — ignore */ }
+        }
 
         function open() {
             if (!loaded) {
                 iframe.src = iframe.dataset.src;
                 loaded = true;
+                applyStoredHeight();
             }
             tray.classList.add("open");
             tray.setAttribute("aria-hidden", "false");
@@ -137,6 +204,33 @@
 
         launcher.addEventListener("click", toggle);
         closeBtn.addEventListener("click", close);
+
+        // --- Drag to resize -------------------------------------------------
+        var dragStartY = 0;
+        var dragStartHeight = 0;
+
+        function onDragMove(e) {
+            var delta = dragStartY - e.clientY; // dragging up increases height
+            tray.style.height = clampHeight(dragStartHeight + delta) + "px";
+        }
+        function onDragEnd() {
+            tray.classList.remove("dragging");
+            overlay.classList.remove("active");
+            document.removeEventListener("mousemove", onDragMove);
+            document.removeEventListener("mouseup", onDragEnd);
+            try {
+                localStorage.setItem(STORAGE_KEY, parseInt(tray.style.height, 10));
+            } catch (e) { /* ignore */ }
+        }
+        resizeHandle.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            dragStartY = e.clientY;
+            dragStartHeight = tray.getBoundingClientRect().height;
+            tray.classList.add("dragging");
+            overlay.classList.add("active");
+            document.addEventListener("mousemove", onDragMove);
+            document.addEventListener("mouseup", onDragEnd);
+        });
 
         window.addEventListener("keydown", function (e) {
             // Ctrl+` — toggle tray (Cmd+` on macOS)
