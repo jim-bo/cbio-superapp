@@ -1,0 +1,153 @@
+<style>
+    #cbio-terminal-launcher {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 10000;
+        background: #0c181f;
+        color: #e5e5e5;
+        border: 1px solid #2a3a47;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 120ms ease, transform 120ms ease;
+    }
+    #cbio-terminal-launcher:hover {
+        background: #162632;
+        transform: translateY(-1px);
+    }
+    #cbio-terminal-launcher .kbd {
+        font-size: 11px;
+        opacity: 0.6;
+        border: 1px solid #2a3a47;
+        border-radius: 3px;
+        padding: 1px 5px;
+        margin-left: 4px;
+    }
+
+    #cbio-terminal-tray {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 60vh;
+        z-index: 9999;
+        background: #0c181f;
+        border-top: 1px solid #2a3a47;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        transform: translateY(100%);
+        transition: transform 200ms ease;
+    }
+    #cbio-terminal-tray.open {
+        transform: translateY(0);
+    }
+    #cbio-terminal-tray .tray-header {
+        height: 32px;
+        flex: 0 0 32px;
+        background: #162632;
+        color: #e5e5e5;
+        font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        border-bottom: 1px solid #2a3a47;
+    }
+    #cbio-terminal-tray .tray-header .title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #cbio-terminal-tray .tray-header button {
+        background: transparent;
+        border: none;
+        color: #9aa4ad;
+        cursor: pointer;
+        padding: 4px 8px;
+        font-size: 14px;
+        line-height: 1;
+    }
+    #cbio-terminal-tray .tray-header button:hover {
+        color: #e5e5e5;
+    }
+    #cbio-terminal-tray iframe {
+        flex: 1 1 auto;
+        width: 100%;
+        border: 0;
+        background: #0c181f;
+    }
+</style>
+
+<button id="cbio-terminal-launcher" type="button" aria-label="Open cbio terminal">
+    <i class="fa fa-terminal" aria-hidden="true"></i>
+    <span>Terminal</span>
+    <span class="kbd">Ctrl+`</span>
+</button>
+
+<div id="cbio-terminal-tray" role="dialog" aria-label="cbio terminal" aria-hidden="true">
+    <div class="tray-header">
+        <span class="title">
+            <i class="fa fa-terminal" aria-hidden="true"></i>
+            cbio terminal
+        </span>
+        <button type="button" id="cbio-terminal-close" aria-label="Close terminal">
+            <i class="fa fa-times" aria-hidden="true"></i>
+        </button>
+    </div>
+    <iframe id="cbio-terminal-iframe" title="cbio terminal" data-src="/terminal"></iframe>
+</div>
+
+<script>
+    (function () {
+        var tray = document.getElementById("cbio-terminal-tray");
+        var launcher = document.getElementById("cbio-terminal-launcher");
+        var closeBtn = document.getElementById("cbio-terminal-close");
+        var iframe = document.getElementById("cbio-terminal-iframe");
+        var loaded = false;
+
+        function open() {
+            if (!loaded) {
+                iframe.src = iframe.dataset.src;
+                loaded = true;
+            }
+            tray.classList.add("open");
+            tray.setAttribute("aria-hidden", "false");
+        }
+        function close() {
+            tray.classList.remove("open");
+            tray.setAttribute("aria-hidden", "true");
+        }
+        function toggle() {
+            if (tray.classList.contains("open")) {
+                close();
+            } else {
+                open();
+            }
+        }
+
+        launcher.addEventListener("click", toggle);
+        closeBtn.addEventListener("click", close);
+
+        window.addEventListener("keydown", function (e) {
+            // Ctrl+` — toggle tray (Cmd+` on macOS)
+            if ((e.ctrlKey || e.metaKey) && e.key === "`") {
+                e.preventDefault();
+                toggle();
+            }
+            // Escape — close if open
+            if (e.key === "Escape" && tray.classList.contains("open")) {
+                close();
+            }
+        });
+    })();
+</script>

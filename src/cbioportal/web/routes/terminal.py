@@ -350,6 +350,11 @@ def terminal_index(request: Request) -> HTMLResponse:
         samesite="strict",
         path="/terminal",
     )
+    # Allow same-origin iframing from the dashboard tray, block everything
+    # else. `frame-ancestors` is the CSP3 directive (modern browsers);
+    # `X-Frame-Options` is the legacy fallback.
+    resp.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+    resp.headers["X-Frame-Options"] = "SAMEORIGIN"
     return resp
 
 

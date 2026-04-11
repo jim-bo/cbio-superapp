@@ -157,6 +157,10 @@ def create_app():
             return value
     templates.env.filters["comma_number"] = comma_number
 
+    # Expose the terminal feature flag to every template so base.html can
+    # conditionally include the tray partial without per-route plumbing.
+    templates.env.globals["terminal_enabled"] = terminal_router.terminal_enabled
+
     app.state.templates = templates
 
     # Static files
