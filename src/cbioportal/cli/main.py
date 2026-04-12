@@ -27,7 +27,7 @@ def _launch_chat_app(log: bool = False) -> None:
     When ``log`` is True, the full conversation (user input, LLM events,
     tool calls) is appended to ``~/.cbio/convos/<utc-timestamp>.jsonl``.
     """
-    from cli_textual.app import ChatApp
+    from cbioportal.cli.tui_app import CbioApp
 
     from cbioportal.cli.tools import get_tools_for_env
 
@@ -61,7 +61,7 @@ def _launch_chat_app(log: bool = False) -> None:
         ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         log_path = CBIO_LOG_DIR / f"{ts}.jsonl"
 
-    ChatApp(
+    CbioApp(
         tools=get_tools_for_env(),
         command_packages=["cbioportal.cli.slash_commands"],
         log_path=log_path,
